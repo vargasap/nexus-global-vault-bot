@@ -455,9 +455,33 @@ class TelegramStarsBot:
         if start_arg in promo_map:
             self.activate_service_by_num(chat_id, lang_code, promo_map[start_arg], username)
             return
+        elif start_arg == "game" or start_arg.startswith("game"):
+            self.send_game_menu(chat_id, lang_code)
+            return
 
         welcome_txt = self.get_text(lang_code, "welcome")
         self.send_services_menu(chat_id, lang_code, header_text=welcome_txt)
+
+    def send_game_menu(self, chat_id, lang_code):
+        msg = (
+            "🎰 **¡BIENVENIDO A LUCKY VAULT ARCADE!** 💎\n\n"
+            "Gira la ruleta de la fortuna, abre cofres misteriosos y gana Telegram Stars, Pases VIP y descargas gratis para el bot.\n\n"
+            "🎁 **Recompensa Diaria:** +3 Giros gratis listos para reclamar hoy.\n"
+            "🚀 **Bucle Viral:** Gana +3 giros extra por cada amigo que invites.\n\n"
+            "👇 **Toca el botón abajo para jugar en pantalla completa:**"
+        )
+        reply_markup = {
+            "inline_keyboard": [
+                [{"text": "🎰 Abrir Lucky Vault Arcade (Mini App)", "web_app": {"url": "https://vargasap.github.io/nexus-global-vault-bot/web_hub/game.html"}}],
+                [{"text": "🚀 Invitar Amigos (+3 Giros)", "url": "https://t.me/share/url?url=" + urllib.parse.quote("https://t.me/nexus_global_vault_bot?start=game") + "&text=" + urllib.parse.quote("🎰 ¡Entra al Lucky Vault Arcade en Telegram y gira la ruleta gratis para ganar Stars y premios VIP! ⚡")}],
+                [{"text": "🔙 Volver al Menú de Herramientas", "callback_data": "view_menu"}]
+            ]
+        }
+        self.call_api("sendMessage", {
+            "chat_id": chat_id,
+            "text": msg,
+            "reply_markup": reply_markup
+        })
 
     def get_delivery_markup(self, user_id):
         ref_link = f"https://t.me/nexus_global_vault_bot?start=ref_{user_id}"
@@ -552,6 +576,9 @@ class TelegramStarsBot:
         
         reply_markup = {
             "inline_keyboard": [
+                [
+                    {"text": "🎰 💎 JUGAR LUCKY VAULT ARCADE (MINI APP)", "web_app": {"url": "https://vargasap.github.io/nexus-global-vault-bot/web_hub/game.html"}}
+                ],
                 [
                     {"text": "1️⃣ 🎬 Video HD", "callback_data": "act_1"},
                     {"text": "2️⃣ 🎵 Audio MP3", "callback_data": "act_2"}
@@ -1374,6 +1401,8 @@ class TelegramStarsBot:
                                 parts = text.split()
                                 start_arg = parts[1] if len(parts) > 1 else ""
                                 self.handle_start(chat_id, lang_code, username, start_arg)
+                            elif text.startswith("/juego") or text.startswith("/ruleta") or text.startswith("/arcade"):
+                                self.send_game_menu(chat_id, lang_code)
                             elif text.startswith("/invitar") or text.startswith("/compartir") or text.startswith("/referidos"):
                                 self.send_referral_info(chat_id, lang_code)
                             elif text.startswith("/menu") or text.startswith("/servicios"):

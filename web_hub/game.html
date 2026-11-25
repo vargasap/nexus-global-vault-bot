@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Lucky Vault Arcade 🎰 Telegram Mini App</title>
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --bg-card: rgba(22, 29, 47, 0.85);
+            --neon-blue: #00f0ff;
+            --neon-gold: #ffd700;
+            --neon-purple: #b026ff;
+            --neon-green: #00ff88;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Outfit', -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(176, 38, 255, 0.25) 0%, transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(0, 240, 255, 0.15) 0%, transparent 50%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 12px 14px 80px 14px;
+        }
+
+        /* Top HUD Header */
+        .hud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 10px 16px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            margin-bottom: 16px;
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            border: 2px solid var(--neon-blue);
+        }
+
+        .user-info h3 {
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .user-info p {
+            font-size: 11px;
+            color: var(--neon-green);
+        }
+
+        .currency-cluster {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stat-badge {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 14px;
+            padding: 5px 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .stat-badge.stars { color: var(--neon-gold); border-color: rgba(255, 215, 0, 0.4); }
+        .stat-badge.spins { color: var(--neon-blue); border-color: rgba(0, 240, 255, 0.4); }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 700;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(176, 38, 255, 0.2));
+            border-color: var(--neon-blue);
+            color: white;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        /* SECTION: WHEEL OF FORTUNE */
+        .section-view { display: none; }
+        .section-view.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 330px;
+            height: 330px;
+            margin: 10px auto 20px auto;
+        }
+
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 0 25px rgba(0, 240, 255, 0.45));
+            border-radius: 50%;
+        }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 32px;
+            height: 42px;
+            z-index: 10;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
+        }
+
+        .wheel-center-jewel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 56px;
+            height: 56px;
+            background: radial-gradient(circle, #ff2a6d 0%, #05051a 100%);
+            border: 3px solid var(--neon-gold);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 42, 109, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* Big Spin Action Button */
+        .spin-action-btn {
+            display: block;
+            width: 100%;
+            max-width: 340px;
+            margin: 0 auto 12px auto;
+            padding: 16px 0;
+            background: linear-gradient(135deg, #00f0ff 0%, #7000ff 100%);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            box-shadow: 0 10px 25px rgba(0, 240, 255, 0.4), inset 0 2px 4px rgba(255,255,255,0.4);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .spin-action-btn:active {
+            transform: scale(0.97);
+            filter: brightness(1.2);
+        }
+
+        .spin-action-btn:disabled {
+            background: #334155;
+            box-shadow: none;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+
+        /* Streak & Daily Reward Card */
+        .daily-reward-bar {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        .daily-text h4 { font-size: 14px; font-weight: 700; color: var(--neon-gold); }
+        .daily-text p { font-size: 11px; color: var(--text-muted); }
+
+        .claim-btn {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* SECTION: MYSTERY CHESTS */
+        .chests-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .chest-card {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 16px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chest-card:active { transform: scale(0.95); }
+        .chest-card.golden {
+            border-color: rgba(255, 215, 0, 0.4);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.15);
+        }
+
+        .chest-icon {
+            font-size: 42px;
+            margin-bottom: 8px;
+            display: inline-block;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .chest-card:hover .chest-icon { transform: scale(1.15) rotate(-5deg); }
+
+        .chest-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+        .chest-card p { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+        .chest-price {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(0, 240, 255, 0.1);
+            color: var(--neon-blue);
+        }
+        .chest-card.golden .chest-price { background: rgba(255, 215, 0, 0.15); color: var(--neon-gold); }
+
+        /* SECTION: VIRAL INVITE BOX */
+        .invite-card {
+            background: linear-gradient(135deg, rgba(176, 38, 255, 0.2), rgba(0, 240, 255, 0.2));
+            border: 1px solid var(--neon-blue);
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 16px;
+            text-align: center;
+            position: relative;
+        }
+
+        .invite-card h3 { font-size: 16px; font-weight: 900; color: white; margin-bottom: 6px; }
+        .invite-card p { font-size: 12px; color: #cbd5e1; margin-bottom: 14px; }
+        .invite-action-btn {
+            background: white;
+            color: #0f172a;
+            font-size: 14px;
+            font-weight: 900;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+        }
+
+        /* SECTION: STARS SHOP (BUY SPINS) */
+        .shop-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .shop-item {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .shop-item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .shop-item-icon { font-size: 28px; }
+        .shop-item-text h4 { font-size: 14px; font-weight: 700; }
+        .shop-item-text p { font-size: 11px; color: var(--text-muted); }
+
+        .buy-stars-btn {
+            background: linear-gradient(135deg, #ffd700, #ff8800);
+            border: none;
+            border-radius: 14px;
+            color: #0a0e17;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        /* WIN POPUP MODAL */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        @keyframes zoomIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-box {
+            background: var(--bg-card);
+            border: 2px solid var(--neon-gold);
+            border-radius: 26px;
+            padding: 28px 20px;
+            text-align: center;
+            max-width: 320px;
+            width: 100%;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
+        }
+
+        .modal-prize-icon { font-size: 64px; margin-bottom: 12px; animation: bounce 1s infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+
+        .modal-box h2 { font-size: 22px; font-weight: 900; color: var(--neon-gold); margin-bottom: 6px; }
+        .modal-box p { font-size: 14px; color: #cbd5e1; margin-bottom: 20px; }
+
+        .modal-close-btn {
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            border: none;
+            border-radius: 14px;
+            color: white;
+            font-size: 15px;
+            font-weight: 900;
+            padding: 12px 24px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Confetti canvas */
+        #confettiCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 99;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="confettiCanvas"></canvas>
+
+    <!-- TOP HUD -->
+    <header class="hud-header">
+        <div class="user-pill">
+            <div class="user-avatar" id="avatarLetter">N</div>
+            <div class="user-info">
+                <h3 id="userName">Jugador</h3>
+                <p>Nivel 1 • Novato</p>
+            </div>
+        </div>
+        <div class="currency-cluster">
+            <div class="stat-badge spins" title="Giros Disponibles">
+                <span>⚡</span> <span id="spinsCount">5</span>
+            </div>
+            <div class="stat-badge stars" title="Puntos Stars">
+                <span>⭐</span> <span id="starsCount">250</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('wheel')">🎰 Ruleta</button>
+        <button class="tab-btn" onclick="switchTab('chests')">📦 Cofres</button>
+        <button class="tab-btn" onclick="switchTab('invite')">🎁 Amigos</button>
+        <button class="tab-btn" onclick="switchTab('shop')">💎 Tienda</button>
+    </nav>
+
+    <!-- TAB 1: LUCKY WHEEL -->
+    <section id="tab-wheel" class="section-view active">
+        <!-- Daily Streak Bar -->
+        <div class="daily-reward-bar">
+            <div class="daily-text">
+                <h4>🎁 Recompensa Diaria</h4>
+                <p>+3 Giros gratis listos para reclamar</p>
+            </div>
+            <button class="claim-btn" id="dailyClaimBtn" onclick="claimDailyReward()">Reclamar</button>
+        </div>
+
+        <!-- Wheel Canvas Container -->
+        <div class="wheel-container">
+            <svg class="wheel-pointer" viewBox="0 0 32 42">
+                <polygon points="16,42 0,0 32,0" fill="#ffd700" stroke="#0f172a" stroke-width="2"/>
+                <circle cx="16" cy="10" r="4" fill="#ff0055"/>
+            </svg>
+            <canvas id="wheelCanvas" width="660" height="660"></canvas>
+            <div class="wheel-center-jewel">💎</div>
+        </div>
+
+        <button class="spin-action-btn" id="spinBtn" onclick="spinWheel()">GIRAR RULETA 🎰</button>
+    </section>
+
+    <!-- TAB 2: MYSTERY CHESTS -->
+    <section id="tab-chests" class="section-view">
+        <div class="invite-card" style="margin-bottom: 20px;">
+            <h3>📦 Cofres Misteriosos con Premios</h3>
+            <p>Abre cofres para desbloquear Telegram Stars, Pases VIP y descargas gratis para el bot.</p>
+        </div>
+
+        <div class="chests-grid">
+            <div class="chest-card" onclick="openChest('bronce')">
+                <div class="chest-icon">📦</div>
+                <h4>Cofre Bronce</h4>
+                <p>Común</p>
+                <span class="chest-price">GRATIS</span>
+            </div>
+            <div class="chest-card" onclick="openChest('plata')">
+                <div class="chest-icon">🥈</div>
+                <h4>Cofre Plata</h4>
+                <p>Épico</p>
+                <span class="chest-price">⭐ 50 Stars</span>
+            </div>
+            <div class="chest-card golden" onclick="openChest('oro')">
+                <div class="chest-icon">👑</div>
+                <h4>Cofre Oro</h4>
+                <p>Legendario</p>
+                <span class="chest-price">⭐ 150 Stars</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- TAB 3: VIRAL INVITE -->
+    <section id="tab-invite" class="section-view">
+        <div class="invite-card">
+            <div style="font-size: 48px; margin-bottom: 8px;">🚀</div>
+            <h3>¡Invita y Gana Giros Ilimitados!</h3>
+            <p>Por cada amigo que abra el juego con tu enlace, recibes <strong>+3 Giros Gratis</strong> y <strong>+100 Puntos Stars</strong> al instante.</p>
+            <button class="invite-action-btn" onclick="shareInviteLink()">COMPARTIR EN TELEGRAM (1 TOQUE)</button>
+        </div>
+
+        <div class="shop-item">
+            <div class="shop-item-info">
+                <div class="shop-item-icon">👥</div>
+                <div class="shop-item-text">
+                    <h4>Amigos Invitados</h4>
+                    <p>Recompensas acumuladas en tu cuenta</p>
+                </div>
+            </div>
+            <span style="font-weight: 900; font-size: 18px; color: var(--neon-blue);">0</span>
+        </div>
+    </section>
+
+    <!-- TAB 4: SHOP (TELEGRAM STARS) -->
+    <section id="tab-shop" class="section-view">
+        <div class="shop-list">
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-icon">⚡</div>
+                    <div class="shop-item-text">
+                        <h4>10 Giros VIP</h4>
+                        <p>Multiplica tus premios en la ruleta</p>
+                    </div>
+                </div>
+                <button class="buy-stars-btn" onclick="triggerStarsInvoice('spins_10')">⭐ 50</button>
+            </div>
+
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-icon">🎁</div>
+                    <div class="shop-item-text">
+                        <h4>30 Giros + 1 Cofre Oro</h4>
+                        <p>Paquete más vendido</p>
+                    </div>
+                </div>
+                <button class="buy-stars-btn" onclick="triggerStarsInvoice('spins_30')">⭐ 150</button>
+            </div>
+
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-icon">👑</div>
+                    <div class="shop-item-text">
+                        <h4>100 Giros + Pase VIP</h4>
+                        <p>Acceso ilimitado a todas las herramientas</p>
+                    </div>
+                </div>
+                <button class="buy-stars-btn" onclick="triggerStarsInvoice('spins_vip')">⭐ 500</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- WIN MODAL -->
+    <div class="modal-overlay" id="winModal">
+        <div class="modal-box">
+            <div class="modal-prize-icon" id="modalIcon">🎉</div>
+            <h2 id="modalTitle">¡FELICITACIONES!</h2>
+            <p id="modalDesc">Has ganado 100 Puntos Stars.</p>
+            <button class="modal-close-btn" onclick="closeModal()">¡RECLAMAR PREMIO!</button>
+        </div>
+    </div>
+
+    <script>
+        // Init Telegram WebApp
+        const tg = window.Telegram?.WebApp;
+        if (tg) {
+            tg.ready();
+            tg.expand();
+            try {
+                if (tg.initDataUnsafe?.user) {
+                    const u = tg.initDataUnsafe.user;
+                    const name = u.first_name || u.username || 'Jugador';
+                    document.getElementById('userName').textContent = name;
+                    document.getElementById('avatarLetter').textContent = name[0].toUpperCase();
+                }
+            } catch(e) {}
+        }
+
+        // Web Audio API Synthesizer (Instant latency-free sound effects)
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTickSound() {
+            try {
+                initAudio();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.04);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.04);
+            } catch(e) {}
+        }
+
+        function playWinFanfare() {
+            try {
+                initAudio();
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, High C
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime + (idx * 0.1));
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (idx * 0.1) + 0.35);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime + (idx * 0.1));
+                    osc.stop(audioCtx.currentTime + (idx * 0.1) + 0.35);
+                });
+            } catch(e) {}
+        }
+
+        // Wheel Slices Data
+        const SLICES = [
+            { text: "+50 Stars", icon: "⭐", color: "#e11d48", prize: "50 Stars", type: "stars", amount: 50 },
+            { text: "3 Usos Bot", icon: "🎬", color: "#2563eb", prize: "3 Usos Gratis para el Bot", type: "uses", amount: 3 },
+            { text: "+100 Stars", icon: "🌟", color: "#7c3aed", prize: "100 Stars", type: "stars", amount: 100 },
+            { text: "Casi...", icon: "😅", color: "#1e293b", prize: "¡Casi ganas! Vuelve a intentar", type: "none", amount: 0 },
+            { text: "+3 Giros", icon: "⚡", color: "#059669", prize: "3 Giros Extra", type: "spins", amount: 3 },
+            { text: "Cofre Oro", icon: "👑", color: "#d97706", prize: "Cofre Legendario de Oro", type: "chest", amount: 1 },
+            { text: "Stickers VIP", icon: "🪄", color: "#0284c7", prize: "Pase Stickers con Sonido", type: "uses", amount: 5 },
+            { text: "2X Boost", icon: "🚀", color: "#db2777", prize: "Multiplicador 2X de Puntos", type: "boost", amount: 2 }
+        ];
+
+        // Canvas Wheel Drawing
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const numSlices = SLICES.length;
+        const arc = (2 * Math.PI) / numSlices;
+        let startAngle = 0;
+        let isSpinning = false;
+        let currentSpins = 5;
+        let currentStars = 250;
+
+        function drawWheel() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = centerX - 15;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw outer neon border
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius + 10, 0, 2 * Math.PI);
+            ctx.strokeStyle = "#00f0ff";
+            ctx.lineWidth = 8;
+            ctx.stroke();
+
+            // Draw segments
+            for (let i = 0; i < numSlices; i++) {
+                const angle = startAngle + i * arc;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, angle, angle + arc);
+                ctx.fillStyle = SLICES[i].color;
+                ctx.fill();
+                ctx.strokeStyle = "rgba(255,255,255,0.2)";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw Text & Icon
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "white";
+                ctx.font = "bold 26px 'Outfit', sans-serif";
+                ctx.fillText(SLICES[i].icon + " " + SLICES[i].text, radius - 25, 10);
+                ctx.restore();
+            }
+        }
+        drawWheel();
+
+        // Spin Physics & Animation
+        function spinWheel() {
+            if (isSpinning) return;
+            if (currentSpins <= 0) {
+                switchTab('shop');
+                return;
+            }
+
+            initAudio();
+            isSpinning = true;
+            currentSpins--;
+            document.getElementById('spinsCount').textContent = currentSpins;
+            document.getElementById('spinBtn').disabled = true;
+
+            // Random landing slice
+            const targetSlice = Math.floor(Math.random() * numSlices);
+            const extraRotations = (5 + Math.floor(Math.random() * 4)) * (2 * Math.PI);
+            // Calculate final angle to align targetSlice with top (pointer at 3*PI/2)
+            const targetAngle = (3 * Math.PI / 2) - (targetSlice * arc + arc / 2);
+            const totalRotation = extraRotations + (targetAngle - (startAngle % (2 * Math.PI)));
+
+            const duration = 4500;
+            const startTime = performance.now();
+            const initialAngle = startAngle;
+            let lastTickAngle = startAngle;
+
+            function animate(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // Cubic ease out
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                startAngle = initialAngle + totalRotation * easeOut;
+                drawWheel();
+
+                // Sound & Haptic on peg click
+                if (Math.abs(startAngle - lastTickAngle) >= arc) {
+                    playTickSound();
+                    if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+                    lastTickAngle = startAngle;
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isSpinning = false;
+                    document.getElementById('spinBtn').disabled = false;
+                    handleSpinResult(SLICES[targetSlice]);
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function handleSpinResult(slice) {
+            playWinFanfare();
+            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            fireConfetti();
+
+            if (slice.type === 'stars') {
+                currentStars += slice.amount;
+                document.getElementById('starsCount').textContent = currentStars;
+            } else if (slice.type === 'spins') {
+                currentSpins += slice.amount;
+                document.getElementById('spinsCount').textContent = currentSpins;
+            }
+
+            showModal(slice.icon, "¡PREMIO CONSEGUIDO!", "Has ganado: " + slice.prize);
+        }
+
+        // Daily Reward
+        function claimDailyReward() {
+            currentSpins += 3;
+            document.getElementById('spinsCount').textContent = currentSpins;
+            document.getElementById('dailyClaimBtn').disabled = true;
+            document.getElementById('dailyClaimBtn').textContent = "Reclamado ✅";
+            playWinFanfare();
+            showModal("🎁", "¡RECOMPENSA DIARIA!", "Has recibido +3 Giros Gratis para hoy.");
+        }
+
+        // Open Chests
+        function openChest(tier) {
+            initAudio();
+            playWinFanfare();
+            fireConfetti();
+            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+            if (tier === 'bronce') {
+                currentStars += 50;
+                document.getElementById('starsCount').textContent = currentStars;
+                showModal("📦", "¡COFRE BRONCE ABIERTO!", "Has recibido: 50 Stars + 1 Uso Gratis en el Bot.");
+            } else if (tier === 'plata') {
+                currentStars += 200;
+                currentSpins += 5;
+                document.getElementById('starsCount').textContent = currentStars;
+                document.getElementById('spinsCount').textContent = currentSpins;
+                showModal("🥈", "¡COFRE PLATA ABIERTO!", "Has recibido: 200 Stars + 5 Giros Extra.");
+            } else {
+                currentStars += 600;
+                currentSpins += 15;
+                document.getElementById('starsCount').textContent = currentStars;
+                document.getElementById('spinsCount').textContent = currentSpins;
+                showModal("👑", "¡COFRE ORO LEGENDARIO!", "Has recibido: 600 Stars + 15 Giros + PASE VIP ⭐.");
+            }
+        }
+
+        // Modal Handler
+        function showModal(icon, title, desc) {
+            document.getElementById('modalIcon').textContent = icon;
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalDesc').textContent = desc;
+            document.getElementById('winModal').classList.add('active');
+        }
+        function closeModal() {
+            document.getElementById('winModal').classList.remove('active');
+        }
+
+        // Tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.section-view').forEach(sec => sec.classList.remove('active'));
+
+            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+            if (targetBtn) targetBtn.classList.add('active');
+
+            const targetSection = document.getElementById('tab-' + tabId);
+            if (targetSection) targetSection.classList.add('active');
+        }
+
+        // Viral Share Invite
+        function shareInviteLink() {
+            const shareUrl = "https://t.me/share/url?url=" + encodeURIComponent("https://t.me/nexus_global_vault_bot?start=game") + "&text=" + encodeURIComponent("🎰 ¡Entra al Lucky Vault Arcade en Telegram y gira la ruleta gratis para ganar Stars y premios VIP! ⚡");
+            if (tg?.openTelegramLink) {
+                tg.openTelegramLink(shareUrl);
+            } else {
+                window.open(shareUrl, '_blank');
+            }
+        }
+
+        // Trigger Stars Invoice (Sends signal back to Telegram)
+        function triggerStarsInvoice(plan) {
+            if (tg?.sendData) {
+                tg.sendData(JSON.stringify({ action: "buy_spins", plan: plan }));
+            } else {
+                showModal("💳", "PAQUETE TELEGRAM STARS", "Para comprar este paquete, escribe /planes en el bot de Telegram.");
+            }
+        }
+
+        // Particle Confetti Effect
+        function fireConfetti() {
+            const c = document.getElementById('confettiCanvas');
+            const cCtx = c.getContext('2d');
+            c.width = window.innerWidth;
+            c.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#00f0ff', '#ffd700', '#b026ff', '#00ff88', '#ff0055'];
+
+            for (let i = 0; i < 70; i++) {
+                particles.push({
+                    x: c.width / 2,
+                    y: c.height * 0.4,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.7) * 14,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: 1
+                });
+            }
+
+            function update() {
+                cCtx.clearRect(0, 0, c.width, c.height);
+                let alive = false;
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.35; // gravity
+                    p.alpha -= 0.015;
+                    if (p.alpha > 0) {
+                        alive = true;
+                        cCtx.globalAlpha = p.alpha;
+                        cCtx.fillStyle = p.color;
+                        cCtx.fillRect(p.x, p.y, p.size, p.size);
+                    }
+                });
+                cCtx.globalAlpha = 1;
+                if (alive) requestAnimationFrame(update);
+            }
+            update();
+        }
+    </script>
+</body>
+</html>

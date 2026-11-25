@@ -1,10 +1,12 @@
+import os
 import requests
 
-token = '9176578200:AAG1Qgg56gyzvoNwNCcGXT2SjXyMHJMlYN8'
+token = '9176578200:AAEK08QowB8IqaDXKyKQnl9-YN1EScbJQBE'
 base_url = f'https://api.telegram.org/bot{token}'
 
 commands = [
     {'command': 'menu', 'description': '🛠️ Menú Oficial (8 Servicios)'},
+    {'command': 'juego', 'description': '🎰 Ruleta y Cofres (Mini App)'},
     {'command': 'video', 'description': '🎬 1. Descargar Video HD'},
     {'command': 'mp3', 'description': '🎵 2. Extraer Audio MP3'},
     {'command': 'sticker', 'description': '🪄 3. Creador de Stickers'},
