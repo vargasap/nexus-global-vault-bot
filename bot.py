@@ -178,11 +178,55 @@ def write_log(msg):
     except Exception:
         pass
 
+USER_LAST_REQUESTS = {}
+
+def check_rate_limit(user_id, max_requests=6, window_seconds=8):
+    now = time.time()
+    user_times = USER_LAST_REQUESTS.get(user_id, [])
+    user_times = [t for t in user_times if now - t < window_seconds]
+    if len(user_times) >= max_requests:
+        USER_LAST_REQUESTS[user_id] = user_times
+        return False
+    user_times.append(now)
+    USER_LAST_REQUESTS[user_id] = user_times
+    return True
+
+def cleanup_old_downloads():
+    try:
+        now = time.time()
+        for f in os.listdir(DOWNLOADS_DIR):
+            fpath = os.path.join(DOWNLOADS_DIR, f)
+            if os.path.isfile(fpath) and (now - os.path.getmtime(fpath) > 1800):
+                try: os.remove(fpath)
+                except: pass
+    except Exception:
+        pass
+
 def load_config():
-    if not os.path.exists(CONFIG_PATH):
-        raise FileNotFoundError(f"No se encontró {CONFIG_PATH}")
-    with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+    cfg = {}
+    if os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+        except Exception:
+            cfg = {}
+
+    # Soporte para archivo .env seguro
+    env_file = os.path.join(BASE_DIR, ".env")
+    if os.path.exists(env_file):
+        try:
+            with open(env_file, "r", encoding="utf-8") as ef:
+                for line in ef:
+                    line = line.strip()
+                    if line.startswith("BOT_TOKEN="):
+                        cfg["bot_token"] = line.split("=", 1)[1].strip()
+        except Exception:
+            pass
+
+    if os.environ.get("BOT_TOKEN"):
+        cfg["bot_token"] = os.environ.get("BOT_TOKEN").strip()
+
+    return cfg
 
 def load_users():
     if not os.path.exists(USERS_DB_PATH):
@@ -1246,6 +1290,17 @@ class TelegramStarsBot:
 
                             user_data = get_user_status(user_id, username)
                             active_mode = user_data.get("active_mode", "video")
+
+                            # Protección Anti-Spam / Rate Limiting (Máx 6 peticiones cada 8s)
+                            if not check_rate_limit(user_id):
+                                self.call_api("sendMessage", {
+                                    "chat_id": chat_id,
+                                    "text": "⏳ **Protección Anti-Spam Activa:** Por favor espera unos segundos antes de enviar otra solicitud."
+                                })
+                                continue
+
+                            # Limpieza periódica de archivos temporales antiguos
+                            cleanup_old_downloads()
 
                             # Pago exitoso
                             if "successful_payment" in msg:
