@@ -3,20 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Lucky Vault Arcade 🎰 Telegram Mini App</title>
+    <title>Lucky Vault Arcade 🎰</title>
     <!-- Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #0a0e17;
-            --bg-card: rgba(22, 29, 47, 0.85);
+            --bg-dark: #070a13;
+            --bg-card: rgba(18, 24, 40, 0.88);
+            --bg-card-hover: rgba(28, 38, 64, 0.95);
             --neon-blue: #00f0ff;
             --neon-gold: #ffd700;
             --neon-purple: #b026ff;
             --neon-green: #00ff88;
+            --neon-pink: #ff0055;
+            --neon-flame: #ff5500;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
+            --gold-gradient: linear-gradient(135deg, #ffd700 0%, #ff8800 100%);
+            --cyber-gradient: linear-gradient(135deg, #00f0ff 0%, #7000ff 100%);
+            --fire-gradient: linear-gradient(135deg, #ff0055 0%, #ff7700 100%);
         }
 
         * {
@@ -32,80 +38,201 @@
         body {
             background-color: var(--bg-dark);
             background-image: 
-                radial-gradient(circle at 50% 0%, rgba(176, 38, 255, 0.25) 0%, transparent 60%),
-                radial-gradient(circle at 80% 80%, rgba(0, 240, 255, 0.15) 0%, transparent 50%);
+                radial-gradient(circle at 50% 0%, rgba(176, 38, 255, 0.3) 0%, transparent 60%),
+                radial-gradient(circle at 90% 90%, rgba(0, 240, 255, 0.18) 0%, transparent 50%),
+                radial-gradient(circle at 10% 80%, rgba(255, 0, 85, 0.15) 0%, transparent 50%);
             color: var(--text-main);
             min-height: 100vh;
             overflow-x: hidden;
-            padding: 12px 14px 80px 14px;
+            padding: 10px 14px 85px 14px;
+            transition: background 0.4s ease;
         }
 
-        /* Top HUD Header */
-        .hud-header {
+        body.fever-mode {
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(255, 85, 0, 0.4) 0%, transparent 65%),
+                radial-gradient(circle at 80% 80%, rgba(255, 0, 85, 0.3) 0%, transparent 50%);
+            animation: pulseFever 2s infinite alternate;
+        }
+
+        @keyframes pulseFever {
+            from { filter: saturate(1.1); }
+            to { filter: saturate(1.4); }
+        }
+
+        /* Language Bar & Top Header */
+        .top-utility-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(12px);
-            padding: 10px 16px;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .lang-pill-select {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            margin-bottom: 16px;
+            padding: 4px 10px;
+            color: #cbd5e1;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .lang-dropdown {
+            position: fixed;
+            top: 45px;
+            left: 14px;
+            background: rgba(15, 23, 42, 0.98);
+            border: 1px solid var(--neon-blue);
+            border-radius: 16px;
+            padding: 8px;
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 150;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(12px);
+        }
+        .lang-dropdown.open { display: flex; }
+        .lang-item {
+            padding: 6px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .lang-item:hover, .lang-item.active {
+            background: rgba(0, 240, 255, 0.2);
+            color: var(--neon-blue);
+        }
+
+        .fever-badge {
+            display: none;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(135deg, #ff0055, #ff7700);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            animation: flameFlicker 1.2s infinite;
+        }
+        .fever-badge.active { display: flex; }
+        @keyframes flameFlicker {
+            0% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.05); filter: brightness(1.3); }
+            100% { transform: scale(1); filter: brightness(1); }
+        }
+
+        /* Top HUD Card */
+        .hud-header {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(14px);
+            padding: 12px 16px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            margin-bottom: 12px;
+        }
+
+        .hud-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
 
         .user-pill {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .user-avatar {
-            width: 36px;
-            height: 36px;
+            width: 42px;
+            height: 42px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
+            font-weight: 900;
+            font-size: 18px;
             border: 2px solid var(--neon-blue);
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
         }
 
         .user-info h3 {
-            font-size: 14px;
-            font-weight: 700;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.3px;
         }
-        .user-info p {
+        .user-info .user-rank {
             font-size: 11px;
-            color: var(--neon-green);
+            color: var(--neon-gold);
+            font-weight: 700;
         }
 
         .currency-cluster {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .stat-badge {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             border-radius: 14px;
-            padding: 5px 10px;
+            padding: 6px 12px;
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 13px;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 800;
+        }
+        .stat-badge.stars { color: var(--neon-gold); border-color: rgba(255, 215, 0, 0.45); box-shadow: 0 0 10px rgba(255, 215, 0, 0.15); }
+        .stat-badge.spins { color: var(--neon-blue); border-color: rgba(0, 240, 255, 0.45); box-shadow: 0 0 10px rgba(0, 240, 255, 0.15); }
+
+        /* Level XP Bar */
+        .xp-bar-container {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .xp-bar-fill {
+            height: 100%;
+            width: 35%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple), var(--neon-gold));
+            border-radius: 10px;
+            transition: width 0.4s ease;
+        }
+        .xp-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 4px;
             font-weight: 700;
         }
-        .stat-badge.stars { color: var(--neon-gold); border-color: rgba(255, 215, 0, 0.4); }
-        .stat-badge.spins { color: var(--neon-blue); border-color: rgba(0, 240, 255, 0.4); }
 
         /* Navigation Tabs */
         .nav-tabs {
             display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
+            gap: 6px;
+            margin-bottom: 14px;
         }
 
         .tab-btn {
@@ -115,34 +242,108 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 14px;
             color: var(--text-muted);
-            font-size: 13px;
-            font-weight: 700;
+            font-size: 12px;
+            font-weight: 800;
             text-align: center;
             cursor: pointer;
             transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
         }
 
         .tab-btn.active {
-            background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(176, 38, 255, 0.2));
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.25), rgba(176, 38, 255, 0.25));
             border-color: var(--neon-blue);
             color: white;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
+            transform: translateY(-1px);
         }
 
-        /* SECTION: WHEEL OF FORTUNE */
         .section-view { display: none; }
-        .section-view.active { display: block; animation: fadeIn 0.3s ease; }
+        .section-view.active { display: block; animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* 7-Day Streak Calendar */
+        .streak-calendar-box {
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            border-radius: 18px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .streak-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .streak-header h4 {
+            font-size: 13px;
+            font-weight: 900;
+            color: var(--neon-gold);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .streak-pill {
+            background: rgba(255, 215, 0, 0.15);
+            color: var(--neon-gold);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .streak-days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .day-cell {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 6px 2px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+        .day-cell .day-icon { font-size: 14px; margin: 2px 0; }
+        .day-cell .day-reward { font-size: 9px; font-weight: 800; color: #e2e8f0; }
+
+        .day-cell.completed {
+            background: rgba(0, 255, 136, 0.15);
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+        }
+        .day-cell.active-day {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 136, 0, 0.3));
+            border-color: var(--neon-gold);
+            color: white;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+            transform: scale(1.05);
+        }
+        .day-cell.jackpot-day {
+            border-color: var(--neon-flame);
+            background: rgba(255, 85, 0, 0.15);
+        }
+
+        /* SECTION: WHEEL OF FORTUNE */
         .wheel-container {
             position: relative;
-            width: 330px;
-            height: 330px;
-            margin: 10px auto 20px auto;
+            width: 320px;
+            height: 320px;
+            margin: 8px auto 16px auto;
         }
 
         #wheelCanvas {
@@ -157,10 +358,14 @@
             top: -12px;
             left: 50%;
             transform: translateX(-50%);
-            width: 32px;
-            height: 42px;
+            width: 34px;
+            height: 44px;
             z-index: 10;
-            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.9));
+            transition: transform 0.05s ease;
+        }
+        .wheel-pointer.pegging {
+            transform: translateX(-50%) rotate(-8deg);
         }
 
         .wheel-center-jewel {
@@ -168,18 +373,23 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 56px;
-            height: 56px;
+            width: 60px;
+            height: 60px;
             background: radial-gradient(circle, #ff2a6d 0%, #05051a 100%);
             border: 3px solid var(--neon-gold);
             border-radius: 50%;
-            box-shadow: 0 0 20px rgba(255, 42, 109, 0.8);
+            box-shadow: 0 0 25px rgba(255, 42, 109, 0.8), inset 0 0 10px rgba(255, 215, 0, 0.6);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 22px;
             z-index: 5;
             pointer-events: none;
+            animation: pulseJewel 2s infinite alternate;
+        }
+        @keyframes pulseJewel {
+            from { transform: translate(-50%, -50%) scale(0.96); }
+            to { transform: translate(-50%, -50%) scale(1.04); }
         }
 
         /* Big Spin Action Button */
@@ -187,70 +397,74 @@
             display: block;
             width: 100%;
             max-width: 340px;
-            margin: 0 auto 12px auto;
-            padding: 16px 0;
-            background: linear-gradient(135deg, #00f0ff 0%, #7000ff 100%);
+            margin: 0 auto 10px auto;
+            padding: 18px 0;
+            background: linear-gradient(135deg, #00f0ff 0%, #b026ff 50%, #ff0055 100%);
+            background-size: 200% 200%;
             border: none;
-            border-radius: 20px;
+            border-radius: 22px;
             color: white;
-            font-size: 18px;
+            font-size: 19px;
             font-weight: 900;
-            letter-spacing: 0.5px;
-            box-shadow: 0 10px 25px rgba(0, 240, 255, 0.4), inset 0 2px 4px rgba(255,255,255,0.4);
+            letter-spacing: 0.8px;
+            box-shadow: 0 12px 30px rgba(0, 240, 255, 0.45), inset 0 2px 4px rgba(255,255,255,0.5);
             cursor: pointer;
             transition: all 0.2s ease;
+            animation: gradientShift 3s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .spin-action-btn:active {
-            transform: scale(0.97);
-            filter: brightness(1.2);
+            transform: scale(0.96);
+            filter: brightness(1.25);
         }
 
         .spin-action-btn:disabled {
-            background: #334155;
+            background: #232c3d;
             box-shadow: none;
             color: #64748b;
             cursor: not-allowed;
+            animation: none;
         }
 
-        /* Streak & Daily Reward Card */
-        .daily-reward-bar {
-            background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 18px;
-            padding: 12px 16px;
+        /* Quick Free Spin Claim Button */
+        .claim-daily-pill-btn {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 16px;
-        }
-        .daily-text h4 { font-size: 14px; font-weight: 700; color: var(--neon-gold); }
-        .daily-text p { font-size: 11px; color: var(--text-muted); }
-
-        .claim-btn {
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            padding: 8px 14px;
-            font-size: 12px;
-            font-weight: 700;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 340px;
+            margin: 0 auto 14px auto;
+            padding: 10px;
+            background: rgba(0, 255, 136, 0.12);
+            border: 1px solid var(--neon-green);
+            border-radius: 14px;
+            color: var(--neon-green);
+            font-size: 13px;
+            font-weight: 800;
             cursor: pointer;
         }
+        .claim-daily-pill-btn:active { transform: scale(0.97); }
 
-        /* SECTION: MYSTERY CHESTS */
+        /* SECTION: CHESTS */
         .chests-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .chest-card {
             background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 18px;
-            padding: 16px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 18px 8px;
             text-align: center;
             cursor: pointer;
             transition: all 0.25s ease;
@@ -258,74 +472,101 @@
             overflow: hidden;
         }
 
-        .chest-card:active { transform: scale(0.95); }
+        .chest-card:active { transform: scale(0.94); }
         .chest-card.golden {
-            border-color: rgba(255, 215, 0, 0.4);
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.15);
+            border-color: rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+            background: linear-gradient(180deg, rgba(30, 24, 10, 0.9), var(--bg-card));
         }
 
         .chest-icon {
-            font-size: 42px;
+            font-size: 46px;
             margin-bottom: 8px;
             display: inline-block;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .chest-card:hover .chest-icon { transform: scale(1.15) rotate(-5deg); }
+        .chest-card:hover .chest-icon { transform: scale(1.18) rotate(-6deg); }
 
-        .chest-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+        .chest-card h4 { font-size: 13px; font-weight: 800; margin-bottom: 3px; }
         .chest-card p { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
         .chest-price {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 10px;
+            padding: 4px 10px;
+            border-radius: 12px;
             font-size: 11px;
-            font-weight: 700;
-            background: rgba(0, 240, 255, 0.1);
+            font-weight: 800;
+            background: rgba(0, 240, 255, 0.12);
             color: var(--neon-blue);
         }
-        .chest-card.golden .chest-price { background: rgba(255, 215, 0, 0.15); color: var(--neon-gold); }
+        .chest-card.golden .chest-price { background: rgba(255, 215, 0, 0.2); color: var(--neon-gold); }
 
-        /* SECTION: VIRAL INVITE BOX */
+        /* SECTION: VIRAL INVITE */
         .invite-card {
-            background: linear-gradient(135deg, rgba(176, 38, 255, 0.2), rgba(0, 240, 255, 0.2));
+            background: linear-gradient(135deg, rgba(176, 38, 255, 0.25), rgba(0, 240, 255, 0.25));
             border: 1px solid var(--neon-blue);
-            border-radius: 20px;
-            padding: 16px;
+            border-radius: 22px;
+            padding: 20px 16px;
             margin-bottom: 16px;
             text-align: center;
-            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 240, 255, 0.2);
         }
 
-        .invite-card h3 { font-size: 16px; font-weight: 900; color: white; margin-bottom: 6px; }
-        .invite-card p { font-size: 12px; color: #cbd5e1; margin-bottom: 14px; }
+        .invite-card h3 { font-size: 18px; font-weight: 900; color: white; margin-bottom: 6px; }
+        .invite-card p { font-size: 13px; color: #cbd5e1; margin-bottom: 16px; line-height: 1.4; }
+
         .invite-action-btn {
             background: white;
-            color: #0f172a;
-            font-size: 14px;
+            color: #070a13;
+            font-size: 15px;
             font-weight: 900;
-            padding: 12px 24px;
+            padding: 14px 24px;
             border: none;
-            border-radius: 14px;
+            border-radius: 16px;
             cursor: pointer;
             width: 100%;
-            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+            transition: all 0.2s;
         }
+        .invite-action-btn:active { transform: scale(0.97); }
 
-        /* SECTION: STARS SHOP (BUY SPINS) */
+        /* SECTION: STARS SHOP (HIGH CONVERTING TIERS) */
         .shop-list {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .shop-item {
             background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 18px;
-            padding: 12px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px;
+            padding: 14px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .shop-item.featured {
+            border: 2px solid var(--neon-gold);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.2);
+            background: linear-gradient(180deg, rgba(35, 28, 12, 0.95), var(--bg-card));
+        }
+
+        .shop-badge-hot {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: var(--fire-gradient);
+            color: white;
+            font-size: 9px;
+            font-weight: 900;
+            padding: 3px 12px 3px 10px;
+            border-bottom-left-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .shop-item-info {
@@ -333,23 +574,26 @@
             align-items: center;
             gap: 12px;
         }
-        .shop-item-icon { font-size: 28px; }
-        .shop-item-text h4 { font-size: 14px; font-weight: 700; }
+        .shop-item-icon { font-size: 32px; }
+        .shop-item-text h4 { font-size: 15px; font-weight: 800; }
         .shop-item-text p { font-size: 11px; color: var(--text-muted); }
 
         .buy-stars-btn {
-            background: linear-gradient(135deg, #ffd700, #ff8800);
+            background: var(--gold-gradient);
             border: none;
             border-radius: 14px;
-            color: #0a0e17;
-            padding: 10px 16px;
-            font-size: 13px;
+            color: #070a13;
+            padding: 12px 18px;
+            font-size: 14px;
             font-weight: 900;
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+            transition: all 0.2s;
         }
+        .buy-stars-btn:active { transform: scale(0.95); }
 
         /* WIN POPUP MODAL */
         .modal-overlay {
@@ -359,48 +603,51 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(10px);
-            z-index: 100;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(12px);
+            z-index: 200;
             justify-content: center;
             align-items: center;
             padding: 20px;
         }
-        .modal-overlay.active { display: flex; animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .modal-overlay.active { display: flex; animation: zoomIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
         @keyframes zoomIn {
-            from { opacity: 0; transform: scale(0.8); }
+            from { opacity: 0; transform: scale(0.75); }
             to { opacity: 1; transform: scale(1); }
         }
 
         .modal-box {
             background: var(--bg-card);
             border: 2px solid var(--neon-gold);
-            border-radius: 26px;
-            padding: 28px 20px;
+            border-radius: 28px;
+            padding: 30px 22px;
             text-align: center;
-            max-width: 320px;
+            max-width: 330px;
             width: 100%;
-            box-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.5);
+            position: relative;
         }
 
-        .modal-prize-icon { font-size: 64px; margin-bottom: 12px; animation: bounce 1s infinite alternate; }
-        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+        .modal-prize-icon { font-size: 68px; margin-bottom: 12px; animation: bounce 0.8s infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
 
-        .modal-box h2 { font-size: 22px; font-weight: 900; color: var(--neon-gold); margin-bottom: 6px; }
-        .modal-box p { font-size: 14px; color: #cbd5e1; margin-bottom: 20px; }
+        .modal-box h2 { font-size: 23px; font-weight: 900; color: var(--neon-gold); margin-bottom: 8px; }
+        .modal-box p { font-size: 14px; color: #cbd5e1; margin-bottom: 22px; line-height: 1.4; }
 
         .modal-close-btn {
-            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            background: var(--cyber-gradient);
             border: none;
-            border-radius: 14px;
+            border-radius: 16px;
             color: white;
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 900;
-            padding: 12px 24px;
+            padding: 14px 24px;
             width: 100%;
             cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 240, 255, 0.4);
         }
+        .modal-close-btn:active { transform: scale(0.97); }
 
         /* Confetti canvas */
         #confettiCanvas {
@@ -410,164 +657,428 @@
             width: 100%;
             height: 100%;
             pointer-events: none;
-            z-index: 99;
+            z-index: 199;
         }
     </style>
 </head>
 <body>
     <canvas id="confettiCanvas"></canvas>
 
-    <!-- TOP HUD -->
+    <!-- Top Utility Bar (Language Selector & Fever Mode Badge) -->
+    <div class="top-utility-bar">
+        <div class="lang-pill-select" onclick="toggleLangDropdown()">
+            <span id="currentLangFlag">🌐</span> <span id="currentLangName">Idioma</span> ▾
+        </div>
+        <div class="fever-badge" id="feverBadge">
+            🔥 <span id="feverText">FEVER 2X! (5)</span>
+        </div>
+    </div>
+
+    <!-- Language Selector Dropdown -->
+    <div class="lang-dropdown" id="langDropdown">
+        <div class="lang-item" onclick="setLanguage('en')">🇺🇸 English</div>
+        <div class="lang-item" onclick="setLanguage('es')">🇪🇸 Español</div>
+        <div class="lang-item" onclick="setLanguage('ru')">🇷🇺 Русский</div>
+        <div class="lang-item" onclick="setLanguage('pt')">🇧🇷 Português</div>
+        <div class="lang-item" onclick="setLanguage('hi')">🇮🇳 हिन्दी</div>
+        <div class="lang-item" onclick="setLanguage('ar')">🇸🇦 العربية</div>
+    </div>
+
+    <!-- TOP HUD: Avatar, Level, XP Bar, Currency -->
     <header class="hud-header">
-        <div class="user-pill">
-            <div class="user-avatar" id="avatarLetter">N</div>
-            <div class="user-info">
-                <h3 id="userName">Jugador</h3>
-                <p>Nivel 1 • Novato</p>
+        <div class="hud-top-row">
+            <div class="user-pill">
+                <div class="user-avatar" id="avatarLetter">L</div>
+                <div class="user-info">
+                    <h3 id="userName">Player</h3>
+                    <p class="user-rank" id="userRankTitle">Level 1 • Rookie</p>
+                </div>
+            </div>
+            <div class="currency-cluster">
+                <div class="stat-badge spins" title="Spins">
+                    <span>⚡</span> <span id="spinsCount">5</span>
+                </div>
+                <div class="stat-badge stars" title="Stars Points">
+                    <span>⭐</span> <span id="starsCount">250</span>
+                </div>
             </div>
         </div>
-        <div class="currency-cluster">
-            <div class="stat-badge spins" title="Giros Disponibles">
-                <span>⚡</span> <span id="spinsCount">5</span>
-            </div>
-            <div class="stat-badge stars" title="Puntos Stars">
-                <span>⭐</span> <span id="starsCount">250</span>
-            </div>
+        <!-- XP Progression Bar -->
+        <div class="xp-bar-container">
+            <div class="xp-bar-fill" id="xpBarFill" style="width: 25%;"></div>
+        </div>
+        <div class="xp-labels">
+            <span id="xpCurrentText">XP: 25 / 100</span>
+            <span id="nextLevelText">Next: Level 2</span>
         </div>
     </header>
 
     <!-- NAVIGATION TABS -->
     <nav class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('wheel')">🎰 Ruleta</button>
-        <button class="tab-btn" onclick="switchTab('chests')">📦 Cofres</button>
-        <button class="tab-btn" onclick="switchTab('invite')">🎁 Amigos</button>
-        <button class="tab-btn" onclick="switchTab('shop')">💎 Tienda</button>
+        <button class="tab-btn active" onclick="switchTab('wheel')">
+            <span>🎰</span><span id="tabWheelLabel">Wheel</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('streak')">
+            <span>📅</span><span id="tabStreakLabel">Streak</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('chests')">
+            <span>📦</span><span id="tabChestsLabel">Chests</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('invite')">
+            <span>👥</span><span id="tabInviteLabel">Invite</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('shop')">
+            <span>💎</span><span id="tabShopLabel">Shop</span>
+        </button>
     </nav>
 
     <!-- TAB 1: LUCKY WHEEL -->
     <section id="tab-wheel" class="section-view active">
-        <!-- Daily Streak Bar -->
-        <div class="daily-reward-bar">
-            <div class="daily-text">
-                <h4>🎁 Recompensa Diaria</h4>
-                <p>+3 Giros gratis listos para reclamar</p>
-            </div>
-            <button class="claim-btn" id="dailyClaimBtn" onclick="claimDailyReward()">Reclamar</button>
-        </div>
+        <!-- Quick Daily Claim Pill -->
+        <button class="claim-daily-pill-btn" id="quickClaimBtn" onclick="claimDailyReward()">
+            <span>🎁</span> <span id="quickClaimLabel">Claim Daily Free Spins (+3)</span>
+        </button>
 
-        <!-- Wheel Canvas Container -->
+        <!-- Canvas Wheel Container -->
         <div class="wheel-container">
-            <svg class="wheel-pointer" viewBox="0 0 32 42">
-                <polygon points="16,42 0,0 32,0" fill="#ffd700" stroke="#0f172a" stroke-width="2"/>
-                <circle cx="16" cy="10" r="4" fill="#ff0055"/>
+            <svg class="wheel-pointer" id="wheelPointer" viewBox="0 0 34 44">
+                <polygon points="17,44 0,0 34,0" fill="#ffd700" stroke="#070a13" stroke-width="2.5"/>
+                <circle cx="17" cy="11" r="5" fill="#ff0055"/>
             </svg>
             <canvas id="wheelCanvas" width="660" height="660"></canvas>
             <div class="wheel-center-jewel">💎</div>
         </div>
 
-        <button class="spin-action-btn" id="spinBtn" onclick="spinWheel()">GIRAR RULETA 🎰</button>
+        <button class="spin-action-btn" id="spinBtn" onclick="spinWheel()">SPIN WHEEL 🎰</button>
     </section>
 
-    <!-- TAB 2: MYSTERY CHESTS -->
+    <!-- TAB 2: 7-DAY CONSECUTIVE STREAK -->
+    <section id="tab-streak" class="section-view">
+        <div class="streak-calendar-box">
+            <div class="streak-header">
+                <h4><span id="streakTitle">7-Day Streak Rewards</span> ⚡</h4>
+                <span class="streak-pill" id="streakCounterText">Day 1 Active</span>
+            </div>
+            <div class="streak-days-grid" id="streakGrid">
+                <!-- Days 1 to 7 injected dynamically -->
+            </div>
+        </div>
+        <div class="invite-card">
+            <h3 id="streakBannerTitle">🔥 Never Break Your Streak!</h3>
+            <p id="streakBannerDesc">Log in every 24 hours to claim increasingly rare rewards culminating in the Day 7 Mega Jackpot Chest.</p>
+            <button class="claim-daily-pill-btn" style="background: var(--gold-gradient); color: #070a13; border: none; font-weight: 900;" onclick="claimDailyReward()">
+                <span id="streakClaimBtnText">CLAIM TODAY'S REWARD 🎁</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- TAB 3: MYSTERY CHESTS -->
     <section id="tab-chests" class="section-view">
-        <div class="invite-card" style="margin-bottom: 20px;">
-            <h3>📦 Cofres Misteriosos con Premios</h3>
-            <p>Abre cofres para desbloquear Telegram Stars, Pases VIP y descargas gratis para el bot.</p>
+        <div class="invite-card" style="margin-bottom: 18px;">
+            <h3 id="chestsTitle">📦 Mystery Vault Chests</h3>
+            <p id="chestsDesc">Crack open rare vaults to unlock Stars, Keys, Fever Boosters, and VIP Passes.</p>
         </div>
 
         <div class="chests-grid">
-            <div class="chest-card" onclick="openChest('bronce')">
+            <div class="chest-card" onclick="openChest('bronze')">
                 <div class="chest-icon">📦</div>
-                <h4>Cofre Bronce</h4>
-                <p>Común</p>
-                <span class="chest-price">GRATIS</span>
+                <h4 id="chestBronzeTitle">Bronze Vault</h4>
+                <p id="chestBronzeRarity">Common</p>
+                <span class="chest-price" id="chestBronzePrice">FREE (2h)</span>
             </div>
-            <div class="chest-card" onclick="openChest('plata')">
+            <div class="chest-card" onclick="openChest('silver')">
                 <div class="chest-icon">🥈</div>
-                <h4>Cofre Plata</h4>
-                <p>Épico</p>
-                <span class="chest-price">⭐ 50 Stars</span>
+                <h4 id="chestSilverTitle">Silver Vault</h4>
+                <p id="chestSilverRarity">Epic</p>
+                <span class="chest-price" id="chestSilverPrice">⭐ 50 Stars</span>
             </div>
-            <div class="chest-card golden" onclick="openChest('oro')">
+            <div class="chest-card golden" onclick="openChest('gold')">
                 <div class="chest-icon">👑</div>
-                <h4>Cofre Oro</h4>
-                <p>Legendario</p>
-                <span class="chest-price">⭐ 150 Stars</span>
+                <h4 id="chestGoldTitle">Golden Vault</h4>
+                <p id="chestGoldRarity">Legendary</p>
+                <span class="chest-price" id="chestGoldPrice">⭐ 150 Stars</span>
             </div>
         </div>
     </section>
 
-    <!-- TAB 3: VIRAL INVITE -->
+    <!-- TAB 4: VIRAL INVITE (EXPONENTIAL LOOP) -->
     <section id="tab-invite" class="section-view">
         <div class="invite-card">
-            <div style="font-size: 48px; margin-bottom: 8px;">🚀</div>
-            <h3>¡Invita y Gana Giros Ilimitados!</h3>
-            <p>Por cada amigo que abra el juego con tu enlace, recibes <strong>+3 Giros Gratis</strong> y <strong>+100 Puntos Stars</strong> al instante.</p>
-            <button class="invite-action-btn" onclick="shareInviteLink()">COMPARTIR EN TELEGRAM (1 TOQUE)</button>
+            <div style="font-size: 52px; margin-bottom: 8px;">🚀</div>
+            <h3 id="inviteTitle">Invite Friends, Get Unlimited Spins!</h3>
+            <p id="inviteDesc">Every friend who launches the game through your link gives you <strong>+5 Free Spins</strong> and <strong>+100 Stars Points</strong> instantly!</p>
+            <button class="invite-action-btn" onclick="shareInviteLink()" id="inviteBtnText">SHARE ON TELEGRAM (1 TAP)</button>
         </div>
 
         <div class="shop-item">
             <div class="shop-item-info">
                 <div class="shop-item-icon">👥</div>
                 <div class="shop-item-text">
-                    <h4>Amigos Invitados</h4>
-                    <p>Recompensas acumuladas en tu cuenta</p>
+                    <h4 id="invitedCountTitle">Friends Invited</h4>
+                    <p id="invitedCountDesc">Total rewards accrued</p>
                 </div>
             </div>
-            <span style="font-weight: 900; font-size: 18px; color: var(--neon-blue);">0</span>
+            <span style="font-weight: 900; font-size: 20px; color: var(--neon-blue);" id="referralStatsCount">0</span>
         </div>
     </section>
 
-    <!-- TAB 4: SHOP (TELEGRAM STARS) -->
+    <!-- TAB 5: TELEGRAM STARS SHOP (MONETIZATION) -->
     <section id="tab-shop" class="section-view">
         <div class="shop-list">
+            <!-- Tier 1: Starter Pack (Impulse Buy) -->
             <div class="shop-item">
+                <div class="shop-badge-hot" id="tier1Badge">HOT • 70% OFF</div>
                 <div class="shop-item-info">
                     <div class="shop-item-icon">⚡</div>
                     <div class="shop-item-text">
-                        <h4>10 Giros VIP</h4>
-                        <p>Multiplica tus premios en la ruleta</p>
+                        <h4 id="tier1Title">Starter Pack (15 Spins)</h4>
+                        <p id="tier1Desc">+1 Bronze Chest Key</p>
                     </div>
                 </div>
-                <button class="buy-stars-btn" onclick="triggerStarsInvoice('spins_10')">⭐ 50</button>
+                <button class="buy-stars-btn" onclick="triggerStarsInvoice('spins_10')">⭐ 25</button>
             </div>
 
-            <div class="shop-item">
+            <!-- Tier 2: Pro Spinner Pack (Most Popular) -->
+            <div class="shop-item featured">
+                <div class="shop-badge-hot" style="background: var(--gold-gradient);" id="tier2Badge">MOST POPULAR ⭐️</div>
                 <div class="shop-item-info">
-                    <div class="shop-item-icon">🎁</div>
+                    <div class="shop-item-icon">🔥</div>
                     <div class="shop-item-text">
-                        <h4>30 Giros + 1 Cofre Oro</h4>
-                        <p>Paquete más vendido</p>
+                        <h4 id="tier2Title">Pro Arcade (50 Spins)</h4>
+                        <p id="tier2Desc">+2 Silver Keys + Fever Mode</p>
                     </div>
                 </div>
-                <button class="buy-stars-btn" onclick="triggerStarsInvoice('spins_30')">⭐ 150</button>
+                <button class="buy-stars-btn" onclick="triggerStarsInvoice('spins_30')">⭐ 99</button>
             </div>
 
+            <!-- Tier 3: Whale / VIP Legend -->
             <div class="shop-item">
+                <div class="shop-badge-hot" id="tier3Badge">VIP PASS</div>
                 <div class="shop-item-info">
                     <div class="shop-item-icon">👑</div>
                     <div class="shop-item-text">
-                        <h4>100 Giros + Pase VIP</h4>
-                        <p>Acceso ilimitado a todas las herramientas</p>
+                        <h4 id="tier3Title">Legend Vault (200 Spins)</h4>
+                        <p id="tier3Desc">Golden Master Key + Lifetime Crown</p>
                     </div>
                 </div>
-                <button class="buy-stars-btn" onclick="triggerStarsInvoice('spins_vip')">⭐ 500</button>
+                <button class="buy-stars-btn" onclick="triggerStarsInvoice('spins_vip')">⭐ 399</button>
             </div>
         </div>
     </section>
 
-    <!-- WIN MODAL -->
+    <!-- WIN / REWARD MODAL POPUP -->
     <div class="modal-overlay" id="winModal">
         <div class="modal-box">
             <div class="modal-prize-icon" id="modalIcon">🎉</div>
-            <h2 id="modalTitle">¡FELICITACIONES!</h2>
-            <p id="modalDesc">Has ganado 100 Puntos Stars.</p>
-            <button class="modal-close-btn" onclick="closeModal()">¡RECLAMAR PREMIO!</button>
+            <h2 id="modalTitle">BIG WIN!</h2>
+            <p id="modalDesc">You won 100 Stars Points.</p>
+            <button class="modal-close-btn" onclick="closeModal()" id="modalBtnText">CLAIM REWARD!</button>
         </div>
     </div>
 
     <script>
-        // Init Telegram WebApp
+        // MULTI-LANGUAGE DICTIONARY (i18n)
+        const I18N = {
+            en: {
+                flag: "🇺🇸", name: "English",
+                rank1: "Level 1 • Rookie", rank2: "Level 2 • Scout", rank3: "Level 3 • Captain", rank4: "Level 4 • Master", rank5: "Level 5 • Legend",
+                tabWheel: "Wheel", tabStreak: "Streak", tabChests: "Chests", tabInvite: "Invite", tabShop: "Shop",
+                quickClaim: "Claim Daily Free Spins (+3)",
+                spinBtn: "SPIN WHEEL 🎰",
+                spinBtnNoSpins: "GET MORE SPINS ⚡",
+                streakTitle: "7-Day Streak Rewards",
+                streakDayActive: "Day {d} Active",
+                streakBannerTitle: "🔥 Never Break Your Streak!",
+                streakBannerDesc: "Log in every 24 hours to claim increasingly rare rewards culminating in Day 7 Mega Jackpot.",
+                streakClaimBtn: "CLAIM TODAY'S REWARD 🎁",
+                alreadyClaimed: "Already Claimed ✅",
+                chestsTitle: "📦 Mystery Vault Chests",
+                chestsDesc: "Crack open rare vaults to unlock Stars, Keys, Fever Boosters, and VIP Passes.",
+                chestBronze: "Bronze Vault", chestBronzeRarity: "Common", chestBronzePrice: "FREE",
+                chestSilver: "Silver Vault", chestSilverRarity: "Epic", chestSilverPrice: "⭐ 50 Stars",
+                chestGold: "Golden Vault", chestGoldRarity: "Legendary", chestGoldPrice: "⭐ 150 Stars",
+                inviteTitle: "Invite Friends, Get Unlimited Spins!",
+                inviteDesc: "Every friend who joins through your link gives you +5 Free Spins and +100 Stars Points instantly!",
+                inviteBtn: "SHARE ON TELEGRAM (1 TAP)",
+                invitedCountTitle: "Friends Invited", invitedCountDesc: "Total rewards accrued",
+                tier1Title: "Starter Pack (15 Spins)", tier1Desc: "+1 Bronze Chest Key", tier1Badge: "HOT • 70% OFF",
+                tier2Title: "Pro Arcade (50 Spins)", tier2Desc: "+2 Silver Keys + Fever Mode", tier2Badge: "MOST POPULAR ⭐️",
+                tier3Title: "Legend Vault (200 Spins)", tier3Desc: "Golden Master Key + Lifetime Crown", tier3Badge: "VIP PASS",
+                modalBigWin: "🎉 BIG WIN!", modalClaim: "CLAIM REWARD!",
+                feverText: "FEVER 2X! ({n})",
+                levelUpTitle: "⚡ LEVEL UP!", levelUpDesc: "Congratulations! You reached Level {l}! Received +5 FREE SPINS!"
+            },
+            es: {
+                flag: "🇪🇸", name: "Español",
+                rank1: "Nivel 1 • Novato", rank2: "Nivel 2 • Explorador", rank3: "Nivel 3 • Capitán", rank4: "Nivel 4 • Maestro", rank5: "Nivel 5 • Leyenda",
+                tabWheel: "Ruleta", tabStreak: "Racha", tabChests: "Cofres", tabInvite: "Amigos", tabShop: "Tienda",
+                quickClaim: "Reclamar Giros Diarios (+3)",
+                spinBtn: "GIRAR RULETA 🎰",
+                spinBtnNoSpins: "CONSEGUIR MÁS GIROS ⚡",
+                streakTitle: "Racha de 7 Días",
+                streakDayActive: "Día {d} Activo",
+                streakBannerTitle: "🔥 ¡Nunca Rompas Tu Racha!",
+                streakBannerDesc: "Entra cada 24 horas para reclamar premios cada vez mayores hasta el Gran Jackpot del Día 7.",
+                streakClaimBtn: "RECLAMAR RECOMPENSA DE HOY 🎁",
+                alreadyClaimed: "Ya Reclamado ✅",
+                chestsTitle: "📦 Cofres Misteriosos con Premios",
+                chestsDesc: "Abre cofres para desbloquear Telegram Stars, Llaves, Modo Fiebre y Pases VIP.",
+                chestBronze: "Cofre Bronce", chestBronzeRarity: "Común", chestBronzePrice: "GRATIS",
+                chestSilver: "Cofre Plata", chestSilverRarity: "Épico", chestSilverPrice: "⭐ 50 Stars",
+                chestGold: "Cofre Oro", chestGoldRarity: "Legendario", chestGoldPrice: "⭐ 150 Stars",
+                inviteTitle: "¡Invita y Gana Giros Ilimitados!",
+                inviteDesc: "Por cada amigo que entre con tu enlace, recibes +5 Giros Gratis y +100 Puntos Stars al instante.",
+                inviteBtn: "COMPARTIR EN TELEGRAM (1 TOQUE)",
+                invitedCountTitle: "Amigos Invitados", invitedCountDesc: "Recompensas acumuladas en tu cuenta",
+                tier1Title: "Paquete Inicio (15 Giros)", tier1Desc: "+1 Llave Cofre Bronce", tier1Badge: "OFERTA • 70% DTO",
+                tier2Title: "Pro Arcade (50 Giros)", tier2Desc: "+2 Llaves Plata + Modo Fiebre", tier2Badge: "MÁS VENDIDO ⭐️",
+                tier3Title: "Bóveda Leyenda (200 Giros)", tier3Desc: "Llave Maestra de Oro + Corona VIP", tier3Badge: "PASE VIP",
+                modalBigWin: "🎉 ¡GRAN PREMIO!", modalClaim: "¡RECLAMAR PREMIO!",
+                feverText: "¡FIEBRE 2X! ({n})",
+                levelUpTitle: "⚡ ¡SUBISTE DE NIVEL!", levelUpDesc: "¡Felicidades! Alcanzaste el Nivel {l}. Recibiste +5 GIROS GRATIS!"
+            },
+            ru: {
+                flag: "🇷🇺", name: "Русский",
+                rank1: "Уровень 1 • Новичок", rank2: "Уровень 2 • Скаут", rank3: "Уровень 3 • Капитан", rank4: "Уровень 4 • Мастер", rank5: "Уровень 5 • Легенда",
+                tabWheel: "Колесо", tabStreak: "Серия", tabChests: "Сундуки", tabInvite: "Друзья", tabShop: "Магазин",
+                quickClaim: "Забрать ежедневные спины (+3)",
+                spinBtn: "КРУТИТЬ КОЛЕСО 🎰",
+                spinBtnNoSpins: "ПОЛУЧИТЬ СПИНЫ ⚡",
+                streakTitle: "7-дневная серия наград",
+                streakDayActive: "День {d} активен",
+                streakBannerTitle: "🔥 Не прерывай серию!",
+                streakBannerDesc: "Заходи каждый день за растущими наградами вплоть до Джекпота 7-го дня.",
+                streakClaimBtn: "ЗАБРАТЬ НАГРАДУ 🎁",
+                alreadyClaimed: "Получено ✅",
+                chestsTitle: "📦 Тайные сундуки",
+                chestsDesc: "Открывай сундуки с Telegram Stars, ключами, режимом лихорадки и VIP-пропусками.",
+                chestBronze: "Бронзовый сундук", chestBronzeRarity: "Обычный", chestBronzePrice: "БЕСПЛАТНО",
+                chestSilver: "Серебряный сундук", chestSilverRarity: "Эпический", chestSilverPrice: "⭐ 50 Stars",
+                chestGold: "Золотой сундук", chestGoldRarity: "Легендарный", chestGoldPrice: "⭐ 150 Stars",
+                inviteTitle: "Приглашай друзей — крути бесконечно!",
+                inviteDesc: "Каждый приглашённый друг даёт +5 бесплатных спинов и +100 очков Stars мгновенно!",
+                inviteBtn: "ПОДЕЛИТЬСЯ В TELEGRAM (1 КЛИК)",
+                invitedCountTitle: "Приглашено друзей", invitedCountDesc: "Всего наград получено",
+                tier1Title: "Стартовый набор (15 спинов)", tier1Desc: "+1 бронзовый ключ", tier1Badge: "СКИДКА 70%",
+                tier2Title: "Про Аркада (50 спинов)", tier2Desc: "+2 серебряных ключа + Лихорадка", tier2Badge: "ХИТ ПРОДАЖ ⭐️",
+                tier3Title: "Легенда (200 спинов)", tier3Desc: "Золотой ключ + Вечный VIP", tier3Badge: "VIP ПРОПУСК",
+                modalBigWin: "🎉 БОЛЬШОЙ ВЫИГРЫШ!", modalClaim: "ЗАБРАТЬ ПРИЗ!",
+                feverText: "ЛИХОРАДКА 2X! ({n})",
+                levelUpTitle: "⚡ НОВЫЙ УРОВЕНЬ!", levelUpDesc: "Поздравляем! Достигнут уровень {l}! Получено +5 СПИНОВ!"
+            },
+            pt: {
+                flag: "🇧🇷", name: "Português",
+                rank1: "Nível 1 • Novato", rank2: "Nível 2 • Explorador", rank3: "Nível 3 • Capitão", rank4: "Nível 4 • Mestre", rank5: "Nível 5 • Lenda",
+                tabWheel: "Roleta", tabStreak: "Sequência", tabChests: "Baús", tabInvite: "Amigos", tabShop: "Loja",
+                quickClaim: "Resgatar Giros Diários (+3)",
+                spinBtn: "GIRAR ROLETA 🎰",
+                spinBtnNoSpins: "OBTER MAIS GIROS ⚡",
+                streakTitle: "Sequência de 7 Dias",
+                streakDayActive: "Dia {d} Ativo",
+                streakBannerTitle: "🔥 Não Perca a Sequência!",
+                streakBannerDesc: "Acesse a cada 24 horas para desbloquear recompensas até o Mega Jackpot do Dia 7.",
+                streakClaimBtn: "RESGATAR RECOMPENSA DE HOJE 🎁",
+                alreadyClaimed: "Já Resgatado ✅",
+                chestsTitle: "📦 Baús Misteriosos",
+                chestsDesc: "Abra baús para ganhar Telegram Stars, chaves, Modo Febre e Passes VIP.",
+                chestBronze: "Baú de Bronze", chestBronzeRarity: "Comum", chestBronzePrice: "GRÁTIS",
+                chestSilver: "Baú de Prata", chestSilverRarity: "Épico", chestSilverPrice: "⭐ 50 Stars",
+                chestGold: "Baú de Ouro", chestGoldRarity: "Lendário", chestGoldPrice: "⭐ 150 Stars",
+                inviteTitle: "Convide Amigos e Ganhe Giros!",
+                inviteDesc: "Cada amigo que entrar pelo seu link garante +5 Giros Grátis e +100 Pontos Stars na hora!",
+                inviteBtn: "COMPARTILHAR NO TELEGRAM (1 TOQUE)",
+                invitedCountTitle: "Amigos Convidados", invitedCountDesc: "Total acumulado",
+                tier1Title: "Pacote Inicial (15 Giros)", tier1Desc: "+1 Chave de Bronze", tier1Badge: "OFERTA 70% OFF",
+                tier2Title: "Pro Arcade (50 Giros)", tier2Desc: "+2 Chaves de Prata + Modo Febre", tier2Badge: "MAIS VENDIDO ⭐️",
+                tier3Title: "Cofre Lendário (200 Giros)", tier3Desc: "Chave Mestra de Ouro + Coroa VIP", tier3Badge: "PASSE VIP",
+                modalBigWin: "🎉 GRANDE PRÊMIO!", modalClaim: "RESGATAR PRÊMIO!",
+                feverText: "FEBRE 2X! ({n})",
+                levelUpTitle: "⚡ SUBIU DE NÍVEL!", levelUpDesc: "Parabéns! Você alcançou o Nível {l}! Ganhou +5 GIROS GRÁTIS!"
+            },
+            hi: {
+                flag: "🇮🇳", name: "हिन्दी",
+                rank1: "लेवल 1 • नौसिखिया", rank2: "लेवल 2 • खोजी", rank3: "लेवल 3 • कप्तान", rank4: "लेवल 4 • मास्टर", rank5: "लेवल 5 • लेजेंड",
+                tabWheel: "चक्र", tabStreak: "दैनिक", tabChests: "बक्से", tabInvite: "मित्र", tabShop: "दुकान",
+                quickClaim: "दैनिक मुफ्त स्पिन प्राप्त करें (+3)",
+                spinBtn: "चक्र घुमाएँ 🎰",
+                spinBtnNoSpins: "और स्पिन प्राप्त करें ⚡",
+                streakTitle: "7-दिवसीय इनाम",
+                streakDayActive: "दिन {d} सक्रिय",
+                streakBannerTitle: "🔥 कभी न चूकें!",
+                streakBannerDesc: "दिन 7 के विशाल जैकपॉट तक हर दिन पुरस्कार प्राप्त करने के लिए रोज़ाना आएँ।",
+                streakClaimBtn: "आज का इनाम लें 🎁",
+                alreadyClaimed: "प्राप्त हो गया ✅",
+                chestsTitle: "📦 रहस्यमयी बक्से",
+                chestsDesc: "स्टार्स, चाबियाँ और वीआईपी पास पाने के लिए बक्से खोलें।",
+                chestBronze: "कांस्य बक्सा", chestBronzeRarity: "सामान्य", chestBronzePrice: "मुफ़्त",
+                chestSilver: "चांदी का बक्सा", chestSilverRarity: "शानदार", chestSilverPrice: "⭐ 50 Stars",
+                chestGold: "सोने का बक्सा", chestGoldRarity: "लेजेंडरी", chestGoldPrice: "⭐ 150 Stars",
+                inviteTitle: "मित्रों को आमंत्रित करें, असीमित स्पिन पाएं!",
+                inviteDesc: "प्रत्येक मित्र के जुड़ने पर आपको तुरंत +5 मुफ्त स्पिन और +100 स्टार्स मिलेंगे!",
+                inviteBtn: "टेलीग्राम पर साझा करें (1 टैप)",
+                invitedCountTitle: "आमंत्रित मित्र", invitedCountDesc: "कुल अर्जित इनाम",
+                tier1Title: "शुरुआती पैक (15 स्पिन)", tier1Desc: "+1 कांस्य चाबी", tier1Badge: "70% छूट",
+                tier2Title: "प्रो आर्केड (50 स्पिन)", tier2Desc: "+2 चांदी चाबियां + फीवर मोड", tier2Badge: "सबसे लोकप्रिय ⭐️",
+                tier3Title: "लेजेंड वॉल्ट (200 स्पिन)", tier3Desc: "मास्टर गोल्ड चाबी + वीआईपी क्राउन", tier3Badge: "वीआईपी पास",
+                modalBigWin: "🎉 बड़ी जीत!", modalClaim: "इनाम प्राप्त करें!",
+                feverText: "फीवर 2X! ({n})",
+                levelUpTitle: "⚡ लेवल अप!", levelUpDesc: "बधाई! आप लेवल {l} पर पहुँच गए हैं! +5 मुफ़्त स्पिन मिले!"
+            },
+            ar: {
+                flag: "🇸🇦", name: "العربية",
+                rank1: "المستوى 1 • مبتدئ", rank2: "المستوى 2 • مستكشف", rank3: "المستوى 3 • قائد", rank4: "المستوى 4 • محترف", rank5: "المستوى 5 • أسطورة",
+                tabWheel: "العجلة", tabStreak: "المتتالية", tabChests: "الصناديق", tabInvite: "الأصدقاء", tabShop: "المتجر",
+                quickClaim: "استلم اللفات اليومية (+3)",
+                spinBtn: "أدر العجلة 🎰",
+                spinBtnNoSpins: "احصل على لفات ⚡",
+                streakTitle: "مكافآت الـ 7 أيام",
+                streakDayActive: "اليوم {d} نشط",
+                streakBannerTitle: "🔥 لا تقطع سلسلتك!",
+                streakBannerDesc: "سجل الدخول يومياً لتكسب جوائز أكبر وصولاً إلى الجائزة الكبرى في اليوم السابع.",
+                streakClaimBtn: "استلم مكافأة اليوم 🎁",
+                alreadyClaimed: "تم الاستلام ✅",
+                chestsTitle: "📦 الصناديق الغامضة",
+                chestsDesc: "افتح الصناديق للحصول على نجوم تيليجرام ومفاتيح ومضاعفات النقاط.",
+                chestBronze: "صندوق برونزي", chestBronzeRarity: "شائع", chestBronzePrice: "مجاناً",
+                chestSilver: "صندوق فضي", chestSilverRarity: "نادر", chestSilverPrice: "⭐ 50 Stars",
+                chestGold: "صندوق ذهبي", chestGoldRarity: "أسطوري", chestGoldPrice: "⭐ 150 Stars",
+                inviteTitle: "ادعُ أصدقاءك واحصل على لفات غير محدودة!",
+                inviteDesc: "كل صديق يدخل عبر رابطك يمنحك +5 لفات مجانية و+100 نقطة نجوم فوراً!",
+                inviteBtn: "مشاركة في تيليجرام (ضغطة واحدة)",
+                invitedCountTitle: "الأصدقاء المدعوون", invitedCountDesc: "مجموع الجوائز",
+                tier1Title: "باقة المبتدئين (15 لفة)", tier1Desc: "+1 مفتاح برونزي", tier1Badge: "خصم 70%",
+                tier2Title: "برو أركيد (50 لفة)", tier2Desc: "+2 مفتاح فضي + وضع الحماس", tier2Badge: "الأكثر طلباً ⭐️",
+                tier3Title: "الخزنة الأسطورية (200 لفة)", tier3Desc: "مفتاح ذهبي + تاج الـ VIP", tier3Badge: "عضوية VIP",
+                modalBigWin: "🎉 فوز كبير!", modalClaim: "استلم الجائزة!",
+                feverText: "حماس 2X! ({n})",
+                levelUpTitle: "⚡ ارتقاء للمستوى!", levelUpDesc: "مبروك! وصلت للمستوى {l}! حصلت على +5 لفات مجانية!"
+            }
+        };
+
+        // State & LocalStorage
+        let currentLang = 'en';
+        let currentSpins = parseInt(localStorage.getItem('lva_spins') || '7');
+        let currentStars = parseInt(localStorage.getItem('lva_stars') || '250');
+        let currentXp = parseInt(localStorage.getItem('lva_xp') || '25');
+        let currentLevel = parseInt(localStorage.getItem('lva_level') || '1');
+        let streakDay = parseInt(localStorage.getItem('lva_streak_day') || '1');
+        let lastDailyTimestamp = parseInt(localStorage.getItem('lva_last_daily') || '0');
+        let feverSpinsLeft = parseInt(localStorage.getItem('lva_fever') || '0');
+        let friendsInvited = parseInt(localStorage.getItem('lva_invited') || '0');
+
+        function saveState() {
+            localStorage.setItem('lva_spins', currentSpins);
+            localStorage.setItem('lva_stars', currentStars);
+            localStorage.setItem('lva_xp', currentXp);
+            localStorage.setItem('lva_level', currentLevel);
+            localStorage.setItem('lva_streak_day', streakDay);
+            localStorage.setItem('lva_last_daily', lastDailyTimestamp);
+            localStorage.setItem('lva_fever', feverSpinsLeft);
+            localStorage.setItem('lva_invited', friendsInvited);
+            localStorage.setItem('lva_lang', currentLang);
+        }
+
+        // Telegram WebApp Setup
         const tg = window.Telegram?.WebApp;
         if (tg) {
             tg.ready();
@@ -575,14 +1086,102 @@
             try {
                 if (tg.initDataUnsafe?.user) {
                     const u = tg.initDataUnsafe.user;
-                    const name = u.first_name || u.username || 'Jugador';
+                    const name = u.first_name || u.username || 'Player';
                     document.getElementById('userName').textContent = name;
                     document.getElementById('avatarLetter').textContent = name[0].toUpperCase();
+                    // Detect language
+                    if (u.language_code) {
+                        const langPrefix = u.language_code.toLowerCase().slice(0, 2);
+                        if (I18N[langPrefix]) currentLang = langPrefix;
+                    }
                 }
             } catch(e) {}
         }
+        // Check saved lang
+        const savedLang = localStorage.getItem('lva_lang');
+        if (savedLang && I18N[savedLang]) currentLang = savedLang;
 
-        // Web Audio API Synthesizer (Instant latency-free sound effects)
+        function setLanguage(lang) {
+            if (!I18N[lang]) return;
+            currentLang = lang;
+            saveState();
+            applyLanguage();
+            closeLangDropdown();
+        }
+
+        function toggleLangDropdown() {
+            document.getElementById('langDropdown').classList.toggle('open');
+        }
+        function closeLangDropdown() {
+            document.getElementById('langDropdown').classList.remove('open');
+        }
+
+        function applyLanguage() {
+            const t = I18N[currentLang] || I18N['en'];
+            document.getElementById('currentLangFlag').textContent = t.flag;
+            document.getElementById('currentLangName').textContent = t.name;
+
+            // Update tab labels
+            document.getElementById('tabWheelLabel').textContent = t.tabWheel;
+            document.getElementById('tabStreakLabel').textContent = t.tabStreak;
+            document.getElementById('tabChestsLabel').textContent = t.tabChests;
+            document.getElementById('tabInviteLabel').textContent = t.tabInvite;
+            document.getElementById('tabShopLabel').textContent = t.tabShop;
+
+            // Rank
+            const ranks = [t.rank1, t.rank2, t.rank3, t.rank4, t.rank5];
+            document.getElementById('userRankTitle').textContent = ranks[Math.min(currentLevel - 1, 4)];
+
+            // Button texts
+            updateSpinButtonText();
+            document.getElementById('quickClaimLabel').textContent = t.quickClaim;
+
+            // Streak Section
+            document.getElementById('streakTitle').textContent = t.streakTitle;
+            document.getElementById('streakCounterText').textContent = t.streakDayActive.replace('{d}', streakDay);
+            document.getElementById('streakBannerTitle').textContent = t.streakBannerTitle;
+            document.getElementById('streakBannerDesc').textContent = t.streakBannerDesc;
+            document.getElementById('streakClaimBtnText').textContent = t.streakClaimBtn;
+
+            // Chests Section
+            document.getElementById('chestsTitle').textContent = t.chestsTitle;
+            document.getElementById('chestsDesc').textContent = t.chestsDesc;
+            document.getElementById('chestBronzeTitle').textContent = t.chestBronze;
+            document.getElementById('chestBronzeRarity').textContent = t.chestBronzeRarity;
+            document.getElementById('chestBronzePrice').textContent = t.chestBronzePrice;
+            document.getElementById('chestSilverTitle').textContent = t.chestSilver;
+            document.getElementById('chestSilverRarity').textContent = t.chestSilverRarity;
+            document.getElementById('chestSilverPrice').textContent = t.chestSilverPrice;
+            document.getElementById('chestGoldTitle').textContent = t.chestGold;
+            document.getElementById('chestGoldRarity').textContent = t.chestGoldRarity;
+            document.getElementById('chestGoldPrice').textContent = t.chestGoldPrice;
+
+            // Invite Section
+            document.getElementById('inviteTitle').textContent = t.inviteTitle;
+            document.getElementById('inviteDesc').textContent = t.inviteDesc;
+            document.getElementById('inviteBtnText').textContent = t.inviteBtn;
+            document.getElementById('invitedCountTitle').textContent = t.invitedCountTitle;
+            document.getElementById('invitedCountDesc').textContent = t.invitedCountDesc;
+
+            // Shop Section
+            document.getElementById('tier1Title').textContent = t.tier1Title;
+            document.getElementById('tier1Desc').textContent = t.tier1Desc;
+            document.getElementById('tier1Badge').textContent = t.tier1Badge;
+            document.getElementById('tier2Title').textContent = t.tier2Title;
+            document.getElementById('tier2Desc').textContent = t.tier2Desc;
+            document.getElementById('tier2Badge').textContent = t.tier2Badge;
+            document.getElementById('tier3Title').textContent = t.tier3Title;
+            document.getElementById('tier3Desc').textContent = t.tier3Desc;
+            document.getElementById('tier3Badge').textContent = t.tier3Badge;
+
+            // Modal
+            document.getElementById('modalBtnText').textContent = t.modalClaim;
+
+            renderStreakGrid();
+            updateFeverDisplay();
+        }
+
+        // Web Audio Synthesizer (Zero-latency sound effects)
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         let audioCtx = null;
         function initAudio() {
@@ -590,79 +1189,76 @@
             if (audioCtx.state === 'suspended') audioCtx.resume();
         }
 
-        function playTickSound() {
+        function playTickSound(pitch = 1.0) {
             try {
                 initAudio();
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.04);
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+                osc.frequency.setValueAtTime(550 * pitch, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150 * pitch, audioCtx.currentTime + 0.035);
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.035);
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start();
-                osc.stop(audioCtx.currentTime + 0.04);
+                osc.stop(audioCtx.currentTime + 0.035);
             } catch(e) {}
         }
 
         function playWinFanfare() {
             try {
                 initAudio();
-                const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, High C
+                const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
                 notes.forEach((freq, idx) => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
                     osc.type = 'sine';
                     osc.frequency.value = freq;
-                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime + (idx * 0.1));
-                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (idx * 0.1) + 0.35);
+                    gain.gain.setValueAtTime(0.25, audioCtx.currentTime + (idx * 0.08));
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + (idx * 0.08) + 0.4);
                     osc.connect(gain);
                     gain.connect(audioCtx.destination);
-                    osc.start(audioCtx.currentTime + (idx * 0.1));
-                    osc.stop(audioCtx.currentTime + (idx * 0.1) + 0.35);
+                    osc.start(audioCtx.currentTime + (idx * 0.08));
+                    osc.stop(audioCtx.currentTime + (idx * 0.08) + 0.4);
                 });
             } catch(e) {}
         }
 
-        // Wheel Slices Data
+        // Wheel Slices (8 Slices of Excitement)
         const SLICES = [
-            { text: "+50 Stars", icon: "⭐", color: "#e11d48", prize: "50 Stars", type: "stars", amount: 50 },
-            { text: "3 Usos Bot", icon: "🎬", color: "#2563eb", prize: "3 Usos Gratis para el Bot", type: "uses", amount: 3 },
-            { text: "+100 Stars", icon: "🌟", color: "#7c3aed", prize: "100 Stars", type: "stars", amount: 100 },
-            { text: "Casi...", icon: "😅", color: "#1e293b", prize: "¡Casi ganas! Vuelve a intentar", type: "none", amount: 0 },
-            { text: "+3 Giros", icon: "⚡", color: "#059669", prize: "3 Giros Extra", type: "spins", amount: 3 },
-            { text: "Cofre Oro", icon: "👑", color: "#d97706", prize: "Cofre Legendario de Oro", type: "chest", amount: 1 },
-            { text: "Stickers VIP", icon: "🪄", color: "#0284c7", prize: "Pase Stickers con Sonido", type: "uses", amount: 5 },
-            { text: "2X Boost", icon: "🚀", color: "#db2777", prize: "Multiplicador 2X de Puntos", type: "boost", amount: 2 }
+            { text: "+500 Stars", icon: "💎", color: "#e11d48", type: "stars", amount: 500, label: "500 Stars" },
+            { text: "+5 Giros", icon: "⚡", color: "#0284c7", type: "spins", amount: 5, label: "+5 Spins" },
+            { text: "Cofre Oro", icon: "👑", color: "#d97706", type: "chest", amount: 1, label: "Golden Vault Key" },
+            { text: "+100 Stars", icon: "🌟", color: "#7c3aed", type: "stars", amount: 100, label: "100 Stars" },
+            { text: "🔥 FEVER 2X", icon: "🔥", color: "#ea580c", type: "fever", amount: 5, label: "Fever Mode (5 Spins)" },
+            { text: "+3 Giros", icon: "⚡", color: "#059669", type: "spins", amount: 3, label: "+3 Spins" },
+            { text: "Cofre Plata", icon: "🥈", color: "#475569", type: "chest", amount: 1, label: "Silver Vault Key" },
+            { text: "+50 Stars", icon: "⭐", color: "#db2777", type: "stars", amount: 50, label: "50 Stars" }
         ];
 
-        // Canvas Wheel Drawing
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
         const numSlices = SLICES.length;
         const arc = (2 * Math.PI) / numSlices;
         let startAngle = 0;
         let isSpinning = false;
-        let currentSpins = 5;
-        let currentStars = 250;
 
         function drawWheel() {
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const radius = centerX - 15;
+            const radius = centerX - 18;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw outer neon border
+            // Outer Neon Border
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius + 10, 0, 2 * Math.PI);
-            ctx.strokeStyle = "#00f0ff";
-            ctx.lineWidth = 8;
+            ctx.strokeStyle = feverSpinsLeft > 0 ? "#ff5500" : "#00f0ff";
+            ctx.lineWidth = 10;
             ctx.stroke();
 
-            // Draw segments
+            // Slices
             for (let i = 0; i < numSlices; i++) {
                 const angle = startAngle + i * arc;
                 ctx.beginPath();
@@ -670,8 +1266,8 @@
                 ctx.arc(centerX, centerY, radius, angle, angle + arc);
                 ctx.fillStyle = SLICES[i].color;
                 ctx.fill();
-                ctx.strokeStyle = "rgba(255,255,255,0.2)";
-                ctx.lineWidth = 2;
+                ctx.strokeStyle = "rgba(255,255,255,0.25)";
+                ctx.lineWidth = 2.5;
                 ctx.stroke();
 
                 // Draw Text & Icon
@@ -680,14 +1276,106 @@
                 ctx.rotate(angle + arc / 2);
                 ctx.textAlign = "right";
                 ctx.fillStyle = "white";
-                ctx.font = "bold 26px 'Outfit', sans-serif";
-                ctx.fillText(SLICES[i].icon + " " + SLICES[i].text, radius - 25, 10);
+                ctx.font = "900 28px 'Outfit', sans-serif";
+                ctx.shadowColor = "rgba(0,0,0,0.8)";
+                ctx.shadowBlur = 6;
+                ctx.fillText(SLICES[i].icon + " " + SLICES[i].text, radius - 26, 10);
                 ctx.restore();
             }
         }
         drawWheel();
 
-        // Spin Physics & Animation
+        // 7-Day Streak Grid
+        const STREAK_DATA = [
+            { day: 1, icon: "⚡", reward: "+3" },
+            { day: 2, icon: "⭐", reward: "+50" },
+            { day: 3, icon: "📦", reward: "Key" },
+            { day: 4, icon: "⚡", reward: "+10" },
+            { day: 5, icon: "🥈", reward: "Silver" },
+            { day: 6, icon: "🌟", reward: "+250" },
+            { day: 7, icon: "💎", reward: "JACKPOT" }
+        ];
+
+        function renderStreakGrid() {
+            const container = document.getElementById('streakGrid');
+            container.innerHTML = '';
+            STREAK_DATA.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'day-cell';
+                if (s.day < streakDay) div.classList.add('completed');
+                if (s.day === streakDay) div.classList.add('active-day');
+                if (s.day === 7) div.classList.add('jackpot-day');
+
+                div.innerHTML = `
+                    <div>D${s.day}</div>
+                    <div class="day-icon">${s.icon}</div>
+                    <div class="day-reward">${s.reward}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function updateFeverDisplay() {
+            const badge = document.getElementById('feverBadge');
+            const t = I18N[currentLang] || I18N['en'];
+            if (feverSpinsLeft > 0) {
+                document.body.classList.add('fever-mode');
+                badge.classList.add('active');
+                document.getElementById('feverText').textContent = t.feverText.replace('{n}', feverSpinsLeft);
+            } else {
+                document.body.classList.remove('fever-mode');
+                badge.classList.remove('active');
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('spinsCount').textContent = currentSpins;
+            document.getElementById('starsCount').textContent = currentStars;
+
+            // XP Bar calculation (100 XP per level)
+            const xpInLevel = currentXp % 100;
+            const pct = Math.min(xpInLevel, 100);
+            document.getElementById('xpBarFill').style.width = pct + '%';
+            document.getElementById('xpCurrentText').textContent = `XP: ${xpInLevel} / 100`;
+            document.getElementById('nextLevelText').textContent = `Next: Level ${currentLevel + 1}`;
+
+            const t = I18N[currentLang] || I18N['en'];
+            const ranks = [t.rank1, t.rank2, t.rank3, t.rank4, t.rank5];
+            document.getElementById('userRankTitle').textContent = ranks[Math.min(currentLevel - 1, 4)];
+
+            updateSpinButtonText();
+            saveState();
+        }
+
+        function updateSpinButtonText() {
+            const btn = document.getElementById('spinBtn');
+            const t = I18N[currentLang] || I18N['en'];
+            if (currentSpins > 0) {
+                btn.textContent = t.spinBtn;
+                btn.disabled = false;
+            } else {
+                btn.textContent = t.spinBtnNoSpins;
+                btn.disabled = false;
+            }
+        }
+
+        function addXp(amount) {
+            const oldLevel = currentLevel;
+            currentXp += amount;
+            currentLevel = Math.floor(currentXp / 100) + 1;
+            if (currentLevel > oldLevel) {
+                // LEVEL UP CELEBRATION!
+                currentSpins += 5;
+                fireConfetti();
+                playWinFanfare();
+                if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                const t = I18N[currentLang] || I18N['en'];
+                showModal("⚡", t.levelUpTitle, t.levelUpDesc.replace('{l}', currentLevel));
+            }
+            updateHUD();
+        }
+
+        // Spin Logic with Realistic Friction & Dramatic Deceleration
         function spinWheel() {
             if (isSpinning) return;
             if (currentSpins <= 0) {
@@ -698,34 +1386,41 @@
             initAudio();
             isSpinning = true;
             currentSpins--;
-            document.getElementById('spinsCount').textContent = currentSpins;
+            if (feverSpinsLeft > 0) {
+                feverSpinsLeft--;
+                updateFeverDisplay();
+            }
+            updateHUD();
             document.getElementById('spinBtn').disabled = true;
 
-            // Random landing slice
             const targetSlice = Math.floor(Math.random() * numSlices);
-            const extraRotations = (5 + Math.floor(Math.random() * 4)) * (2 * Math.PI);
-            // Calculate final angle to align targetSlice with top (pointer at 3*PI/2)
+            const extraRotations = (6 + Math.floor(Math.random() * 3)) * (2 * Math.PI);
             const targetAngle = (3 * Math.PI / 2) - (targetSlice * arc + arc / 2);
             const totalRotation = extraRotations + (targetAngle - (startAngle % (2 * Math.PI)));
 
-            const duration = 4500;
+            const duration = 5200; // Dramatic tension duration
             const startTime = performance.now();
             const initialAngle = startAngle;
-            let lastTickAngle = startAngle;
+            let lastPeg = Math.floor(startAngle / arc);
+
+            const pointer = document.getElementById('wheelPointer');
 
             function animate(now) {
                 const elapsed = now - startTime;
                 const progress = Math.min(elapsed / duration, 1);
-                // Cubic ease out
-                const easeOut = 1 - Math.pow(1 - progress, 3);
+                // Quintic ease out for nail-biting slow deceleration at the end
+                const easeOut = 1 - Math.pow(1 - progress, 4);
                 startAngle = initialAngle + totalRotation * easeOut;
                 drawWheel();
 
-                // Sound & Haptic on peg click
-                if (Math.abs(startAngle - lastTickAngle) >= arc) {
-                    playTickSound();
+                const currentPeg = Math.floor(startAngle / arc);
+                if (currentPeg !== lastPeg) {
+                    const speed = 1 - progress;
+                    playTickSound(0.9 + speed * 0.4);
                     if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-                    lastTickAngle = startAngle;
+                    pointer.classList.add('pegging');
+                    setTimeout(() => pointer.classList.remove('pegging'), 40);
+                    lastPeg = currentPeg;
                 }
 
                 if (progress < 1) {
@@ -743,26 +1438,48 @@
             playWinFanfare();
             if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             fireConfetti();
+            addXp(15);
+
+            let multiplier = (feverSpinsLeft > 0) ? 2 : 1;
 
             if (slice.type === 'stars') {
-                currentStars += slice.amount;
-                document.getElementById('starsCount').textContent = currentStars;
+                const earned = slice.amount * multiplier;
+                currentStars += earned;
+                showModal(slice.icon, "BIG WIN! 💎", `+${earned} Stars Points!`);
             } else if (slice.type === 'spins') {
                 currentSpins += slice.amount;
-                document.getElementById('spinsCount').textContent = currentSpins;
+                showModal(slice.icon, "FREE SPINS! ⚡", `+${slice.amount} Free Spins!`);
+            } else if (slice.type === 'fever') {
+                feverSpinsLeft += 5;
+                updateFeverDisplay();
+                showModal("🔥", "FEVER MODE ACTIVE!", "Next 5 spins give 2X REWARDS!");
+            } else if (slice.type === 'chest') {
+                showModal("👑", "VAULT KEY UNLOCKED!", `You found a ${slice.label}!`);
             }
-
-            showModal(slice.icon, "¡PREMIO CONSEGUIDO!", "Has ganado: " + slice.prize);
+            updateHUD();
         }
 
-        // Daily Reward
+        // Daily Reward System
         function claimDailyReward() {
-            currentSpins += 3;
-            document.getElementById('spinsCount').textContent = currentSpins;
-            document.getElementById('dailyClaimBtn').disabled = true;
-            document.getElementById('dailyClaimBtn').textContent = "Reclamado ✅";
+            const now = Date.now();
+            const oneDay = 24 * 60 * 60 * 1000;
+            if (now - lastDailyTimestamp < oneDay && lastDailyTimestamp > 0) {
+                showModal("⏳", "DAILY COOLDOWN", "Come back tomorrow to keep your streak alive!");
+                return;
+            }
+
+            lastDailyTimestamp = now;
+            currentSpins += 3 + streakDay;
+            addXp(30);
+            streakDay = (streakDay % 7) + 1;
+            saveState();
+
             playWinFanfare();
-            showModal("🎁", "¡RECOMPENSA DIARIA!", "Has recibido +3 Giros Gratis para hoy.");
+            fireConfetti();
+            const t = I18N[currentLang] || I18N['en'];
+            showModal("🎁", t.modalBigWin, `Claimed +${2 + streakDay} Free Spins! Streak Level increased.`);
+            renderStreakGrid();
+            updateHUD();
         }
 
         // Open Chests
@@ -770,25 +1487,27 @@
             initAudio();
             playWinFanfare();
             fireConfetti();
-            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+            addXp(25);
 
-            if (tier === 'bronce') {
-                currentStars += 50;
-                document.getElementById('starsCount').textContent = currentStars;
-                showModal("📦", "¡COFRE BRONCE ABIERTO!", "Has recibido: 50 Stars + 1 Uso Gratis en el Bot.");
-            } else if (tier === 'plata') {
-                currentStars += 200;
-                currentSpins += 5;
-                document.getElementById('starsCount').textContent = currentStars;
-                document.getElementById('spinsCount').textContent = currentSpins;
-                showModal("🥈", "¡COFRE PLATA ABIERTO!", "Has recibido: 200 Stars + 5 Giros Extra.");
+            if (tier === 'bronze') {
+                currentStars += 60;
+                currentSpins += 2;
+                showModal("📦", "BRONZE VAULT OPENED!", "+60 Stars + 2 Free Spins!");
+            } else if (tier === 'silver') {
+                currentStars += 250;
+                currentSpins += 8;
+                feverSpinsLeft += 3;
+                updateFeverDisplay();
+                showModal("🥈", "SILVER VAULT OPENED!", "+250 Stars + 8 Spins + 3 Fever Spins!");
             } else {
-                currentStars += 600;
-                currentSpins += 15;
-                document.getElementById('starsCount').textContent = currentStars;
-                document.getElementById('spinsCount').textContent = currentSpins;
-                showModal("👑", "¡COFRE ORO LEGENDARIO!", "Has recibido: 600 Stars + 15 Giros + PASE VIP ⭐.");
+                currentStars += 800;
+                currentSpins += 20;
+                feverSpinsLeft += 5;
+                updateFeverDisplay();
+                showModal("👑", "LEGENDARY GOLDEN VAULT!", "+800 Stars + 20 Spins + VIP CROWN!");
             }
+            updateHUD();
         }
 
         // Modal Handler
@@ -807,16 +1526,23 @@
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.section-view').forEach(sec => sec.classList.remove('active'));
 
-            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+            const targetBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(tabId));
             if (targetBtn) targetBtn.classList.add('active');
 
             const targetSection = document.getElementById('tab-' + tabId);
             if (targetSection) targetSection.classList.add('active');
         }
 
-        // Viral Share Invite
+        // Viral Share Invite (100% hooked to @lucky_vault_arcade_bot)
         function shareInviteLink() {
-            const shareUrl = "https://t.me/share/url?url=" + encodeURIComponent("https://t.me/nexus_global_vault_bot?start=game") + "&text=" + encodeURIComponent("🎰 ¡Entra al Lucky Vault Arcade en Telegram y gira la ruleta gratis para ganar Stars y premios VIP! ⚡");
+            let userId = "";
+            try {
+                userId = tg?.initDataUnsafe?.user?.id || "";
+            } catch(e) {}
+            const botUrl = "https://t.me/lucky_vault_arcade_bot" + (userId ? `?start=ref_${userId}` : "");
+            const shareText = "🎰 Come play Lucky Vault Arcade on Telegram! Spin the 60 FPS Wheel of Fortune, open mystery vaults, and win Telegram Stars! 💎⚡";
+            const shareUrl = "https://t.me/share/url?url=" + encodeURIComponent(botUrl) + "&text=" + encodeURIComponent(shareText);
+
             if (tg?.openTelegramLink) {
                 tg.openTelegramLink(shareUrl);
             } else {
@@ -824,16 +1550,18 @@
             }
         }
 
-        // Trigger Stars Invoice (Sends signal back to Telegram)
+        // Trigger Stars Invoice
         function triggerStarsInvoice(plan) {
-            if (tg?.sendData) {
+            if (tg?.openTelegramLink) {
+                tg.openTelegramLink(`https://t.me/lucky_vault_arcade_bot?start=buy_${plan}`);
+            } else if (tg?.sendData) {
                 tg.sendData(JSON.stringify({ action: "buy_spins", plan: plan }));
             } else {
-                showModal("💳", "PAQUETE TELEGRAM STARS", "Para comprar este paquete, escribe /planes en el bot de Telegram.");
+                showModal("⭐", "TELEGRAM STARS", "To purchase, open @lucky_vault_arcade_bot and type /tienda.");
             }
         }
 
-        // Particle Confetti Effect
+        // High Quality Confetti Engine
         function fireConfetti() {
             const c = document.getElementById('confettiCanvas');
             const cCtx = c.getContext('2d');
@@ -841,17 +1569,19 @@
             c.height = window.innerHeight;
 
             const particles = [];
-            const colors = ['#00f0ff', '#ffd700', '#b026ff', '#00ff88', '#ff0055'];
+            const colors = ['#00f0ff', '#ffd700', '#b026ff', '#00ff88', '#ff0055', '#ff7700'];
 
-            for (let i = 0; i < 70; i++) {
+            for (let i = 0; i < 90; i++) {
                 particles.push({
                     x: c.width / 2,
-                    y: c.height * 0.4,
-                    vx: (Math.random() - 0.5) * 12,
-                    vy: (Math.random() - 0.7) * 14,
-                    size: Math.random() * 8 + 4,
+                    y: c.height * 0.45,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.75) * 16,
+                    size: Math.random() * 9 + 4,
                     color: colors[Math.floor(Math.random() * colors.length)],
-                    alpha: 1
+                    alpha: 1,
+                    rotation: Math.random() * 360,
+                    rotSpeed: (Math.random() - 0.5) * 10
                 });
             }
 
@@ -861,13 +1591,18 @@
                 particles.forEach(p => {
                     p.x += p.vx;
                     p.y += p.vy;
-                    p.vy += 0.35; // gravity
-                    p.alpha -= 0.015;
+                    p.vy += 0.38;
+                    p.alpha -= 0.014;
+                    p.rotation += p.rotSpeed;
                     if (p.alpha > 0) {
                         alive = true;
+                        cCtx.save();
+                        cCtx.translate(p.x, p.y);
+                        cCtx.rotate(p.rotation * Math.PI / 180);
                         cCtx.globalAlpha = p.alpha;
                         cCtx.fillStyle = p.color;
-                        cCtx.fillRect(p.x, p.y, p.size, p.size);
+                        cCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                        cCtx.restore();
                     }
                 });
                 cCtx.globalAlpha = 1;
@@ -875,6 +1610,10 @@
             }
             update();
         }
+
+        // Initialize HUD and Language
+        applyLanguage();
+        updateHUD();
     </script>
 </body>
 </html>
