@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  nexus-telegram-bot:
+    build: .
+    container_name: nexus_global_vault_bot
+    restart: always
+    volumes:
+      - ./users_db.json:/app/users_db.json
+      - ./bot_runtime.log:/app/bot_runtime.log
+      - ./sales_log.json:/app/sales_log.json
+      - ./downloads:/app/downloads
+    environment:
+      - PYTHONUNBUFFERED=1

@@ -1,0 +1,13 @@
+Ficha Técnica de tu Bot en Vivo
+Nombre Oficial: Nexus Global Vault
+Usuario en Telegram: @nexus_global_vault_bot
+Enlace Directo Global: t.me/nexus_global_vault_bot
+ID en Telegram: 9176578200
+Moneda de Cobro: XTR (Telegram Stars)
+Precio por Desbloqueo: 50 Stars (~$0.99 USD)
+Estado: 🟢 ACTIVO Y CORRIENDO EN SEGUNDO PLANO (Proceso ID: 29612)
+
+9176578200:AAG1Qgg56gyzvoNwNCcGXT2SjXyMHJMlYN8
+
+
+Fragment.com

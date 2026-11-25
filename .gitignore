@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.env
+
+# Runtime databases and logs
+downloads/
+bot_runtime.log
+sales_log.json
+users_db.json
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Heavy render videos (optional, keep promotional images)
+*.tmp
+temp_*

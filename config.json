@@ -1,0 +1,62 @@
+{
+  "bot_token": "9176578200:AAG1Qgg56gyzvoNwNCcGXT2SjXyMHJMlYN8",
+  "currency": "XTR",
+  "fallback_language": "en",
+  "plans": {
+    "pack_3": {
+      "id": "pack_3",
+      "credits": 3,
+      "stars": 50,
+      "usd": "0.99",
+      "is_vip": false
+    },
+    "pack_10": {
+      "id": "pack_10",
+      "credits": 10,
+      "stars": 150,
+      "usd": "2.99",
+      "is_vip": false
+    },
+    "pack_vip": {
+      "id": "pack_vip",
+      "credits": 50,
+      "stars": 500,
+      "usd": "9.99",
+      "is_vip": true
+    }
+  },
+  "translations": {
+    "es": {
+      "welcome": "🔥 **#1 SUPER-BOT MULTI-HERRAMIENTA GLOBAL 🚀**\n*+500,000 Usos Diarios a Nivel Mundial*\n\n🎁 **¡TIENES 1 USO GRATIS EN CADA UNO DE LOS 8 SERVICIOS!**\n\n📋 **¿Qué hace cada servicio?:**\n1️⃣ **🎬 Video HD:** Descarga videos sin marca de agua (TikTok, Reels, Shorts, X, Pinterest).\n2️⃣ **🎵 Audio MP3:** Extrae el audio o música en MP3 de cualquier video.\n3️⃣ **🪄 Sticker con Sonido:** Crea stickers con audio/sonido o elige de los más populares.\n4️⃣ **📸 Mejorar HD:** Aumenta resolución, nitidez y color de tus imágenes.\n5️⃣ **📄 Foto a PDF:** Convierte tus fotos o documentos a archivo PDF listo.\n6️⃣ **📱 Código QR:** Genera códigos QR en alta resolución de cualquier enlace o texto.\n7️⃣ **🌐 Traductor:** Traductor inteligente (Texto, Audio/Voz y Lectura de Documentos).\n8️⃣ **⚡ Resumir IA:** Resume artículos largos, textos o noticias en 5 puntos clave.\n\n👇 **Toca el botón con el número del servicio para activarlo:**",
+      "btn_pack_3": "🥉 3 Usos ($0.99 - 50 Stars)",
+      "btn_pack_10": "🥈 10 Usos ($2.99 - 150 Stars)",
+      "btn_pack_vip": "👑 VIP Ilimitado ($9.99 - 500 Stars)",
+      "btn_menu_services": "🛠️ Menú de los 8 Servicios",
+      "btn_plans": "💳 Ver Paquetes de Descarga ($0.99 - $9.99)",
+      "btn_referral": "🎁 Invita Amigos y Gana Usos Gratis",
+      "plans_menu_title": "🔥 **Paquetes Oficiales de Descarga (8 Servicios):**\n\n1️⃣ **Básico:** 3 Usos por $0.99 USD (50 Stars)\n2️⃣ **Más Vendido:** 10 Usos por $2.99 USD (150 Stars)\n3️⃣ **👑 VIP Ilimitado:** $9.99 USD (500 Stars)\n\n⚡ *Acceso instantáneo en 1 toque con Google Play o Apple Pay:*",
+      "downloading": "⏳ **Procesando tu solicitud en el servidor de alta velocidad...**",
+      "free_used_notice": "\n\n🎁 *Has utilizado tu 1 uso gratis para este servicio. Para seguir usándolo, elige uno de nuestros paquetes económicos:*",
+      "quota_exceeded": "⚠️ **Ya utilizaste tu 1 prueba gratis para este servicio.**\n\n🔥 Para continuar usándolo sin límites, selecciona uno de nuestros paquetes económicos:",
+      "caption": "🎬 Procesado con éxito con @nexus_global_vault_bot ⚡",
+      "paid_success_credits": "🎉 ¡Pago confirmado! Se han añadido **{credits} usos de alta velocidad** a tu cuenta.\n\nPuedes usar cualquiera de los 8 servicios cuando quieras.",
+      "paid_success_vip": "👑 ¡Pago confirmado! Tu cuenta ahora tiene **PASE VIP ILIMITADO (50+ USOS)** ⭐.\n\nAcceso prioritario a todos los 8 servicios sin restricciones."
+    },
+    "en": {
+      "welcome": "🔥 **#1 GLOBAL ALL-IN-ONE SUPER-BOT 🚀**\n*+500,000 Daily Uses Worldwide*\n\n🎁 **YOU GET 1 FREE USE FOR EACH OF THE 8 SERVICES!**\n\n📋 **What each service does:**\n1️⃣ **🎬 HD Video:** Download watermark-free videos (TikTok, Reels, Shorts, X, Pinterest).\n2️⃣ **🎵 MP3 Audio:** Extract crystal clear MP3 audio from any video.\n3️⃣ **🪄 Sound Sticker Maker:** Create stickers with sound or choose popular stickers.\n4️⃣ **📸 Enhancer HD:** Boost resolution, sharpness, and color of photos.\n5️⃣ **📄 Photo to PDF:** Convert your pictures or documents to instant PDF.\n6️⃣ **📱 QR Generator:** Create high-resolution custom QR codes for links or text.\n7️⃣ **🌐 Smart Translator:** Intelligent translation (Text, Voice Audio, & Article Reading).\n8️⃣ **⚡ AI Summarizer:** Summarize articles, long texts, and news in seconds.\n\n👇 **Tap a number button below to activate the service:**",
+      "btn_pack_3": "🥉 3 Uses ($0.99 - 50 Stars)",
+      "btn_pack_10": "🥈 10 Uses ($2.99 - 150 Stars)",
+      "btn_pack_vip": "👑 VIP Unlimited ($9.99 - 500 Stars)",
+      "btn_menu_services": "🛠️ 8 Services Menu",
+      "btn_plans": "💳 View Download Packs ($0.99 - $9.99)",
+      "btn_referral": "🎁 Invite Friends & Earn Free Uses",
+      "plans_menu_title": "🔥 **Official Download Packs (All 8 Services):**\n\n1️⃣ **Basic:** 3 Uses for $0.99 USD (50 Stars)\n2️⃣ **Best Seller:** 10 Uses for $2.99 USD (150 Stars)\n3️⃣ **👑 VIP Unlimited:** $9.99 USD (500 Stars)\n\n⚡ *Instant delivery in 1 tap with Apple Pay or Google Play:*",
+      "downloading": "⏳ **Processing your request on our high-speed server...**",
+      "free_used_notice": "\n\n🎁 *You have used your 1 free trial for this service. To continue using it, please choose an affordable pack:*",
+      "quota_exceeded": "⚠️ **You have already used your 1 free trial for this service.**\n\n🔥 Choose an affordable pack to continue using it with zero limits:",
+      "caption": "🎬 Processed successfully with @nexus_global_vault_bot ⚡",
+      "paid_success_credits": "🎉 Payment confirmed! **{credits} high-speed uses** added to your account.\n\nEnjoy all 8 services anytime.",
+      "paid_success_vip": "👑 Payment confirmed! Your account is now **VIP UNLIMITED (50+ USES)** ⭐.\n\nFull priority access to all 8 services with zero limits."
+    }
+  }
+}
