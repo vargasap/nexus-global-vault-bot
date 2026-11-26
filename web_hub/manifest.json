@@ -1,0 +1,25 @@
+{
+  "name": "CyberShield AI 🛡️ Radar Forense Anti-Estafas",
+  "short_name": "CyberShield",
+  "description": "Detector de fraudes digitales, tiendas falsas, ofertas de empleo sospechosas y contratos honeypot en tiempo real.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050811",
+  "theme_color": "#00e5ff",
+  "icons": [
+    {
+      "src": "./avatar.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./avatar.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>CyberShield AI 🛡️ Radar Forense Anti-Estafas</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#00e5ff">
+  <link rel="icon" type="image/jpeg" href="./avatar.jpg">
   <!-- Google Analytics 4 (GA4): Measurement ID CyberShield AI -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-M4KYQCC8X5"></script>
   <script>
@@ -703,6 +706,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <button onclick="openDownloadModal()" style="background:rgba(0,255,136,0.12); border:1px solid var(--accent-safe); color:var(--accent-safe); font-weight:800; font-size:11px; padding:4px 8px; border-radius:8px; cursor:pointer;">📥 App</button>
         <select class="lang-btn" id="langSelect" onchange="changeLanguage(this.value)">
           <option value="es">🇪🇸 ES</option>
           <option value="en">🇺🇸 EN</option>
@@ -1674,6 +1678,134 @@
     function changeLanguage(lang) {
       showToast(`🌐 Idioma configurado: ${lang.toUpperCase()}`);
     }
+
+    // ==========================================
+    // PWA & GITHUB DOWNLOAD ENGINE
+    // ==========================================
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('btnPwaInstall');
+      if (btn) btn.innerText = 'INSTALAR APP 📲';
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.warn('ServiceWorker error:', err);
+        });
+      });
+    }
+
+    function openDownloadModal() {
+      const modal = document.getElementById('downloadModal');
+      if (modal) modal.classList.add('open');
+    }
+
+    function closeDownloadModal() {
+      const modal = document.getElementById('downloadModal');
+      if (modal) modal.classList.remove('open');
+    }
+
+    function installPWA() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            showToast('🎉 ¡Instalando CyberShield AI en tu dispositivo!');
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        alert('ℹ️ Cómo instalar CyberShield AI:\n\n• En Android (Chrome): Toca el menú de tres puntos (⋮) y selecciona "Instalar aplicación".\n• En iOS (Safari): Toca el botón de Compartir y selecciona "Agregar a la pantalla de inicio".\n• En Windows/Mac: Toca el icono de instalación ⊕ en la barra de direcciones.');
+      }
+    }
+
+    // ==========================================
+    // SUITE DE SEGURIDAD: ANTI-ROBO & ANTI-SPAM
+    // ==========================================
+    document.addEventListener('contextmenu', (e) => {
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      e.preventDefault();
+      showToast('🛡️ CyberShield AI: Código fuente y arquitectura protegidos contra robo.');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'F12' || e.keyCode === 123) {
+        e.preventDefault();
+        showToast('🛡️ Herramientas de inspección deshabilitadas.');
+        return false;
+      }
+      if (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'i', 'j', 'c'].includes(e.key)) {
+        e.preventDefault();
+        showToast('🛡️ Acceso de inspección bloqueado.');
+        return false;
+      }
+      if (e.ctrlKey && ['u', 'U', 's', 'S'].includes(e.key)) {
+        e.preventDefault();
+        showToast('🛡️ Extracción de código no autorizada bloqueada.');
+        return false;
+      }
+    });
+
+    let lastActionTime = 0;
+    function checkRateLimit() {
+      const now = Date.now();
+      if (now - lastActionTime < 1800) {
+        showToast('⚠️ Protección Anti-Spam: Espera 2 segundos.');
+        return false;
+      }
+      lastActionTime = now;
+      return true;
+    }
   </script>
+
+  <!-- Download Modal -->
+  <div class="modal-overlay" id="downloadModal">
+    <div class="modal-card" style="border-color:var(--accent-safe); max-width:440px; text-align:center;">
+      <button class="modal-close" onclick="closeDownloadModal()">✕</button>
+      <div style="font-size:42px; margin-bottom:8px; filter:drop-shadow(0 0 15px rgba(0,255,136,0.5));">📥</div>
+      <div style="font-size:18px; font-weight:800; color:#fff; margin-bottom:6px;">
+        Descargar CyberShield <span style="color:var(--accent-safe);">AI</span>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); margin-bottom:18px;">
+        Instala la aplicación nativa en tu dispositivo o descarga el código fuente oficial desde GitHub.
+      </div>
+
+      <!-- Option 1: PWA Install -->
+      <div style="background:#050811; border:1px solid rgba(0,255,136,0.3); border-radius:12px; padding:12px; margin-bottom:10px; text-align:left; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <div>
+          <div style="font-size:13px; font-weight:800; color:#fff;">📱 Instalar Web App (PWA)</div>
+          <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Android, iOS y Windows</div>
+        </div>
+        <button id="btnPwaInstall" onclick="installPWA()" style="background:var(--accent-safe); color:#000; border:none; padding:6px 12px; border-radius:6px; font-weight:900; font-size:11px; cursor:pointer;">
+          INSTALAR ➔
+        </button>
+      </div>
+
+      <!-- Option 2: GitHub ZIP Download -->
+      <div style="background:#050811; border:1px solid rgba(0,229,255,0.3); border-radius:12px; padding:12px; margin-bottom:10px; text-align:left; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <div>
+          <div style="font-size:13px; font-weight:800; color:#fff;">📦 Descargar Código (.ZIP)</div>
+          <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">Repositorio completo GitHub</div>
+        </div>
+        <a href="https://github.com/vargasap/cybershield-ai/archive/refs/heads/main.zip" style="background:var(--accent-cyber); color:#000; border:none; padding:6px 12px; border-radius:6px; font-weight:900; font-size:11px; text-decoration:none;" download>
+          BAJAR .ZIP ⬇️
+        </a>
+      </div>
+
+      <!-- Option 3: GitHub Repo View -->
+      <div style="background:#050811; border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:12px; text-align:left; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+        <div>
+          <div style="font-size:13px; font-weight:800; color:#fff;">💻 Ver en GitHub</div>
+          <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">github.com/vargasap/cybershield-ai</div>
+        </div>
+        <a href="https://github.com/vargasap/cybershield-ai" target="_blank" rel="noopener" style="background:#1f293d; color:#fff; border:1px solid rgba(255,255,255,0.2); padding:6px 12px; border-radius:6px; font-weight:800; font-size:11px; text-decoration:none;">
+          VER REPO ➔
+        </a>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
