@@ -50,7 +50,7 @@ def load_config():
     cfg = {
         "bot_token": os.environ.get("BOT_TOKEN_SHIELD", "9252483230:AAFEa8faK85k9gaaKTclm5yYqPlGmM7P3u4").strip(),
         "owner_id": os.environ.get("OWNER_ID", "5593082133").strip(),
-        "webapp_url": "https://vargasap.github.io/nexus-global-vault-bot/web_hub/shield.html"
+        "webapp_url": "https://vargasap.github.io/cybershield-ai/shield.html"
     }
     if os.path.exists(CONFIG_PATH):
         try:
@@ -113,7 +113,7 @@ class CyberShieldBot:
         self.cfg = cfg
         self.token = cfg.get("bot_token", "")
         self.owner_id = cfg.get("owner_id", "5593082133")
-        self.webapp_url = cfg.get("webapp_url", "https://vargasap.github.io/nexus-global-vault-bot/web_hub/shield.html")
+        self.webapp_url = cfg.get("webapp_url", "https://vargasap.github.io/cybershield-ai/shield.html")
         self.base_url = f"https://api.telegram.org/bot{self.token}" if self.token else ""
         self.last_update_id = 0
 
@@ -556,7 +556,7 @@ class CyberShieldBot:
                     "menu_button": {
                         "type": "web_app",
                         "text": "CyberShield 🛡️",
-                        "web_app": {"url": f"{self.webapp_url}?v=1.0"}
+                        "web_app": {"url": f"{self.webapp_url}?v=3.5"}
                     }
                 })
             except Exception as e:
