@@ -6,5 +6,13 @@
     "is_vip": false,
     "vip_tier": "Free",
     "first_seen": "2026-11-26T13:59:10.315296"
+  },
+  "1500202797": {
+    "username": "1500202797",
+    "scans_count": 0,
+    "daily_scans_left": 5,
+    "is_vip": false,
+    "vip_tier": "Free",
+    "first_seen": "2026-11-26T15:10:48.953867"
   }
 }
