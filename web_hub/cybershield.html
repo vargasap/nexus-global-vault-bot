@@ -1006,6 +1006,16 @@
 
       <div class="vip-tier-item">
         <div>
+          <div style="font-size:13px; font-weight:800; color:#fff;">⚡ Auditoría Forense Express</div>
+          <div style="font-size:10px; color:var(--text-muted);">1 Auditoría profunda con certificado criptográfico SHA-256</div>
+        </div>
+        <button style="background:var(--accent-warn); border:none; color:#000; font-weight:800; padding:6px 12px; border-radius:8px; cursor:pointer;" onclick="buyVip('audit_single', 25)">
+          25 ⭐
+        </button>
+      </div>
+
+      <div class="vip-tier-item">
+        <div>
           <div style="font-size:13px; font-weight:800; color:#fff;">🛡️ Pase Centinela (30 Días)</div>
           <div style="font-size:10px; color:var(--text-muted);">Escaneos ilimitados + Auditoría de recibos bancarios</div>
         </div>
@@ -1510,11 +1520,43 @@
       document.getElementById('guideModal').classList.remove('open');
     }
 
+    const VIP_INVOICES = {
+      'audit_single': 'https://t.me/$Xm23uqMmQEQrAQAAzDUFl9PFkb4',
+      'sentinel_30': 'https://t.me/$1mPVs6MmQEQsAQAAJvGjmdZ7KdY',
+      'forensic_lifetime': 'https://t.me/$_k9DFaMmQEQtAQAAL2XRoFdYgxo'
+    };
+
     function buyVip(tierId, stars) {
       playCyberSound(900, 'sine', 0.1);
-      showToast(`⭐ Iniciando pago de ${stars} Stars para ${tierId}...`);
-      if (tg && tg.openInvoice) {
-        // Integrate with backend create_invoice_link if connected
+      const invoiceUrl = VIP_INVOICES[tierId] || VIP_INVOICES['sentinel_30'];
+      showToast(`⭐ Abriendo pago de ${stars} Stars...`);
+      
+      // Si estamos dentro de la Mini App en Telegram
+      if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openInvoice === 'function') {
+        try {
+          window.Telegram.WebApp.openInvoice(invoiceUrl, function(status) {
+            if (status === 'paid') {
+              showToast('🎉 ¡Pago exitoso! Acceso VIP desbloqueado.');
+              localStorage.setItem('cybershield_vip', 'true');
+              closeVipModal();
+              playCyberSound(1000, 'sine', 0.25);
+            } else if (status === 'cancelled') {
+              showToast('ℹ️ Pago cancelado.');
+            } else if (status === 'failed') {
+              showToast('❌ El pago no pudo completarse.');
+            }
+          });
+          return;
+        } catch (e) {
+          console.warn('openInvoice error, intentando openTelegramLink:', e);
+        }
+      }
+
+      // Respaldo para clientes web o si openInvoice no responde
+      if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
+        window.Telegram.WebApp.openTelegramLink(invoiceUrl);
+      } else {
+        window.open(invoiceUrl, '_blank');
       }
     }
 

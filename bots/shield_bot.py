@@ -388,6 +388,51 @@ class CyberShieldBot:
         }
         self.send_message(chat_id, report, keyboard)
 
+    def send_stars_invoice(self, chat_id, tier_id):
+        invoices = {
+            "audit_single": {
+                "title": "⚡ CyberShield Auditoría Express",
+                "desc": "1 Análisis forense profundo con certificado SHA-256.",
+                "stars": 25,
+                "payload": "vip_audit_single"
+            },
+            "sentinel_30": {
+                "title": "🛡️ CyberShield Sentinel VIP (30 Días)",
+                "desc": "Protección forense total y auditorías ilimitadas por 30 días.",
+                "stars": 99,
+                "payload": "vip_sentinel_30"
+            },
+            "forensic_lifetime": {
+                "title": "👑 CyberShield Lifetime Investigator",
+                "desc": "Acceso VIP permanente de por vida a todas las herramientas forenses.",
+                "stars": 299,
+                "payload": "vip_lifetime"
+            }
+        }
+        item = invoices.get(tier_id, invoices["sentinel_30"])
+        invoice_data = {
+            "chat_id": chat_id,
+            "title": item["title"],
+            "description": item["desc"],
+            "payload": f"{item['payload']}_{chat_id}_{int(time.time())}",
+            "currency": "XTR",
+            "prices": [{"label": item["title"], "amount": item["stars"]}],
+            "provider_token": ""
+        }
+        res = self.call_api("sendInvoice", invoice_data)
+        if not res.get("ok"):
+            write_log(f"[Error sendInvoice]: {res.get('description')}")
+        else:
+            write_log(f"[Factura Stars enviada] Chat: {chat_id}, Plan: {tier_id}")
+
+    def handle_pre_checkout(self, pre_checkout_query):
+        pc_id = pre_checkout_query.get("id")
+        self.call_api("answerPreCheckoutQuery", {
+            "pre_checkout_query_id": pc_id,
+            "ok": True
+        })
+        write_log(f"[Pre-Checkout CyberShield Aprobado] ID: {pc_id}")
+
     def process_update(self, update):
         if "message" in update:
             msg = update["message"]
@@ -395,8 +440,40 @@ class CyberShieldBot:
             user_id = user.get("id")
             chat_id = msg.get("chat", {}).get("id")
             username = user.get("username", "")
-            text = msg.get("text", "").strip()
 
+            # Manejo de pago exitoso de Telegram Stars
+            if "successful_payment" in msg:
+                sp = msg["successful_payment"]
+                stars = sp.get("total_amount", 0)
+                payload = sp.get("invoice_payload", "")
+                write_log(f"[Pago Exitoso Stars] Chat: {chat_id}, Stars: {stars}, Payload: {payload}")
+
+                db = load_db()
+                uid = str(user_id)
+                if uid in db.get("users", {}):
+                    db["users"][uid]["is_vip"] = True
+                    db["users"][uid]["vip_tier"] = "Sentinel Lifetime" if "lifetime" in payload else "Sentinel 30D"
+                    save_db(db)
+
+                keyboard = {
+                    "inline_keyboard": [
+                        [{"text": "🛡️ Abrir Escudo Forense VIP", "web_app": {"url": self.webapp_url}}]
+                    ]
+                }
+                self.send_message(
+                    chat_id,
+                    f"🎉 *¡PAGO CONFIRMADO CON ÉXITO!*\n\n"
+                    f"⭐ Has activado tu membresía con **{stars} Telegram Stars**.\n\n"
+                    f"🛡️ *Beneficios VIP habilitados:*\n"
+                    f"• Auditorías forenses ilimitadas sin restricciones\n"
+                    f"• Prioridad máxima en verificación de contratos y dApps\n"
+                    f"• Certificados forenses firmados con Hash SHA-256\n\n"
+                    f"_¡Gracias por utilizar CyberShield AI Sentinel!_",
+                    keyboard
+                )
+                return
+
+            text = msg.get("text", "").strip()
             if not text:
                 return
 
@@ -405,7 +482,24 @@ class CyberShieldBot:
             elif text.startswith("/ayuda"):
                 self.send_message(chat_id, "🛡️ *Comandos de CyberShield AI:*\n\n• Envía cualquier link o texto directamente en este chat para analizarlo.\n• /start — Abre el menú y la Mini App.\n• /vip — Pases de protección ilimitada con Telegram Stars.")
             elif text.startswith("/vip") or text.startswith("/tienda"):
-                self.send_message(chat_id, "⭐ *CYBERSHIELD SENTINEL VIP*\n\n1️⃣ **Pase Centinela (30 Días):** 99 Stars\n2️⃣ **Investigador Vitalicio:** 299 Stars\n\n_Accede desde la Mini App para activar tu suscripción con 1 toque._")
+                keyboard = {
+                    "inline_keyboard": [
+                        [{"text": "⚡ Auditoría Express (25 ⭐)", "callback_data": "buy_express"}],
+                        [{"text": "🛡️ Pase Centinela 30 Días (99 ⭐)", "callback_data": "buy_sentinel"}],
+                        [{"text": "👑 Investigador Vitalicio (299 ⭐)", "callback_data": "buy_lifetime"}],
+                        [{"text": "📱 Abrir Tienda en Mini App", "web_app": {"url": self.webapp_url}}]
+                    ]
+                }
+                self.send_message(
+                    chat_id,
+                    "⭐ *CYBERSHIELD SENTINEL VIP*\n\n"
+                    "Elige tu nivel de protección para desbloquear auditorías ilimitadas con Telegram Stars:\n\n"
+                    "⚡ **Auditoría Express (25 ⭐):** 1 Certificado forense criptográfico.\n"
+                    "🛡️ **Pase Centinela (99 ⭐):** 30 días de auditorías ilimitadas.\n"
+                    "👑 **Investigador Vitalicio (299 ⭐):** Acceso permanente sin límites.\n\n"
+                    "_Pulsa un botón para recibir la factura oficial de Telegram Stars al instante._",
+                    keyboard
+                )
             else:
                 self.handle_scan_text(chat_id, text)
 
@@ -421,7 +515,26 @@ class CyberShieldBot:
             elif data == "cmd_receipts":
                 self.send_message(chat_id, "🧾 *Auditoría de Comprobantes Bancarios:*\nAbre la Mini App para subir la imagen del comprobante y escanear inconsistencias en los píxeles de montos y fechas.")
             elif data == "cmd_vip":
-                self.send_message(chat_id, "⭐ Abre la Mini App y pulsa en **VIP Stars** para suscribirte.")
+                keyboard = {
+                    "inline_keyboard": [
+                        [{"text": "⚡ Auditoría Express (25 ⭐)", "callback_data": "buy_express"}],
+                        [{"text": "🛡️ Pase Centinela 30 Días (99 ⭐)", "callback_data": "buy_sentinel"}],
+                        [{"text": "👑 Investigador Vitalicio (299 ⭐)", "callback_data": "buy_lifetime"}],
+                        [{"text": "📱 Abrir Tienda en Mini App", "web_app": {"url": self.webapp_url}}]
+                    ]
+                }
+                self.send_message(
+                    chat_id,
+                    "⭐ *PLANES CYBERSHIELD SENTINEL VIP*\n\n"
+                    "Elige tu suscripción para pagar con Telegram Stars:",
+                    keyboard
+                )
+            elif data == "buy_express":
+                self.send_stars_invoice(chat_id, "audit_single")
+            elif data == "buy_sentinel":
+                self.send_stars_invoice(chat_id, "sentinel_30")
+            elif data == "buy_lifetime":
+                self.send_stars_invoice(chat_id, "forensic_lifetime")
 
     def run(self):
         write_log("Iniciando daemon de CyberShield AI...")
@@ -461,6 +574,9 @@ class CyberShieldBot:
                         for u in updates:
                             self.last_update_id = u["update_id"]
                             try:
+                                if "pre_checkout_query" in u:
+                                    self.handle_pre_checkout(u["pre_checkout_query"])
+                                    continue
                                 self.process_update(u)
                             except Exception as ex:
                                 write_log(f"Error procesando update: {ex}")
