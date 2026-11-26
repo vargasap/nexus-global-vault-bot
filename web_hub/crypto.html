@@ -953,6 +953,12 @@
         <button class="settings-pill-btn" onclick="openSyncModal()" title="Menú de Actualización">
           ⚙️
         </button>
+        <select class="lang-btn" id="langSelect" onchange="changeLanguage(this.value)">
+          <option value="es">🇪🇸 ES</option>
+          <option value="en">🇺🇸 EN</option>
+          <option value="ru">🇷🇺 RU</option>
+          <option value="pt">🇧🇷 PT</option>
+        </select>
         <div class="vip-badge" onclick="openVipModal()">⭐ VIP</div>
       </div>
     </header>
@@ -2207,7 +2213,119 @@
       window.location.href = url.toString();
     }
 
+    // ==========================================
+    // 6. MULTI-LANGUAGE (TELEGRAM + BROWSER + IP GEOLOCATION)
+    // ==========================================
+    const i18n = {
+      es: {
+        live: "BINANCE LIVE STREAM",
+        tabSignals: "Precios & Señales",
+        tabWhales: "Ballenas",
+        tabRadar: "Airdrops",
+        tabMine: "Minar SHA-256",
+        walletLabel: "Billetera $PULSE Minada",
+        refreshBtn: "Actualizar",
+        catAll: "🔥 Todas (14)",
+        catNew: "⭐ Nuevas",
+        catTop: "💎 Top",
+        catUpcoming: "🚀 Próximo",
+        chooseCoin: "🪙 Elegir ▾"
+      },
+      en: {
+        live: "BINANCE LIVE STREAM",
+        tabSignals: "Prices & Signals",
+        tabWhales: "Whales",
+        tabRadar: "Airdrops",
+        tabMine: "Mine SHA-256",
+        walletLabel: "Mined $PULSE Wallet",
+        refreshBtn: "Refresh",
+        catAll: "🔥 All (14)",
+        catNew: "⭐ New Listed",
+        catTop: "💎 Top Market",
+        catUpcoming: "🚀 Upcoming",
+        chooseCoin: "🪙 Select ▾"
+      },
+      ru: {
+        live: "ПОТОК ДАННЫХ BINANCE",
+        tabSignals: "Цены и Сигналы",
+        tabWhales: "Киты",
+        tabRadar: "Аирдропы",
+        tabMine: "Майнинг SHA-256",
+        walletLabel: "Добытый $PULSE Баланс",
+        refreshBtn: "Обновить",
+        catAll: "🔥 Все (14)",
+        catNew: "⭐ Новые",
+        catTop: "💎 Топ",
+        catUpcoming: "🚀 Скоро",
+        chooseCoin: "🪙 Выбрать ▾"
+      },
+      pt: {
+        live: "STREAM AO VIVO BINANCE",
+        tabSignals: "Preços & Sinais",
+        tabWhales: "Baleias",
+        tabRadar: "Airdrops",
+        tabMine: "Minerar SHA-256",
+        walletLabel: "Carteira $PULSE Minerada",
+        refreshBtn: "Atualizar",
+        catAll: "🔥 Todas (14)",
+        catNew: "⭐ Novas",
+        catTop: "💎 Top",
+        catUpcoming: "🚀 Próximas",
+        chooseCoin: "🪙 Escolher ▾"
+      }
+    };
+
+    function changeLanguage(lang) {
+      const t = i18n[lang] || i18n.es;
+      const elLive = document.getElementById('txt-radar-live'); if (elLive) elLive.innerText = t.live;
+      const elSig = document.getElementById('txt-tab-signals'); if (elSig) elSig.innerText = t.tabSignals;
+      const elWh = document.getElementById('txt-tab-whales'); if (elWh) elWh.innerText = t.tabWhales;
+      const elRad = document.getElementById('txt-tab-radar'); if (elRad) elRad.innerText = t.tabRadar;
+      const elMin = document.getElementById('txt-tab-mine'); if (elMin) elMin.innerText = t.tabMine;
+      const elWal = document.getElementById('txt-bal-label'); if (elWal) elWal.innerText = t.walletLabel;
+      const elCatAll = document.getElementById('cat-all'); if (elCatAll) elCatAll.innerText = t.catAll;
+      const elCatNew = document.getElementById('cat-new'); if (elCatNew) elCatNew.innerText = t.catNew;
+      const elCatTop = document.getElementById('cat-top'); if (elCatTop) elCatTop.innerText = t.catTop;
+      const elCatUp = document.getElementById('cat-upcoming'); if (elCatUp) elCatUp.innerText = t.catUpcoming;
+      const elSelect = document.getElementById('langSelect'); if (elSelect) elSelect.value = lang;
+    }
+
+    async function autoDetectUserLanguage() {
+      // 1. Telegram App Language code
+      let lang = tg?.initDataUnsafe?.user?.language_code?.toLowerCase()?.slice(0, 2);
+      if (lang && i18n[lang]) {
+        changeLanguage(lang);
+        return;
+      }
+
+      // 2. Browser navigator language
+      let browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase().slice(0, 2);
+      if (browserLang && i18n[browserLang]) {
+        changeLanguage(browserLang);
+        return;
+      }
+
+      // 3. Fallback IP Geolocation detection
+      try {
+        const res = await fetch('https://ipapi.co/json/');
+        if (res.ok) {
+          const data = await res.json();
+          const country = (data.country_code || '').toUpperCase();
+          const countryLangMap = {
+            'RU': 'ru', 'BY': 'ru', 'KZ': 'ru', 'UA': 'ru',
+            'BR': 'pt', 'PT': 'pt',
+            'ES': 'es', 'MX': 'es', 'CO': 'es', 'AR': 'es', 'CL': 'es', 'PE': 'es', 'VE': 'es',
+            'US': 'en', 'GB': 'en', 'CA': 'en', 'AU': 'en'
+          };
+          if (countryLangMap[country] && i18n[countryLangMap[country]]) {
+            changeLanguage(countryLangMap[country]);
+          }
+        }
+      } catch(e){}
+    }
+
     // Initial Startup
+    autoDetectUserLanguage();
     renderTokenChips();
     fetchRealCryptoPrices();
     fetchKlines('TON');
