@@ -1033,6 +1033,12 @@
           299 ⭐
         </button>
       </div>
+
+      <div style="margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08); text-align:center;">
+        <button onclick="payInBotChat()" style="background:rgba(0,229,255,0.08); border:1px solid var(--accent-cyber); color:var(--accent-cyber); padding:8px 14px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; width:100%;">
+          💬 Pagar con Factura Directa en el Chat (@cybershield_defense_bot)
+        </button>
+      </div>
     </div>
   </div>
 
@@ -1529,12 +1535,14 @@
     function buyVip(tierId, stars) {
       playCyberSound(900, 'sine', 0.1);
       const invoiceUrl = VIP_INVOICES[tierId] || VIP_INVOICES['sentinel_30'];
-      showToast(`⭐ Abriendo pago de ${stars} Stars...`);
+      showToast(`⭐ Abriendo pasarela de pago de ${stars} Stars...`);
       
-      // Si estamos dentro de la Mini App en Telegram
-      if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openInvoice === 'function') {
+      const tgApp = window.Telegram?.WebApp;
+      
+      // Intentar openInvoice nativo
+      if (tgApp && typeof tgApp.openInvoice === 'function') {
         try {
-          window.Telegram.WebApp.openInvoice(invoiceUrl, function(status) {
+          tgApp.openInvoice(invoiceUrl, function(status) {
             if (status === 'paid') {
               showToast('🎉 ¡Pago exitoso! Acceso VIP desbloqueado.');
               localStorage.setItem('cybershield_vip', 'true');
@@ -1544,19 +1552,32 @@
               showToast('ℹ️ Pago cancelado.');
             } else if (status === 'failed') {
               showToast('❌ El pago no pudo completarse.');
+            } else {
+              showToast(`Estado: ${status}`);
             }
           });
           return;
         } catch (e) {
-          console.warn('openInvoice error, intentando openTelegramLink:', e);
+          console.warn('openInvoice falló, usando openTelegramLink:', e);
         }
       }
 
-      // Respaldo para clientes web o si openInvoice no responde
-      if (window.Telegram && window.Telegram.WebApp && typeof window.Telegram.WebApp.openTelegramLink === 'function') {
-        window.Telegram.WebApp.openTelegramLink(invoiceUrl);
+      // Si openInvoice no está soportado o falla (p.ej. versión web/desktop), abrir enlace nativo
+      if (tgApp && typeof tgApp.openTelegramLink === 'function') {
+        tgApp.openTelegramLink(invoiceUrl);
+        return;
+      }
+
+      // Respaldo en navegador tradicional
+      window.open(invoiceUrl, '_blank');
+    }
+
+    function payInBotChat() {
+      const tgApp = window.Telegram?.WebApp;
+      if (tgApp && typeof tgApp.openTelegramLink === 'function') {
+        tgApp.openTelegramLink('https://t.me/cybershield_defense_bot?start=vip');
       } else {
-        window.open(invoiceUrl, '_blank');
+        window.open('https://t.me/cybershield_defense_bot?start=vip', '_blank');
       }
     }
 

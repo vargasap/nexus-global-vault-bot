@@ -478,7 +478,27 @@ class CyberShieldBot:
                 return
 
             if text.startswith("/start"):
-                self.handle_start(user_id, chat_id, username)
+                parts = text.split()
+                if len(parts) > 1 and "vip" in parts[1]:
+                    keyboard = {
+                        "inline_keyboard": [
+                            [{"text": "⚡ Auditoría Express (25 ⭐)", "callback_data": "buy_express"}],
+                            [{"text": "🛡️ Pase Centinela 30 Días (99 ⭐)", "callback_data": "buy_sentinel"}],
+                            [{"text": "👑 Investigador Vitalicio (299 ⭐)", "callback_data": "buy_lifetime"}],
+                            [{"text": "📱 Abrir Tienda en Mini App", "web_app": {"url": f"{self.webapp_url}?v=3.5"}}]
+                        ]
+                    }
+                    self.send_message(
+                        chat_id,
+                        "⭐ *CYBERSHIELD SENTINEL VIP*\n\n"
+                        "Elige tu nivel de protección para recibir la factura de Telegram Stars al instante:\n\n"
+                        "⚡ **Auditoría Express (25 ⭐):** 1 Certificado forense criptográfico.\n"
+                        "🛡️ **Pase Centinela (99 ⭐):** 30 días de auditorías ilimitadas.\n"
+                        "👑 **Investigador Vitalicio (299 ⭐):** Acceso permanente sin límites.",
+                        keyboard
+                    )
+                else:
+                    self.handle_start(user_id, chat_id, username)
             elif text.startswith("/ayuda"):
                 self.send_message(chat_id, "🛡️ *Comandos de CyberShield AI:*\n\n• Envía cualquier link o texto directamente en este chat para analizarlo.\n• /start — Abre el menú y la Mini App.\n• /vip — Pases de protección ilimitada con Telegram Stars.")
             elif text.startswith("/vip") or text.startswith("/tienda"):
