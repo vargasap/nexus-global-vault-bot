@@ -433,6 +433,69 @@ class CyberShieldBot:
         })
         write_log(f"[Pre-Checkout CyberShield Aprobado] ID: {pc_id}")
 
+    def handle_inline_query(self, inline_query):
+        iq_id = inline_query.get("id")
+        query = inline_query.get("query", "").strip()
+
+        if not query:
+            results = [{
+                "type": "article",
+                "id": "help_query",
+                "title": "🛡️ CyberShield AI: Escáner Forense",
+                "description": "Escribe un link, dominio o contrato para auditarlo en vivo.",
+                "thumb_url": "https://vargasap.github.io/cybershield-ai/avatar.jpg",
+                "input_message_content": {
+                    "message_text": (
+                        "🛡️ *CYBERSHIELD AI — RADAR FORENSE*\n\n"
+                        "Para auditar un enlace o verificar sospecha de estafa en cualquier chat o grupo, escribe:\n"
+                        "`@cybershield_defense_bot enlace-o-texto`\n\n"
+                        "O abre el radar interactivo abajo 👇"
+                    ),
+                    "parse_mode": "Markdown"
+                },
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [{"text": "🛡️ Abrir CyberShield Mini App", "web_app": {"url": self.webapp_url}}]
+                    ]
+                }
+            }]
+        else:
+            clean = query.lower()
+            risk, reasons, ip_addr, ssl_issuer = self.analyze_url_heuristics(clean)
+            verdict = "🚨 PELIGRO CRÍTICO" if risk >= 70 else "⚠️ PRECAUCIÓN" if risk >= 35 else "✅ ACTIVO SEGURO"
+
+            report = (
+                f"🛡️ *DICTAMEN FORENSE CYBERSHIELD AI* ⚡\n"
+                f"━━━━━━━━━━━━━━━━━━━━━\n"
+                f"🎯 *Objetivo:* `{query[:40]}`\n"
+                f"📊 *Nivel de Riesgo:* `{risk}%` — *{verdict}*\n\n"
+                f"🔍 *Indicadores:* " + (" ".join(reasons[:2]) if reasons else "Sin anomalías visibles.") + "\n\n"
+                f"💡 *Dictamen oficial en tiempo real.*"
+            )
+
+            results = [{
+                "type": "article",
+                "id": f"res_{int(time.time())}",
+                "title": f"[{verdict}] {query[:25]}",
+                "description": f"Riesgo: {risk}% | Auditoría DNS & Heurística",
+                "thumb_url": "https://vargasap.github.io/cybershield-ai/avatar.jpg",
+                "input_message_content": {
+                    "message_text": report,
+                    "parse_mode": "Markdown"
+                },
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [{"text": "🛡️ Ver Dictamen Completo en Mini App", "web_app": {"url": self.webapp_url}}]
+                    ]
+                }
+            }]
+
+        self.call_api("answerInlineQuery", {
+            "inline_query_id": iq_id,
+            "results": results,
+            "cache_time": 10
+        })
+
     def process_update(self, update):
         if "message" in update:
             msg = update["message"]
@@ -616,6 +679,9 @@ class CyberShieldBot:
                             try:
                                 if "pre_checkout_query" in u:
                                     self.handle_pre_checkout(u["pre_checkout_query"])
+                                    continue
+                                if "inline_query" in u:
+                                    self.handle_inline_query(u["inline_query"])
                                     continue
                                 self.process_update(u)
                             except Exception as ex:

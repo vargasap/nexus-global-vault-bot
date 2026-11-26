@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /private/
+
+# Sitemaps for Google, Bing, Yandex, Yahoo, Baidu
+Sitemap: https://vargasap.github.io/cybershield-ai/sitemap.xml
