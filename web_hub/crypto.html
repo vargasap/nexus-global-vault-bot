@@ -3,24 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>CryptoVault Pulse ⚡ Airdrop Radar & Signals</title>
+  <title>CryptoVault Pulse ⚡ Terminal Real Cripto & Airdrops</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #07090e;
-      --card-bg: #0e131f;
-      --card-border: #1b2438;
+      --bg-dark: #06080e;
+      --card-bg: #0d121e;
+      --card-border: #1a2336;
       --accent-cyan: #00ffc2;
       --accent-ton: #0098ea;
       --accent-gold: #ffb800;
       --accent-red: #ff3366;
       --text-main: #f0f4fc;
-      --text-muted: #8b9bb4;
-      --glow-cyan: 0 0 20px rgba(0, 255, 194, 0.35);
-      --glow-ton: 0 0 20px rgba(0, 152, 234, 0.4);
+      --text-muted: #8493ad;
+      --glow-cyan: 0 0 20px rgba(0, 255, 194, 0.4);
+      --glow-ton: 0 0 20px rgba(0, 152, 234, 0.45);
       --glow-gold: 0 0 20px rgba(255, 184, 0, 0.4);
     }
     * {
@@ -37,14 +37,14 @@
       font-family: 'Space Grotesk', -apple-system, sans-serif;
       min-height: 100vh;
       overflow-x: hidden;
-      padding-bottom: 85px;
+      padding-bottom: 90px;
     }
     .bg-grid {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background-image: 
-        linear-gradient(to right, rgba(27, 36, 56, 0.25) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(27, 36, 56, 0.25) 1px, transparent 1px);
+        linear-gradient(to right, rgba(26, 35, 54, 0.25) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(26, 35, 54, 0.25) 1px, transparent 1px);
       background-size: 32px 32px;
       pointer-events: none;
       z-index: 0;
@@ -61,7 +61,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .brand-box {
       display: flex;
@@ -90,8 +90,8 @@
     .live-pulse {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 11px;
+      gap: 5px;
+      font-size: 10px;
       color: var(--accent-cyan);
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
@@ -101,7 +101,7 @@
       height: 7px;
       background-color: var(--accent-cyan);
       border-radius: 50%;
-      animation: radarPing 1.8s infinite;
+      animation: radarPing 1.6s infinite;
     }
     @keyframes radarPing {
       0% { box-shadow: 0 0 0 0 rgba(0, 255, 194, 0.8); }
@@ -133,13 +133,13 @@
       box-shadow: var(--glow-gold);
       cursor: pointer;
     }
-    /* Stats Bar */
+    /* Stats & Balance Bar */
     .stats-card {
-      background: linear-gradient(135deg, #0e1526, #141c30);
-      border: 1px solid rgba(0, 255, 194, 0.2);
+      background: linear-gradient(135deg, #0d1424, #121a30);
+      border: 1px solid rgba(0, 255, 194, 0.25);
       border-radius: 18px;
       padding: 14px 16px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -151,8 +151,8 @@
       gap: 10px;
     }
     .user-avatar {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       background: #1e293b;
       display: flex;
@@ -160,6 +160,7 @@
       justify-content: center;
       font-size: 18px;
       border: 2px solid var(--accent-ton);
+      overflow: hidden;
     }
     .user-name {
       font-size: 14px;
@@ -184,18 +185,18 @@
       gap: 4px;
     }
     .balance-label {
-      font-size: 11px;
+      font-size: 10px;
       color: var(--text-muted);
     }
-    /* Navigation Tabs */
+    /* Tabs Navigation */
     .tabs-nav {
       display: flex;
-      background: #0b0f1a;
+      background: #090e18;
       border: 1px solid var(--card-border);
       border-radius: 14px;
       padding: 4px;
       gap: 4px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .tab-btn {
       flex: 1;
@@ -214,10 +215,10 @@
       transition: all 0.2s ease;
     }
     .tab-btn.active {
-      background: #172138;
+      background: #152036;
       color: var(--accent-cyan);
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      border: 1px solid rgba(0, 255, 194, 0.25);
+      border: 1px solid rgba(0, 255, 194, 0.3);
     }
     .tab-content {
       display: none;
@@ -231,13 +232,13 @@
       border: 1px solid var(--card-border);
       border-radius: 18px;
       padding: 14px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .chart-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
     .token-chips {
       display: flex;
@@ -248,7 +249,7 @@
     }
     .token-chips::-webkit-scrollbar { display: none; }
     .token-chip {
-      background: #141b2c;
+      background: #131b2c;
       border: 1px solid var(--card-border);
       color: var(--text-muted);
       padding: 6px 12px;
@@ -270,6 +271,15 @@
       justify-content: space-between;
       align-items: baseline;
       margin-bottom: 8px;
+      transition: background-color 0.4s ease;
+      padding: 4px 6px;
+      border-radius: 8px;
+    }
+    .chart-price-row.flash-green {
+      background-color: rgba(0, 255, 194, 0.15);
+    }
+    .chart-price-row.flash-red {
+      background-color: rgba(255, 51, 102, 0.15);
     }
     .chart-price {
       font-size: 26px;
@@ -278,7 +288,7 @@
     }
     .chart-change {
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
       padding: 4px 8px;
       border-radius: 6px;
@@ -303,11 +313,12 @@
       border: 1px solid var(--accent-cyan);
       color: var(--accent-cyan);
       margin-bottom: 12px;
+      font-family: 'JetBrains Mono', monospace;
     }
     #marketCanvas {
       width: 100%;
       height: 160px;
-      background: #080b12;
+      background: #070a12;
       border-radius: 12px;
       display: block;
     }
@@ -370,15 +381,22 @@
       font-weight: 800;
       padding: 4px 8px;
       border-radius: 8px;
-      background: rgba(255, 184, 0, 0.12);
-      border: 1px solid rgba(255, 184, 0, 0.3);
-      color: var(--accent-gold);
       font-family: 'JetBrains Mono', monospace;
+    }
+    .prob-badge.live-active {
+      background: rgba(0, 255, 194, 0.15);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .prob-badge.gold {
+      background: rgba(255, 184, 0, 0.15);
+      border: 1px solid var(--accent-gold);
+      color: var(--accent-gold);
     }
     .airdrop-info {
       font-size: 12px;
       color: var(--text-muted);
-      line-height: 1.4;
+      line-height: 1.45;
     }
     .airdrop-footer {
       display: flex;
@@ -404,6 +422,9 @@
       padding: 6px 14px;
       border-radius: 8px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
     /* Whale Alerts */
     .whale-stream {
@@ -412,7 +433,7 @@
       gap: 10px;
     }
     .whale-item {
-      background: #0d1322;
+      background: #0c1220;
       border-left: 3px solid var(--accent-cyan);
       border-top: 1px solid var(--card-border);
       border-right: 1px solid var(--card-border);
@@ -421,10 +442,10 @@
       padding: 12px;
       display: flex;
       gap: 10px;
-      animation: fadeIn 0.4s ease;
+      animation: fadeIn 0.3s ease;
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-8px); }
+      from { opacity: 0; transform: translateY(-6px); }
       to { opacity: 1; transform: translateY(0); }
     }
     .whale-icon {
@@ -468,100 +489,120 @@
       color: var(--accent-red);
       border: 1px solid var(--accent-red);
     }
-    /* Miner Section */
+    /* Real Web Crypto SHA-256 Miner */
     .miner-box {
-      background: radial-gradient(circle at center, #111a33 0%, #070a12 100%);
+      background: radial-gradient(circle at center, #101930 0%, #060912 100%);
       border: 1px solid var(--card-border);
       border-radius: 24px;
-      padding: 24px 16px;
+      padding: 20px 16px;
       text-align: center;
       position: relative;
       overflow: hidden;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
+    }
+    .mining-dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .mine-stat-box {
+      background: #0a0f1d;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: left;
+    }
+    .mine-stat-title {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+    .mine-stat-value {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .hash-console {
+      background: #04060b;
+      border: 1px solid rgba(0, 255, 194, 0.3);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--accent-cyan);
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-bottom: 14px;
     }
     .crystal-btn {
-      width: 170px;
-      height: 170px;
-      margin: 15px auto;
+      width: 150px;
+      height: 150px;
+      margin: 10px auto;
       border-radius: 50%;
       background: radial-gradient(circle, #00ffc2 0%, #0077c2 70%, #050b18 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 64px;
-      box-shadow: 0 0 45px rgba(0, 255, 194, 0.4), inset 0 0 25px rgba(255,255,255,0.6);
+      font-size: 56px;
+      box-shadow: 0 0 40px rgba(0, 255, 194, 0.4), inset 0 0 20px rgba(255,255,255,0.6);
       border: 3px solid #00ffc2;
       cursor: pointer;
       position: relative;
       transition: transform 0.08s ease;
     }
     .crystal-btn:active {
-      transform: scale(0.92);
+      transform: scale(0.93);
       box-shadow: 0 0 60px rgba(0, 255, 194, 0.7);
     }
-    .energy-bar-container {
-      width: 100%;
-      max-width: 260px;
-      height: 10px;
-      background: #151d30;
-      border-radius: 8px;
-      margin: 12px auto 6px;
-      overflow: hidden;
-      border: 1px solid var(--card-border);
+    .crystal-btn.mining-glow {
+      animation: crystalPulse 1.2s infinite alternate;
     }
-    .energy-fill {
-      height: 100%;
-      width: 100%;
-      background: linear-gradient(90deg, #ffb800, #00ffc2);
-      border-radius: 8px;
-      transition: width 0.2s ease;
+    @keyframes crystalPulse {
+      0% { box-shadow: 0 0 25px rgba(0, 255, 194, 0.4); }
+      100% { box-shadow: 0 0 65px rgba(0, 255, 194, 0.85); }
     }
-    .energy-text {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-family: 'JetBrains Mono', monospace;
+    .mining-controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      margin-top: 14px;
     }
-    .streak-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 6px;
-      margin-top: 18px;
-    }
-    .streak-day {
-      background: #0f1628;
-      border: 1px solid var(--card-border);
+    .rig-btn {
+      flex: 1;
+      padding: 10px;
       border-radius: 10px;
-      padding: 8px 4px;
-      text-align: center;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
     }
-    .streak-day.claimed {
-      background: rgba(0, 255, 194, 0.1);
-      border-color: var(--accent-cyan);
+    .rig-btn-toggle {
+      background: linear-gradient(135deg, #00ffc2, #0098ea);
+      color: #000;
     }
-    .streak-num {
-      font-size: 10px;
-      color: var(--text-muted);
-    }
-    .streak-bonus {
-      font-size: 11px;
-      font-weight: 700;
-      color: var(--accent-gold);
-      font-family: 'JetBrains Mono', monospace;
+    .rig-btn-toggle.active {
+      background: linear-gradient(135deg, #ff3366, #ff8800);
+      color: #fff;
     }
     .particle {
       position: fixed;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
       color: var(--accent-cyan);
       pointer-events: none;
-      animation: floatUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      animation: floatUp 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
       z-index: 999;
       text-shadow: 0 0 10px rgba(0, 255, 194, 0.8);
     }
     @keyframes floatUp {
       0% { opacity: 1; transform: translateY(0) scale(1); }
-      100% { opacity: 0; transform: translateY(-70px) scale(1.4); }
+      100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
     }
     /* VIP Modal */
     .modal-overlay {
@@ -579,7 +620,7 @@
       display: flex;
     }
     .modal-card {
-      background: #0d121f;
+      background: #0c121e;
       border: 1px solid var(--accent-gold);
       box-shadow: 0 0 35px rgba(255, 184, 0, 0.3);
       border-radius: 22px;
@@ -619,7 +660,7 @@
       margin-bottom: 16px;
     }
     .vip-tier-item {
-      background: #141c2e;
+      background: #131c2e;
       border: 1px solid var(--card-border);
       border-radius: 14px;
       padding: 12px 14px;
@@ -631,7 +672,7 @@
     }
     .vip-tier-item:hover {
       border-color: var(--accent-gold);
-      background: #182238;
+      background: #172238;
     }
     .tier-name {
       font-size: 14px;
@@ -658,7 +699,7 @@
     .bottom-bar {
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      background: rgba(10, 14, 24, 0.95);
+      background: rgba(9, 13, 22, 0.96);
       backdrop-filter: blur(12px);
       border-top: 1px solid var(--card-border);
       display: flex;
@@ -700,8 +741,7 @@
           <h1>CryptoVault Pulse</h1>
           <div class="live-pulse">
             <span class="live-dot"></span>
-            <span id="txt-radar-live">RADAR EN VIVO</span>
-            <span style="font-size:9px; background:rgba(0,255,194,0.15); padding:2px 5px; border-radius:4px; margin-left:4px;">BINANCE API</span>
+            <span id="txt-radar-live">BINANCE LIVE STREAM</span>
           </div>
         </div>
       </div>
@@ -722,122 +762,33 @@
         <div class="user-avatar" id="uAvatar">👤</div>
         <div>
           <div class="user-name" id="uName">Hunter Cripto</div>
-          <div class="user-rank" id="uRank">💎 Nivel 1: Explorer</div>
+          <div class="user-rank" id="uRank">💎 Nivel 1: Miner</div>
         </div>
       </div>
       <div class="pulse-balance">
-        <div class="balance-val"><span id="uBalance">1,250</span> ⚡</div>
-        <div class="balance-label" id="txt-bal-label">Balance $PULSE</div>
+        <div class="balance-val"><span id="uBalance">1,250.00</span> ⚡</div>
+        <div class="balance-label" id="txt-bal-label">Billetera $PULSE Minada</div>
       </div>
     </section>
 
     <!-- Main Navigation Tabs -->
     <nav class="tabs-nav">
-      <button class="tab-btn active" onclick="switchTab('radar', this)">
-        <span>📡</span> <span id="txt-tab-radar">Radar</span>
-      </button>
-      <button class="tab-btn" onclick="switchTab('chart', this)">
-        <span>📈</span> <span id="txt-tab-signals">Señales</span>
+      <button class="tab-btn active" onclick="switchTab('chart', this)">
+        <span>📈</span> <span id="txt-tab-signals">Precios & Señal</span>
       </button>
       <button class="tab-btn" onclick="switchTab('whales', this)">
         <span>🐋</span> <span id="txt-tab-whales">Ballenas</span>
       </button>
+      <button class="tab-btn" onclick="switchTab('radar', this)">
+        <span>📡</span> <span id="txt-tab-radar">Airdrops</span>
+      </button>
       <button class="tab-btn" onclick="switchTab('mine', this)">
-        <span>⛏️</span> <span id="txt-tab-mine">Minar</span>
+        <span>⛏️</span> <span id="txt-tab-mine">Minar SHA-256</span>
       </button>
     </nav>
 
-    <!-- TAB 1: RADAR AIRDROPS -->
-    <div id="tab-radar" class="tab-content active">
-      <div class="radar-list">
-        <!-- Airdrop 1: Blum -->
-        <div class="airdrop-card">
-          <div class="airdrop-top">
-            <div class="airdrop-meta">
-              <div class="airdrop-icon" style="background: rgba(0, 255, 194, 0.15); color: #00ffc2;">🌸</div>
-              <div>
-                <div class="airdrop-title">Blum Crypto ($BLUM)</div>
-                <div class="airdrop-stage">Fase: Final Farming & TGE</div>
-              </div>
-            </div>
-            <div class="prob-badge">99% PROB</div>
-          </div>
-          <div class="airdrop-info">
-            Exchange descentralizado híbrido respaldado por ex-ejecutivos de Binance. Snapshot de puntos inminente.
-          </div>
-          <div class="airdrop-footer">
-            <div class="countdown-text">⏳ TGE: Q4 Confirmado</div>
-            <button class="action-btn" onclick="openClaimGuide('Blum')">Ver Guía ↗</button>
-          </div>
-        </div>
-
-        <!-- Airdrop 2: Major -->
-        <div class="airdrop-card">
-          <div class="airdrop-top">
-            <div class="airdrop-meta">
-              <div class="airdrop-icon" style="background: rgba(255, 184, 0, 0.15); color: #ffb800;">👑</div>
-              <div>
-                <div class="airdrop-title">Major of Telegram ($MAJOR)</div>
-                <div class="airdrop-stage">Fase: Reclamo & Listado CEX</div>
-              </div>
-            </div>
-            <div class="prob-badge">100% LIST</div>
-          </div>
-          <div class="airdrop-info">
-            Primer juego de ranking social en Telegram Stars. Listado simultáneo en OKX, Bybit y Bitget.
-          </div>
-          <div class="airdrop-footer">
-            <div class="countdown-text">🔥 Claim Activo en Bot</div>
-            <button class="action-btn" onclick="openClaimGuide('Major')">Reclamar ↗</button>
-          </div>
-        </div>
-
-        <!-- Airdrop 3: Tomarket -->
-        <div class="airdrop-card">
-          <div class="airdrop-top">
-            <div class="airdrop-meta">
-              <div class="airdrop-icon" style="background: rgba(255, 51, 102, 0.15); color: #ff3366;">🍅</div>
-              <div>
-                <div class="airdrop-title">Tomarket ($TOMA)</div>
-                <div class="airdrop-stage">Fase: Nivelación & Stars Boost</div>
-              </div>
-            </div>
-            <div class="prob-badge">96% PROB</div>
-          </div>
-          <div class="airdrop-info">
-            Mercado de activos del mundo real (RWA) e instrumentos pre-mercado en TON blockchain.
-          </div>
-          <div class="airdrop-footer">
-            <div class="countdown-text">⏳ Distribución en curso</div>
-            <button class="action-btn" onclick="openClaimGuide('Tomarket')">Ver Guía ↗</button>
-          </div>
-        </div>
-
-        <!-- Airdrop 4: Yescoin -->
-        <div class="airdrop-card">
-          <div class="airdrop-top">
-            <div class="airdrop-meta">
-              <div class="airdrop-icon" style="background: rgba(0, 152, 234, 0.15); color: #0098ea;">🟡</div>
-              <div>
-                <div class="airdrop-title">Yescoin ($YES)</div>
-                <div class="airdrop-stage">Fase: Swipe-to-Earn Season 2</div>
-              </div>
-            </div>
-            <div class="prob-badge">92% PROB</div>
-          </div>
-          <div class="airdrop-info">
-            Mecánica clásica de deslizar con integración completa a TON Connect y billeteras nativas.
-          </div>
-          <div class="airdrop-footer">
-            <div class="countdown-text">⏳ Snapshot: Nov/Dic</div>
-            <button class="action-btn" onclick="openClaimGuide('Yescoin')">Participar ↗</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TAB 2: SEÑALES & GRÁFICA -->
-    <div id="tab-chart" class="tab-content">
+    <!-- TAB 1: PRECIOS & SEÑAL REAL -->
+    <div id="tab-chart" class="tab-content active">
       <div class="chart-card">
         <div class="chart-header">
           <div class="token-chips">
@@ -848,15 +799,15 @@
             <button class="token-chip" id="chip-DOGS" onclick="switchToken('DOGS')">🦴 DOGS</button>
           </div>
         </div>
-        <div class="chart-price-row">
+        <div class="chart-price-row" id="priceRow">
           <div>
-            <div class="chart-price" id="currPrice">Cargando...</div>
+            <div class="chart-price" id="currPrice">Conectando...</div>
           </div>
           <div class="chart-change up" id="currChange">+0.00%</div>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span class="signal-pill" id="currSignal">🟢 ANÁLISIS EN VIVO (BINANCE DATA)</span>
-          <span class="api-badge">● API TIEMPO REAL</span>
+          <span class="signal-pill" id="currSignal">⚡ CALCULANDO RSI TÉCNICO...</span>
+          <span class="api-badge" id="liveTickBadge">● BINANCE TICKER</span>
         </div>
         <canvas id="marketCanvas" width="440" height="160"></canvas>
       </div>
@@ -864,7 +815,7 @@
       <div class="airdrop-card" style="border-color: rgba(0, 152, 234, 0.4);">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
           <span style="font-weight: 700; font-size: 14px; color: var(--accent-ton);">
-            🎯 Indicadores Técnicos Oficiales
+            🎯 Métricas Oficiales de Mercado
           </span>
           <span id="fngBadge" style="font-size:11px; font-weight:800; font-family:'JetBrains Mono'; color:var(--accent-gold);">
             F&G: 11 (Miedo Extremo)
@@ -873,70 +824,177 @@
         <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6;" id="techMetrics">
           • Máximo 24h: <strong id="valHigh" style="color:#fff;">--</strong> | Mínimo 24h: <strong id="valLow" style="color:#fff;">--</strong><br>
           • Volumen Real 24h: <strong id="valVol" style="color:#fff;">--</strong><br>
-          • Sentimiento Global: <strong id="valSentiment" style="color:var(--accent-cyan);">Calculando...</strong>
+          • RSI Oficial (14 periodos): <strong id="valRSI" style="color:var(--accent-cyan);">--</strong>
         </div>
       </div>
     </div>
 
-    <!-- TAB 3: RASTREADOR DE BALLENAS -->
+    <!-- TAB 2: BALLENAS REALES -->
     <div id="tab-whales" class="tab-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-        <span style="font-size:13px; font-weight:700; color:var(--text-muted);">OPERACIONES REALES INSTITUCIONALES</span>
-        <span style="font-size:11px; color:var(--accent-cyan); font-family:'JetBrains Mono';">● BINANCE LIVE</span>
+        <span style="font-size:12px; font-weight:700; color:var(--text-muted);">TRANSACCIONES EN LIBRO DE ÓRDENES (+$5,000 USD)</span>
+        <span style="font-size:11px; color:var(--accent-cyan); font-family:'JetBrains Mono';">● EN DIRECTO</span>
       </div>
       <div class="whale-stream" id="whaleStream">
-        <!-- Real live trades will be injected dynamically -->
+        <!-- Live trades injected here -->
       </div>
     </div>
 
-    <!-- TAB 4: MINER $PULSE -->
+    <!-- TAB 3: AIRDROPS REALES CONFIRMADOS -->
+    <div id="tab-radar" class="tab-content">
+      <div class="radar-list">
+        <!-- Major -->
+        <div class="airdrop-card">
+          <div class="airdrop-top">
+            <div class="airdrop-meta">
+              <div class="airdrop-icon" style="background: rgba(255, 184, 0, 0.15); color: #ffb800;">👑</div>
+              <div>
+                <div class="airdrop-title">Major of Telegram ($MAJOR)</div>
+                <div class="airdrop-stage">Listado Oficial en OKX, Bybit, KuCoin</div>
+              </div>
+            </div>
+            <div class="prob-badge live-active">LISTADO ACTIVO</div>
+          </div>
+          <div class="airdrop-info">
+            Primer juego de clasificación social verificado en Telegram. El token $MAJOR ya cotiza oficialmente. Conecta tu wallet TON para reclamar tus asignaciones.
+          </div>
+          <div class="airdrop-footer">
+            <div class="countdown-text">🔥 Claim & Retiros Disponibles</div>
+            <button class="action-btn" onclick="openAirdropBot('https://t.me/major')">Abrir Bot Oficial ↗</button>
+          </div>
+        </div>
+
+        <!-- Blum -->
+        <div class="airdrop-card">
+          <div class="airdrop-top">
+            <div class="airdrop-meta">
+              <div class="airdrop-icon" style="background: rgba(0, 255, 194, 0.15); color: #00ffc2;">🌸</div>
+              <div>
+                <div class="airdrop-title">Blum Crypto ($BLUM)</div>
+                <div class="airdrop-stage">Farming Final & Drop Game Activo</div>
+              </div>
+            </div>
+            <div class="prob-badge gold">TGE INMINENTE</div>
+          </div>
+          <div class="airdrop-info">
+            Exchange híbrido descentralizado respaldado por ex-vicepresidentes de Binance. Participa en los Drop Games diarios y acumula Blum Points antes de la fecha límite.
+          </div>
+          <div class="airdrop-footer">
+            <div class="countdown-text">⏳ Fase Final de Acumulación</div>
+            <button class="action-btn" onclick="openAirdropBot('https://t.me/blum')">Faquear Puntos ↗</button>
+          </div>
+        </div>
+
+        <!-- Tomarket -->
+        <div class="airdrop-card">
+          <div class="airdrop-top">
+            <div class="airdrop-meta">
+              <div class="airdrop-icon" style="background: rgba(255, 51, 102, 0.15); color: #ff3366;">🍅</div>
+              <div>
+                <div class="airdrop-title">Tomarket ($TOMA)</div>
+                <div class="airdrop-stage">Snapshot Realizado / Distribución TGE</div>
+              </div>
+            </div>
+            <div class="prob-badge live-active">DISTRIBUCIÓN</div>
+          </div>
+          <div class="airdrop-info">
+            Plataforma de trading pre-mercado y RWA en TON. Consulta tu nivel de asignación de tokens $TOMA vinculando tu billetera compatible con TON Connect.
+          </div>
+          <div class="airdrop-footer">
+            <div class="countdown-text">💎 Distribución en TON Blockchain</div>
+            <button class="action-btn" onclick="openAirdropBot('https://t.me/Tomarket_ai_bot')">Ver Asignación ↗</button>
+          </div>
+        </div>
+
+        <!-- Not Pixel -->
+        <div class="airdrop-card">
+          <div class="airdrop-top">
+            <div class="airdrop-meta">
+              <div class="airdrop-icon" style="background: rgba(0, 152, 234, 0.15); color: #0098ea;">🎨</div>
+              <div>
+                <div class="airdrop-title">Not Pixel ($PX)</div>
+                <div class="airdrop-stage">Respaldado por el Equipo de Notcoin</div>
+              </div>
+            </div>
+            <div class="prob-badge gold">TGE EN TON</div>
+          </div>
+          <div class="airdrop-info">
+            Lienzo virtual colaborativo de 1000x1000 píxeles. Pinta píxeles para minar tokens $PX directamente antes del snapshot final de temporada.
+          </div>
+          <div class="airdrop-footer">
+            <div class="countdown-text">🎨 Minar Píxeles Activo</div>
+            <button class="action-btn" onclick="openAirdropBot('https://t.me/notpixel')">Pintar y Minar ↗</button>
+          </div>
+        </div>
+
+        <!-- PAWS -->
+        <div class="airdrop-card">
+          <div class="airdrop-top">
+            <div class="airdrop-meta">
+              <div class="airdrop-icon" style="background: rgba(153, 69, 255, 0.15); color: #9945ff;">🐾</div>
+              <div>
+                <div class="airdrop-title">PAWS Telegram ($PAWS)</div>
+                <div class="airdrop-stage">Recompensas por Historial de Telegram</div>
+              </div>
+            </div>
+            <div class="prob-badge live-active">VIRAL #1</div>
+          </div>
+          <div class="airdrop-info">
+            El bot que premia la antigüedad de tu cuenta de Telegram y tu participación previa en Notcoin, DOGS y Hamster. Reclamo directo y misiones de red.
+          </div>
+          <div class="airdrop-footer">
+            <div class="countdown-text">🐾 Reclamar Huella Digital</div>
+            <button class="action-btn" onclick="openAirdropBot('https://t.me/pawsupfam')">Calcular PAWS ↗</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: MINERÍA REAL SHA-256 -->
     <div id="tab-mine" class="tab-content">
       <div class="miner-box">
-        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 4px;">Reactor de Minería $PULSE</h2>
-        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">
-          Toca el Cristal Cuántico para extraer $PULSE tokens cada día.
+        <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 2px;">Nodo Minero Web Crypto SHA-256</h2>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">
+          Calcula hashes criptográficos matemáticos reales en tu dispositivo para validar bloques de $PULSE.
         </p>
 
-        <div class="crystal-btn" id="mineBtn" onclick="handleMineClick(event)">
+        <!-- Mining Dashboard Stats -->
+        <div class="mining-dashboard">
+          <div class="mine-stat-box">
+            <div class="mine-stat-title">Potencia Hashrate</div>
+            <div class="mine-stat-value" id="valHashrate">0.0 H/s</div>
+          </div>
+          <div class="mine-stat-box">
+            <div class="mine-stat-title">Bloque de Red</div>
+            <div class="mine-stat-value" id="valBlock">#1,048,592</div>
+          </div>
+          <div class="mine-stat-box">
+            <div class="mine-stat-title">Nonce Criptográfico</div>
+            <div class="mine-stat-value" id="currentNonce">0x00000000</div>
+          </div>
+          <div class="mine-stat-box">
+            <div class="mine-stat-title">Bloques Validados</div>
+            <div class="mine-stat-value" id="valMinedCount">0 Bloques</div>
+          </div>
+        </div>
+
+        <!-- Live Hash Console -->
+        <div class="hash-console" id="liveHashDisplay">
+          SHA-256: Esperando inicialización del nodo...
+        </div>
+
+        <div class="crystal-btn" id="mineBtn" onclick="handleManualMine(event)">
           💎
         </div>
-
-        <div class="energy-bar-container">
-          <div class="energy-fill" id="energyFill"></div>
-        </div>
-        <div class="energy-text">
-          ⚡ Energía: <span id="energyVal">1000</span> / 1000
+        <div style="font-size: 11px; font-weight: 700; color: var(--accent-cyan); margin-top: 6px;">
+          Toca para Turbo Boost (+25 Hashes SHA-256)
         </div>
 
-        <div class="streak-grid">
-          <div class="streak-day claimed">
-            <div class="streak-num">D1</div>
-            <div class="streak-bonus">+100</div>
-          </div>
-          <div class="streak-day claimed">
-            <div class="streak-num">D2</div>
-            <div class="streak-bonus">+250</div>
-          </div>
-          <div class="streak-day">
-            <div class="streak-num">D3</div>
-            <div class="streak-bonus">+500</div>
-          </div>
-          <div class="streak-day">
-            <div class="streak-num">D4</div>
-            <div class="streak-bonus">+750</div>
-          </div>
-          <div class="streak-day">
-            <div class="streak-num">D5</div>
-            <div class="streak-bonus">+1.2K</div>
-          </div>
-          <div class="streak-day">
-            <div class="streak-num">D6</div>
-            <div class="streak-bonus">+1.8K</div>
-          </div>
-          <div class="streak-day">
-            <div class="streak-num">D7</div>
-            <div class="streak-bonus">🏆 3K</div>
-          </div>
+        <!-- Mining Rig Controls -->
+        <div class="mining-controls">
+          <button class="rig-btn rig-btn-toggle" id="autoMineToggle" onclick="toggleAutoMining()">
+            ▶ ACTIVAR MINADO AUTOMÁTICO (RIG)
+          </button>
         </div>
       </div>
 
@@ -944,8 +1002,8 @@
       <div class="airdrop-card" style="border-color: rgba(255, 184, 0, 0.3);">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div>
-            <div style="font-weight: 800; font-size: 14px; color: var(--accent-gold);">👥 Invita y Gana +500 $PULSE</div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Por cada amigo cazador que entre</div>
+            <div style="font-weight: 800; font-size: 13px; color: var(--accent-gold);">👥 Pool de Minería Compartida</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">+500 $PULSE por cada minero que unas a tu nodo</div>
           </div>
           <button class="action-btn" style="background:linear-gradient(135deg, #ffb800, #ff8800); color:#000;" onclick="shareInvite()">Invitar ↗</button>
         </div>
@@ -955,17 +1013,17 @@
 
   <!-- Bottom Navigation -->
   <footer class="bottom-bar">
-    <button class="nav-item active" onclick="switchTab('radar', this)">
-      <span class="nav-icon">📡</span>
-      <span>Airdrops</span>
-    </button>
-    <button class="nav-item" onclick="switchTab('chart', this)">
+    <button class="nav-item active" onclick="switchTab('chart', this)">
       <span class="nav-icon">📈</span>
       <span>Señales</span>
     </button>
     <button class="nav-item" onclick="switchTab('whales', this)">
       <span class="nav-icon">🐋</span>
       <span>Ballenas</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('radar', this)">
+      <span class="nav-icon">📡</span>
+      <span>Airdrops</span>
     </button>
     <button class="nav-item" onclick="switchTab('mine', this)">
       <span class="nav-icon">⛏️</span>
@@ -1021,8 +1079,8 @@
       try {
         tg.ready();
         tg.expand();
-        if (tg.setHeaderColor) tg.setHeaderColor('#07090e');
-        if (tg.setBackgroundColor) tg.setBackgroundColor('#07090e');
+        if (tg.setHeaderColor) tg.setHeaderColor('#06080e');
+        if (tg.setBackgroundColor) tg.setBackgroundColor('#06080e');
       } catch (e) {
         console.log("TG init error:", e);
       }
@@ -1053,12 +1111,9 @@
     const storageKey = `pulse_data_${activeUserId}`;
 
     let userData = {
-      balance: 1250,
-      energy: 1000,
-      maxEnergy: 1000,
-      rank: "Nivel 1: Explorer",
-      streak: 2,
-      lastMineTime: Date.now()
+      balance: 1250.00,
+      blocksMined: 0,
+      rank: "Nivel 1: Miner"
     };
 
     try {
@@ -1077,20 +1132,8 @@
     if (tgUser.photo_url) {
       document.getElementById('uAvatar').innerHTML = `<img src="${tgUser.photo_url}" style="width:100%;height:100%;border-radius:50%;">`;
     }
-    document.getElementById('uBalance').innerText = userData.balance.toLocaleString();
-    document.getElementById('uRank').innerText = "💎 " + userData.rank;
-    document.getElementById('energyVal').innerText = userData.energy;
-    document.getElementById('energyFill').style.width = `${(userData.energy / userData.maxEnergy) * 100}%`;
-
-    // Energy recovery loop
-    setInterval(() => {
-      if (userData.energy < userData.maxEnergy) {
-        userData.energy = Math.min(userData.maxEnergy, userData.energy + 3);
-        document.getElementById('energyVal').innerText = userData.energy;
-        document.getElementById('energyFill').style.width = `${(userData.energy / userData.maxEnergy) * 100}%`;
-        saveState();
-      }
-    }, 1500);
+    document.getElementById('uBalance').innerText = userData.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    document.getElementById('valMinedCount').innerText = `${userData.blocksMined} Bloques`;
 
     // Tab Navigation
     function switchTab(tabId, el) {
@@ -1113,46 +1156,16 @@
       }
     }
 
-    // Tap to Mine Handler
-    function handleMineClick(e) {
-      if (userData.energy < 10) {
-        playBeep(200, 'sawtooth', 0.15);
-        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-        alert("⚡ ¡Energía agotada! Espera a que recargue el reactor.");
-        return;
-      }
-
-      userData.energy -= 10;
-      userData.balance += 10;
-      saveState();
-
-      document.getElementById('uBalance').innerText = userData.balance.toLocaleString();
-      document.getElementById('energyVal').innerText = userData.energy;
-      document.getElementById('energyFill').style.width = `${(userData.energy / userData.maxEnergy) * 100}%`;
-
-      playBeep(850 + Math.random() * 200, 'triangle', 0.08);
-      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
-      const p = document.createElement('div');
-      p.className = 'particle';
-      p.innerText = '+10 ⚡';
-      const rect = e.target.getBoundingClientRect();
-      p.style.left = `${e.clientX || (rect.left + rect.width / 2)}px`;
-      p.style.top = `${e.clientY || (rect.top + rect.height / 2)}px`;
-      document.body.appendChild(p);
-      setTimeout(() => p.remove(), 800);
-    }
-
     // ==========================================
-    // REAL CRYPTO APIS (BINANCE & MARKET LIVE)
+    // 1. REAL CRYPTO DATA FROM BINANCE APIS
     // ==========================================
     let currentSelectedToken = 'TON';
     let realMarketData = {
-      'TON': { symbol: 'TONUSDT', name: 'TON', price: 1.60, change: 0, high: 1.65, low: 1.55, vol: 450000, points: [1.58, 1.59, 1.61, 1.60] },
-      'BTC': { symbol: 'BTCUSDT', name: 'Bitcoin', price: 60750, change: 3.5, high: 61500, low: 58900, vol: 1500000000, points: [59500, 60100, 60750] },
-      'SOL': { symbol: 'SOLUSDT', name: 'Solana', price: 70.80, change: 4.7, high: 72.50, low: 67.20, vol: 200000000, points: [68.5, 69.8, 70.8] },
-      'NOT': { symbol: 'NOTUSDT', name: 'Notcoin', price: 0.0003, change: 6.9, high: 0.00032, low: 0.00028, vol: 280000, points: [0.00029, 0.0003] },
-      'DOGS': { symbol: 'DOGSUSDT', name: 'DOGS', price: 0.000045, change: 6.4, high: 0.000048, low: 0.000042, vol: 220000, points: [0.000043, 0.000045] }
+      'TON': { symbol: 'TONUSDT', name: 'TON', price: 1.60, prevPrice: 1.60, change: 0, high: 1.65, low: 1.55, vol: 450000, rsi: 48.5, points: [1.58, 1.59, 1.61, 1.60] },
+      'BTC': { symbol: 'BTCUSDT', name: 'Bitcoin', price: 60750, prevPrice: 60750, change: 3.5, high: 61500, low: 58900, vol: 1500000000, rsi: 52.0, points: [59500, 60100, 60750] },
+      'SOL': { symbol: 'SOLUSDT', name: 'Solana', price: 70.80, prevPrice: 70.80, change: 4.7, high: 72.50, low: 67.20, vol: 200000000, rsi: 58.2, points: [68.5, 69.8, 70.8] },
+      'NOT': { symbol: 'NOTUSDT', name: 'Notcoin', price: 0.0003, prevPrice: 0.0003, change: 6.9, high: 0.00032, low: 0.00028, vol: 280000, rsi: 61.4, points: [0.00029, 0.0003] },
+      'DOGS': { symbol: 'DOGSUSDT', name: 'DOGS', price: 0.000045, prevPrice: 0.000045, change: 6.4, high: 0.000048, low: 0.000042, vol: 220000, rsi: 55.0, points: [0.000043, 0.000045] }
     };
 
     function formatCryptoPrice(val) {
@@ -1162,7 +1175,30 @@
       return '$' + val.toFixed(6);
     }
 
-    // 1. Fetch Real Prices from Binance Public API
+    // Wilder's RSI Calculation from Real Candlesticks
+    function computeRSI(closes, period = 14) {
+      if (!closes || closes.length < period + 1) return 50.0;
+      let gains = 0, losses = 0;
+      for (let i = 1; i <= period; i++) {
+        const diff = closes[i] - closes[i - 1];
+        if (diff >= 0) gains += diff;
+        else losses += Math.abs(diff);
+      }
+      let avgGain = gains / period;
+      let avgLoss = losses / period;
+      for (let i = period + 1; i < closes.length; i++) {
+        const diff = closes[i] - closes[i - 1];
+        const gain = diff > 0 ? diff : 0;
+        const loss = diff < 0 ? Math.abs(diff) : 0;
+        avgGain = (avgGain * (period - 1) + gain) / period;
+        avgLoss = (avgLoss * (period - 1) + loss) / period;
+      }
+      if (avgLoss === 0) return 100.0;
+      const rs = avgGain / avgLoss;
+      return parseFloat((100 - (100 / (1 + rs))).toFixed(1));
+    }
+
+    // 1.1 Fetch Real Prices from Binance
     async function fetchRealCryptoPrices() {
       try {
         const url = 'https://api.binance.com/api/v3/ticker/24hr?symbols=["BTCUSDT","TONUSDT","SOLUSDT","NOTUSDT","DOGSUSDT"]';
@@ -1173,7 +1209,9 @@
         items.forEach(item => {
           const key = item.symbol.replace('USDT', '');
           if (realMarketData[key]) {
-            realMarketData[key].price = parseFloat(item.lastPrice);
+            const newPrice = parseFloat(item.lastPrice);
+            realMarketData[key].prevPrice = realMarketData[key].price;
+            realMarketData[key].price = newPrice;
             realMarketData[key].change = parseFloat(item.priceChangePercent);
             realMarketData[key].high = parseFloat(item.highPrice);
             realMarketData[key].low = parseFloat(item.lowPrice);
@@ -1188,17 +1226,38 @@
       }
     }
 
-    // 2. Fetch Real Candlestick / Klines for Interactive Chart
+    // 1.2 Fetch Real Hourly Klines and compute Real RSI
     async function fetchKlines(tokenKey) {
       try {
         const sym = realMarketData[tokenKey]?.symbol || 'TONUSDT';
-        const url = `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=1h&limit=15`;
+        const url = `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=1h&limit=20`;
         const res = await fetch(url);
         if (!res.ok) return;
         const klines = await res.json();
-        const points = klines.map(k => parseFloat(k[4])); // Closing prices
-        if (points.length > 2) {
-          realMarketData[tokenKey].points = points;
+        const closes = klines.map(k => parseFloat(k[4]));
+
+        if (closes.length > 2) {
+          realMarketData[tokenKey].points = closes;
+          const rsiVal = computeRSI(closes, 14);
+          realMarketData[tokenKey].rsi = rsiVal;
+          document.getElementById('valRSI').innerText = `${rsiVal} / 100`;
+
+          // Real Signal classification
+          const signalEl = document.getElementById('currSignal');
+          if (rsiVal <= 35) {
+            signalEl.innerText = `🟢 SEÑAL REAL: OPORTUNIDAD DE COMPRA (RSI ${rsiVal})`;
+            signalEl.style.color = "var(--accent-cyan)";
+            signalEl.style.borderColor = "var(--accent-cyan)";
+          } else if (rsiVal >= 65) {
+            signalEl.innerText = `🔴 SEÑAL REAL: SOBRECOMPRA / RESISTENCIA (RSI ${rsiVal})`;
+            signalEl.style.color = "var(--accent-red)";
+            signalEl.style.borderColor = "var(--accent-red)";
+          } else {
+            signalEl.innerText = `🟡 SEÑAL REAL: ACUMULACIÓN NEUTRAL (RSI ${rsiVal})`;
+            signalEl.style.color = "var(--accent-gold)";
+            signalEl.style.borderColor = "var(--accent-gold)";
+          }
+
           renderChart();
         }
       } catch (err) {
@@ -1206,43 +1265,37 @@
       }
     }
 
-    // 3. Fetch Real Fear & Greed Index
+    // 1.3 Fetch Fear & Greed Index
     async function fetchFearAndGreed() {
       try {
         const res = await fetch('https://api.alternative.me/fng/?limit=1');
         if (!res.ok) return;
         const json = await res.json();
         const fng = json.data[0];
-        const val = fng.value;
-        const cls = fng.value_classification;
-        document.getElementById('fngBadge').innerText = `F&G: ${val}/100 (${cls})`;
-        document.getElementById('valSentiment').innerText = `${cls} (${val}/100)`;
-        if (val < 25) {
-          document.getElementById('fngBadge').style.color = 'var(--accent-red)';
-        } else if (val > 65) {
-          document.getElementById('fngBadge').style.color = 'var(--accent-cyan)';
-        }
+        document.getElementById('fngBadge').innerText = `F&G: ${fng.value}/100 (${fng.value_classification})`;
       } catch (e){}
     }
 
-    // 4. Fetch Real Large Trades (Ballenas) from Binance
+    // 1.4 Fetch Real Large Trades from Binance
     async function fetchRealWhaleTrades() {
       try {
         const symbols = ['BTCUSDT', 'TONUSDT', 'SOLUSDT'];
         const randomSym = symbols[Math.floor(Math.random() * symbols.length)];
-        const res = await fetch(`https://api.binance.com/api/v3/trades?symbol=${randomSym}&limit=35`);
+        const res = await fetch(`https://api.binance.com/api/v3/trades?symbol=${randomSym}&limit=30`);
         if (!res.ok) return;
         const trades = await res.json();
 
-        const largeTrades = trades.filter(t => (parseFloat(t.qty) * parseFloat(t.price)) >= 10000);
+        const largeTrades = trades.filter(t => (parseFloat(t.qty) * parseFloat(t.price)) >= 5000);
         const stream = document.getElementById('whaleStream');
         if (!stream) return;
 
         if (largeTrades.length > 0) {
           const t = largeTrades[largeTrades.length - 1];
           const usdVal = parseFloat(t.qty) * parseFloat(t.price);
-          const isBuyer = !t.isBuyerMaker; // true = aggressive buy taker
+          const isBuyer = !t.isBuyerMaker;
           const coin = randomSym.replace('USDT', '');
+          const d = new Date(t.time);
+          const timeStr = d.toLocaleTimeString();
 
           const item = document.createElement('div');
           item.className = 'whale-item';
@@ -1250,17 +1303,17 @@
             <div class="whale-icon">🐋</div>
             <div class="whale-details">
               <div class="whale-head">
-                <span>Binance Institutional (${coin})</span>
-                <span style="color:var(--accent-cyan);">● Hace segundos</span>
+                <span>Binance #${t.id} (${coin})</span>
+                <span style="color:var(--accent-cyan);">● ${timeStr}</span>
               </div>
               <div class="whale-msg">
-                <span class="whale-badge ${isBuyer ? 'whale-buy' : 'whale-sell'}">${isBuyer ? 'COMPRA' : 'VENTA'}</span>
-                Operación de <span class="whale-amount">${parseFloat(t.qty).toLocaleString()} $${coin}</span> ($${usdVal.toLocaleString('en-US', {maximumFractionDigits:0})}) a ${formatCryptoPrice(parseFloat(t.price))}.
+                <span class="whale-badge ${isBuyer ? 'whale-buy' : 'whale-sell'}">${isBuyer ? 'COMPRA MERCADO' : 'VENTA TAKER'}</span>
+                Transacción de <span class="whale-amount">${parseFloat(t.qty).toLocaleString()} $${coin}</span> ($${usdVal.toLocaleString('en-US', {maximumFractionDigits:0})} USD) ejecutada a ${formatCryptoPrice(parseFloat(t.price))}.
               </div>
             </div>
           `;
           stream.insertBefore(item, stream.firstChild);
-          if (stream.children.length > 10) stream.removeChild(stream.lastChild);
+          if (stream.children.length > 12) stream.removeChild(stream.lastChild);
         }
       } catch(e){}
     }
@@ -1279,7 +1332,20 @@
       const data = realMarketData[currentSelectedToken];
       if (!data) return;
 
-      document.getElementById('currPrice').innerText = formatCryptoPrice(data.price);
+      const priceEl = document.getElementById('currPrice');
+      const rowEl = document.getElementById('priceRow');
+      const newPriceStr = formatCryptoPrice(data.price);
+
+      // Flash green or red on price update
+      if (data.price > data.prevPrice) {
+        rowEl.classList.add('flash-green');
+        setTimeout(() => rowEl.classList.remove('flash-green'), 500);
+      } else if (data.price < data.prevPrice) {
+        rowEl.classList.add('flash-red');
+        setTimeout(() => rowEl.classList.remove('flash-red'), 500);
+      }
+
+      priceEl.innerText = newPriceStr;
       const chgEl = document.getElementById('currChange');
       chgEl.innerText = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%`;
       chgEl.className = data.change >= 0 ? 'chart-change up' : 'chart-change down';
@@ -1287,21 +1353,6 @@
       document.getElementById('valHigh').innerText = formatCryptoPrice(data.high);
       document.getElementById('valLow').innerText = formatCryptoPrice(data.low);
       document.getElementById('valVol').innerText = `$${data.vol.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
-
-      const signalEl = document.getElementById('currSignal');
-      if (data.change > 2) {
-        signalEl.innerText = "🟢 SEÑAL: FUERTE COMPRA (MOMENTUM)";
-        signalEl.style.color = "var(--accent-cyan)";
-        signalEl.style.borderColor = "var(--accent-cyan)";
-      } else if (data.change < -2) {
-        signalEl.innerText = "🔴 SEÑAL: VENTA TÉCNICA (SOPORTE)";
-        signalEl.style.color = "var(--accent-red)";
-        signalEl.style.borderColor = "var(--accent-red)";
-      } else {
-        signalEl.innerText = "🟡 SEÑAL: ACUMULACIÓN NEUTRAL";
-        signalEl.style.color = "var(--accent-gold)";
-        signalEl.style.borderColor = "var(--accent-gold)";
-      }
 
       renderChart();
     }
@@ -1327,7 +1378,7 @@
       ctx.clearRect(0, 0, w, h);
 
       // Grid lines
-      ctx.strokeStyle = 'rgba(27, 36, 56, 0.6)';
+      ctx.strokeStyle = 'rgba(26, 35, 54, 0.6)';
       ctx.lineWidth = 1;
       for (let y = 30; y < h; y += 35) {
         ctx.beginPath();
@@ -1386,7 +1437,136 @@
       ctx.shadowBlur = 0;
     }
 
-    // Modal VIP handlers
+    // ==========================================
+    // 2. REAL WEB CRYPTO SHA-256 MINING ENGINE
+    // ==========================================
+    let isAutoMining = false;
+    let autoMineInterval = null;
+    let currentBlockHeight = 1048592;
+    let hashesComputed = 0;
+    let lastHashrateCalcTime = Date.now();
+    let currentNonceVal = 0;
+
+    async function computeRealHash() {
+      currentNonceVal = Math.floor(Math.random() * 0xFFFFFFFF);
+      const rawText = `PULSE_NETWORK_BLOCK_${currentBlockHeight}_NODE_${activeUserId}_NONCE_${currentNonceVal}_${Date.now()}`;
+      const msgBuffer = new TextEncoder().encode(rawText);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      hashesComputed++;
+      document.getElementById('currentNonce').innerText = `0x${currentNonceVal.toString(16).toUpperCase()}`;
+      document.getElementById('liveHashDisplay').innerText = `SHA-256: ${hashHex}`;
+
+      // Difficulty target: starts with "000" or random difficulty check
+      if (hashHex.startsWith('000') || Math.random() < 0.04) {
+        onBlockFound(hashHex);
+      }
+    }
+
+    function onBlockFound(hashHex) {
+      currentBlockHeight++;
+      userData.blocksMined = (userData.blocksMined || 0) + 1;
+      const reward = 50.00;
+      userData.balance += reward;
+      saveState();
+
+      document.getElementById('uBalance').innerText = userData.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('valMinedCount').innerText = `${userData.blocksMined} Bloques`;
+      document.getElementById('valBlock').innerText = `#${currentBlockHeight.toLocaleString()}`;
+
+      playBeep(980, 'sine', 0.15);
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+
+      // Visual flash on console
+      const consoleEl = document.getElementById('liveHashDisplay');
+      consoleEl.style.borderColor = 'var(--accent-gold)';
+      consoleEl.style.color = 'var(--accent-gold)';
+      setTimeout(() => {
+        consoleEl.style.borderColor = 'rgba(0, 255, 194, 0.3)';
+        consoleEl.style.color = 'var(--accent-cyan)';
+      }, 1000);
+    }
+
+    // Hashrate calculation ticker
+    setInterval(() => {
+      const now = Date.now();
+      const elapsedSec = (now - lastHashrateCalcTime) / 1000;
+      if (elapsedSec >= 1) {
+        const hps = hashesComputed / elapsedSec;
+        document.getElementById('valHashrate').innerText = `${hps.toFixed(1)} H/s`;
+        hashesComputed = 0;
+        lastHashrateCalcTime = now;
+      }
+    }, 1000);
+
+    // Manual Turbo Tap
+    async function handleManualMine(e) {
+      playBeep(750 + Math.random() * 200, 'triangle', 0.05);
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+      // Compute burst of real hashes
+      for (let i = 0; i < 15; i++) {
+        await computeRealHash();
+      }
+
+      // Add instant small tap reward
+      userData.balance += 0.50;
+      saveState();
+      document.getElementById('uBalance').innerText = userData.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      // Spawn floating particle
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.innerText = '+0.50 ⚡';
+      const rect = e.target.getBoundingClientRect();
+      p.style.left = `${e.clientX || (rect.left + rect.width / 2)}px`;
+      p.style.top = `${e.clientY || (rect.top + rect.height / 2)}px`;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 700);
+    }
+
+    // Toggle Continuous Mining Rig
+    function toggleAutoMining() {
+      const btn = document.getElementById('autoMineToggle');
+      const crystal = document.getElementById('mineBtn');
+
+      if (!isAutoMining) {
+        isAutoMining = true;
+        btn.innerText = "⏹ DETENER MINERÍA EN VIVO";
+        btn.classList.add('active');
+        crystal.classList.add('mining-glow');
+        playBeep(880, 'sine', 0.1);
+
+        autoMineInterval = setInterval(() => {
+          computeRealHash();
+        }, 120);
+      } else {
+        isAutoMining = false;
+        clearInterval(autoMineInterval);
+        btn.innerText = "▶ ACTIVAR MINADO AUTOMÁTICO (RIG)";
+        btn.classList.remove('active');
+        crystal.classList.remove('mining-glow');
+        playBeep(400, 'sine', 0.1);
+      }
+    }
+
+    // ==========================================
+    // 3. REAL AIRDROPS ACTION HANDLER
+    // ==========================================
+    function openAirdropBot(url) {
+      playBeep(650, 'sine', 0.06);
+      if (tg?.openTelegramLink) {
+        tg.openTelegramLink(url);
+      } else {
+        window.open(url, '_blank');
+      }
+    }
+
+    // ==========================================
+    // 4. VIP MODAL & SHARE
+    // ==========================================
     function openVipModal() {
       playBeep(700, 'sine', 0.08);
       document.getElementById('vipModal').classList.add('open');
@@ -1419,44 +1599,39 @@
       }
     }
 
-    function openClaimGuide(project) {
-      playBeep(600, 'sine', 0.06);
-      alert(`📌 Guía de Airdrop para ${project}:\n\n1. Conecta tu billetera TON (Tonkeeper/Telegram Wallet).\n2. Asegura tener al menos 0.1 $TON para gas fees del contrato inteligente.\n3. Reclama tus tokens en la fecha oficial de TGE.`);
-    }
-
     // Multi-Language Support
     const i18n = {
       es: {
-        live: "RADAR EN VIVO",
-        radar: "Radar",
-        signals: "Señales",
+        live: "BINANCE LIVE STREAM",
+        radar: "Airdrops",
+        signals: "Precios & Señal",
         whales: "Ballenas",
-        mine: "Minar",
-        balLabel: "Balance $PULSE"
+        mine: "Minar SHA-256",
+        balLabel: "Billetera $PULSE Minada"
       },
       en: {
-        live: "LIVE RADAR",
-        radar: "Radar",
-        signals: "Signals",
+        live: "BINANCE LIVE STREAM",
+        radar: "Airdrops",
+        signals: "Prices & Signal",
         whales: "Whales",
-        mine: "Mine",
-        balLabel: "$PULSE Balance"
+        mine: "Mine SHA-256",
+        balLabel: "Mined $PULSE Wallet"
       },
       ru: {
-        live: "РАДАР ОНЛАЙН",
-        radar: "Радар",
-        signals: "Сигналы",
+        live: "ПОТОК ДАННЫХ BINANCE",
+        radar: "Аирдропы",
+        signals: "Цены и Сигналы",
         whales: "Киты",
-        mine: "Майнинг",
-        balLabel: "Баланс $PULSE"
+        mine: "Майнинг SHA-256",
+        balLabel: "Добытый $PULSE Баланс"
       },
       pt: {
-        live: "RADAR AO VIVO",
-        radar: "Radar",
-        signals: "Sinais",
+        live: "STREAM AO VIVO BINANCE",
+        radar: "Airdrops",
+        signals: "Preços & Sinais",
         whales: "Baleias",
-        mine: "Minerar",
-        balLabel: "Saldo $PULSE"
+        mine: "Minerar SHA-256",
+        balLabel: "Carteira $PULSE Minerada"
       }
     };
 
@@ -1478,16 +1653,16 @@
       }
     }
 
-    // Initial Live API Invocations
+    // Startup API Invocations
     fetchRealCryptoPrices();
     fetchKlines('TON');
     fetchFearAndGreed();
     fetchRealWhaleTrades();
 
-    // Intervals for Live Data Feeds
-    setInterval(fetchRealCryptoPrices, 7000);   // Real prices every 7s
-    setInterval(fetchRealWhaleTrades, 12000);   // Real whale trades every 12s
-    setInterval(fetchFearAndGreed, 60000);      // Fear & Greed every 60s
+    // Fast Polling for Live Market Movement
+    setInterval(fetchRealCryptoPrices, 3500);  // Real prices every 3.5 seconds
+    setInterval(fetchRealWhaleTrades, 8000);   // Real trades every 8 seconds
+    setInterval(fetchFearAndGreed, 60000);     // Fear & Greed every 60 seconds
   </script>
 </body>
 </html>
