@@ -1332,18 +1332,18 @@
             } catch(e) {}
         }
 
-        // Wheel Slices (12 High-Stakes Slices: Mega Wins, Chests & Risk Penalties)
+        // Wheel Slices (12 Slices: High-Value Rewards & 4 Spin Loss Penalties: -2, -3, -5, -8)
         const SLICES = [
             { text: "+500 Stars", icon: "💎", color: "#e11d48", type: "stars", amount: 500, label: "500 Stars" },
             { text: "+5 Giros", icon: "⚡", color: "#0284c7", type: "spins", amount: 5, label: "+5 Spins" },
-            { text: "Pierde 5", icon: "💀", color: "#334155", type: "lose", amount: 5, label: "Pierde 5 Puntos" },
+            { text: "-2 Giros", icon: "💀", color: "#334155", type: "lose_spins", amount: 2, label: "-2 Giros" },
             { text: "Cofre Oro", icon: "👑", color: "#d97706", type: "chest", amount: 1, label: "Golden Vault Key" },
+            { text: "-3 Giros", icon: "💥", color: "#4c0519", type: "lose_spins", amount: 3, label: "-3 Giros" },
             { text: "+3 Giros", icon: "⚡", color: "#059669", type: "spins", amount: 3, label: "+3 Spins" },
-            { text: "Pierde 10", icon: "💥", color: "#4c0519", type: "lose", amount: 10, label: "Pierde 10 Puntos" },
+            { text: "-5 Giros", icon: "⚡", color: "#1e1b4b", type: "lose_spins", amount: 5, label: "-5 Giros" },
             { text: "🔥 FEVER 2X", icon: "🔥", color: "#ea580c", type: "fever", amount: 5, label: "Fever Mode (5 Spins)" },
             { text: "+100 Stars", icon: "🌟", color: "#7c3aed", type: "stars", amount: 100, label: "100 Stars" },
-            { text: "+2 Giros", icon: "⚡", color: "#0891b2", type: "spins", amount: 2, label: "+2 Spins" },
-            { text: "Pierde 25", icon: "☠️", color: "#1e1b4b", type: "lose", amount: 25, label: "Pierde 25 Puntos" },
+            { text: "-8 Giros", icon: "☠️", color: "#0f172a", type: "lose_spins", amount: 8, label: "-8 Giros" },
             { text: "Cofre Plata", icon: "🥈", color: "#475569", type: "chest", amount: 1, label: "Silver Vault Key" },
             { text: "+50 Stars", icon: "⭐", color: "#db2777", type: "stars", amount: 50, label: "50 Stars" }
         ];
@@ -1548,11 +1548,15 @@
         function handleSpinResult(slice) {
             addXp(15);
 
-            if (slice.type === 'lose') {
+            if (slice.type === 'lose_spins' || slice.type === 'lose') {
                 playLoseSound();
                 if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('error');
-                currentStars = Math.max(0, currentStars - slice.amount);
-                showModal(slice.icon, "¡MALA SUERTE! 💥", `Has caído en una penalización y perdiste ${slice.amount} Puntos Stars. ¡Gira de nuevo para recuperarte!`);
+                currentSpins = Math.max(0, currentSpins - slice.amount);
+                const isZero = currentSpins === 0;
+                const advice = isZero 
+                    ? "¡Se han agotado todos tus giros! Visita la Tienda de Stars o invita a tus amigos para recargar más giros."
+                    : `Te quedan ${currentSpins} giros disponibles. ¡Gira de nuevo para recuperarte!`;
+                showModal(slice.icon, "¡UY, MALA SUERTE! 💥", `Has caído en una penalización y perdiste ${slice.amount} Giros. ${advice}`);
                 updateHUD();
                 return;
             }
