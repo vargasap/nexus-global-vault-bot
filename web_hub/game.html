@@ -1332,20 +1332,20 @@
             } catch(e) {}
         }
 
-        // Wheel Slices (12 Slices: High-Value Rewards & 4 Spin Loss Penalties: -2, -3, -5, -8)
+        // Wheel Slices (Heavily weighted towards spin depletion and stars points; free spins are extremely rare)
         const SLICES = [
-            { text: "+500 Stars", icon: "💎", color: "#e11d48", type: "stars", amount: 500, label: "500 Stars" },
-            { text: "+5 Giros", icon: "⚡", color: "#0284c7", type: "spins", amount: 5, label: "+5 Spins" },
-            { text: "-2 Giros", icon: "💀", color: "#334155", type: "lose_spins", amount: 2, label: "-2 Giros" },
-            { text: "Cofre Oro", icon: "👑", color: "#d97706", type: "chest", amount: 1, label: "Golden Vault Key" },
-            { text: "-3 Giros", icon: "💥", color: "#4c0519", type: "lose_spins", amount: 3, label: "-3 Giros" },
-            { text: "+3 Giros", icon: "⚡", color: "#059669", type: "spins", amount: 3, label: "+3 Spins" },
-            { text: "-5 Giros", icon: "⚡", color: "#1e1b4b", type: "lose_spins", amount: 5, label: "-5 Giros" },
-            { text: "🔥 FEVER 2X", icon: "🔥", color: "#ea580c", type: "fever", amount: 5, label: "Fever Mode (5 Spins)" },
-            { text: "+100 Stars", icon: "🌟", color: "#7c3aed", type: "stars", amount: 100, label: "100 Stars" },
-            { text: "-8 Giros", icon: "☠️", color: "#0f172a", type: "lose_spins", amount: 8, label: "-8 Giros" },
-            { text: "Cofre Plata", icon: "🥈", color: "#475569", type: "chest", amount: 1, label: "Silver Vault Key" },
-            { text: "+50 Stars", icon: "⭐", color: "#db2777", type: "stars", amount: 50, label: "50 Stars" }
+            { text: "+500 Stars", icon: "💎", color: "#e11d48", type: "stars", amount: 500, weight: 1, label: "500 Stars" },
+            { text: "-2 Giros", icon: "💀", color: "#334155", type: "lose_spins", amount: 2, weight: 26, label: "-2 Giros" },
+            { text: "+25 Stars", icon: "🌟", color: "#7c3aed", type: "stars", amount: 25, weight: 20, label: "25 Stars" },
+            { text: "-3 Giros", icon: "💥", color: "#4c0519", type: "lose_spins", amount: 3, weight: 22, label: "-3 Giros" },
+            { text: "+1 Giro", icon: "⚡", color: "#0284c7", type: "spins", amount: 1, weight: 4, label: "+1 Giro" },
+            { text: "-5 Giros", icon: "⚡", color: "#1e1b4b", type: "lose_spins", amount: 5, weight: 14, label: "-5 Giros" },
+            { text: "+10 Stars", icon: "⭐", color: "#059669", type: "stars", amount: 10, weight: 20, label: "10 Stars" },
+            { text: "-8 Giros", icon: "☠️", color: "#0f172a", type: "lose_spins", amount: 8, weight: 8, label: "-8 Giros" },
+            { text: "Cofre Plata", icon: "🥈", color: "#475569", type: "chest", amount: 1, weight: 4, label: "Silver Vault Key" },
+            { text: "+5 Stars", icon: "💫", color: "#0891b2", type: "stars", amount: 5, weight: 16, label: "5 Stars" },
+            { text: "-2 Giros", icon: "💀", color: "#334155", type: "lose_spins", amount: 2, weight: 22, label: "-2 Giros" },
+            { text: "Cofre Oro", icon: "👑", color: "#d97706", type: "chest", amount: 1, weight: 2, label: "Golden Vault Key" }
         ];
 
         const canvas = document.getElementById('wheelCanvas');
@@ -1504,7 +1504,18 @@
             updateHUD();
             document.getElementById('spinBtn').disabled = true;
 
-            const targetSlice = Math.floor(Math.random() * numSlices);
+            // Weighted probability algorithm (ensures spins drain fast while keeping excitement high)
+            function getWeightedTarget() {
+                const totalWeight = SLICES.reduce((sum, s) => sum + (s.weight || 10), 0);
+                let rand = Math.random() * totalWeight;
+                for (let i = 0; i < SLICES.length; i++) {
+                    const w = SLICES[i].weight || 10;
+                    if (rand < w) return i;
+                    rand -= w;
+                }
+                return 0;
+            }
+            const targetSlice = getWeightedTarget();
             const extraRotations = (6 + Math.floor(Math.random() * 3)) * (2 * Math.PI);
             const targetAngle = (3 * Math.PI / 2) - (targetSlice * arc + arc / 2);
             const totalRotation = extraRotations + (targetAngle - (startAngle % (2 * Math.PI)));
