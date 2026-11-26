@@ -300,18 +300,21 @@
     /* Token Filter Categories */
     .market-cat-nav {
       display: flex;
-      gap: 6px;
-      margin-bottom: 8px;
+      gap: 4px;
+      overflow-x: auto;
+      scrollbar-width: none;
     }
+    .market-cat-nav::-webkit-scrollbar { display: none; }
     .cat-pill {
       background: #0b101c;
       border: 1px solid var(--card-border);
       color: var(--text-muted);
-      padding: 5px 10px;
+      padding: 5px 8px;
       border-radius: 8px;
       font-size: 10px;
       font-weight: 800;
       cursor: pointer;
+      white-space: nowrap;
       transition: all 0.2s;
     }
     .cat-pill.active {
@@ -319,23 +322,75 @@
       border-color: var(--accent-ton);
       color: #fff;
     }
-    /* Chart Card */
-    .chart-card {
-      background: var(--card-bg);
+    .select-coin-btn {
+      background: linear-gradient(135deg, #16243d, #1a2c4d);
+      border: 1px solid var(--accent-ton);
+      color: #fff;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0, 152, 234, 0.25);
+    }
+    .select-coin-btn:active {
+      transform: scale(0.95);
+    }
+    /* Horizontal Chips Scroll Wrapper & Arrows */
+    .chips-scroll-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .scroll-arrow-btn {
+      background: #101626;
       border: 1px solid var(--card-border);
-      border-radius: 18px;
-      padding: 14px;
-      margin-bottom: 12px;
+      color: var(--accent-cyan);
+      width: 26px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 11px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .scroll-arrow-btn:active {
+      background: rgba(0, 255, 194, 0.2);
     }
     .token-chips {
       display: flex;
       gap: 6px;
       overflow-x: auto;
-      scrollbar-width: none;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0, 255, 194, 0.4) #090e18;
       width: 100%;
-      margin-bottom: 10px;
+      padding-bottom: 4px;
+      cursor: grab;
+      scroll-behavior: smooth;
     }
-    .token-chips::-webkit-scrollbar { display: none; }
+    .token-chips:active {
+      cursor: grabbing;
+    }
+    .token-chips::-webkit-scrollbar {
+      height: 4px;
+    }
+    .token-chips::-webkit-scrollbar-track {
+      background: #090e18;
+      border-radius: 4px;
+    }
+    .token-chips::-webkit-scrollbar-thumb {
+      background: var(--accent-cyan);
+      border-radius: 4px;
+    }
     .token-chip {
       background: #131b2c;
       border: 1px solid var(--card-border);
@@ -346,6 +401,7 @@
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
+      flex-shrink: 0;
       transition: all 0.2s;
     }
     .token-chip.active {
@@ -402,17 +458,20 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
     }
     .verdict-badge {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
-      padding: 4px 10px;
-      border-radius: 20px;
+      padding: 4px 8px;
+      border-radius: 12px;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       border: 1px solid;
+      white-space: nowrap;
     }
     .confidence-badge {
       font-size: 10px;
@@ -944,17 +1003,26 @@
     <!-- TAB 1: PRECIOS & SEÑAL CUANTITATIVA AVANZADA -->
     <div id="tab-chart" class="tab-content active">
       <div class="chart-card">
-        <!-- Token Category Filter Tabs -->
-        <div class="market-cat-nav">
-          <button class="cat-pill active" id="cat-all" onclick="filterTokens('all', this)">🔥 Todas</button>
-          <button class="cat-pill" id="cat-new" onclick="filterTokens('new', this)">⭐ Recién Listadas</button>
-          <button class="cat-pill" id="cat-top" onclick="filterTokens('top', this)">💎 Top Mercado</button>
-          <button class="cat-pill" id="cat-upcoming" onclick="filterTokens('upcoming', this)">🚀 Próximo Listado</button>
+        <!-- Token Category Filter Tabs & Selector Button -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:6px;">
+          <div class="market-cat-nav">
+            <button class="cat-pill active" id="cat-all" onclick="filterTokens('all', this)">🔥 Todas (14)</button>
+            <button class="cat-pill" id="cat-new" onclick="filterTokens('new', this)">⭐ Nuevas</button>
+            <button class="cat-pill" id="cat-top" onclick="filterTokens('top', this)">💎 Top</button>
+            <button class="cat-pill" id="cat-upcoming" onclick="filterTokens('upcoming', this)">🚀 Próximo</button>
+          </div>
+          <button class="select-coin-btn" onclick="openCoinSelectorModal()" title="Elegir cualquier moneda">
+            <span>🪙 Elegir</span> <span>▾</span>
+          </button>
         </div>
 
-        <!-- Horizontal Token Scroll -->
-        <div class="token-chips" id="tokenChipsContainer">
-          <!-- Dynamically injected chips -->
+        <!-- Horizontal Token Scroll with Visible Navigation Arrows -->
+        <div class="chips-scroll-wrapper">
+          <button class="scroll-arrow-btn" onclick="scrollTokens('left')" title="Desplazar izquierda">◀</button>
+          <div class="token-chips" id="tokenChipsContainer">
+            <!-- Dynamically injected chips -->
+          </div>
+          <button class="scroll-arrow-btn" onclick="scrollTokens('right')" title="Desplazar derecha">▶</button>
         </div>
 
         <div class="chart-price-row" id="priceRow">
@@ -1270,6 +1338,23 @@
     </div>
   </div>
 
+  <!-- Full Coin Selector Modal -->
+  <div class="modal-overlay" id="coinSelectorModal">
+    <div class="modal-card" style="max-height:85vh; display:flex; flex-direction:column;">
+      <button class="modal-close" onclick="closeCoinSelectorModal()">&times;</button>
+      <div class="modal-title">🪙 Seleccionar Criptomoneda</div>
+      <div class="modal-sub">Toca cualquier moneda para abrir su gráfica y señales cuantitativas:</div>
+
+      <input type="text" id="coinSearchInput" placeholder="🔍 Buscar por nombre o símbolo (BTC, TON, MAJOR...)" 
+             style="background:#070a12; border:1px solid var(--card-border); color:#fff; padding:10px 14px; border-radius:12px; font-family:'Space Grotesk',sans-serif; font-size:12px; margin-bottom:12px; width:100%; outline:none;"
+             oninput="filterSelectorModal(this.value)">
+
+      <div id="coinSelectorGrid" style="overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-right:4px;">
+        <!-- Injected list of all coins -->
+      </div>
+    </div>
+  </div>
+
   <!-- Sync & Update Modal -->
   <div class="modal-overlay" id="syncModal">
     <div class="modal-card">
@@ -1470,6 +1555,73 @@
       if (val >= 1) return '$' + val.toFixed(2);
       if (val >= 0.01) return '$' + val.toFixed(4);
       return '$' + val.toFixed(6);
+    }
+
+    function scrollTokens(dir) {
+      playBeep(500, 'sine', 0.04);
+      const container = document.getElementById('tokenChipsContainer');
+      if (!container) return;
+      const scrollAmt = dir === 'left' ? -180 : 180;
+      container.scrollBy({ left: scrollAmt, behavior: 'smooth' });
+    }
+
+    function openCoinSelectorModal() {
+      playBeep(700, 'sine', 0.06);
+      renderCoinSelectorGrid();
+      document.getElementById('coinSelectorModal').classList.add('open');
+      const input = document.getElementById('coinSearchInput');
+      if (input) {
+        input.value = '';
+        setTimeout(() => input.focus(), 100);
+      }
+    }
+
+    function closeCoinSelectorModal() {
+      document.getElementById('coinSelectorModal').classList.remove('open');
+    }
+
+    function renderCoinSelectorGrid(filterQuery = '') {
+      const grid = document.getElementById('coinSelectorGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      const q = filterQuery.trim().toLowerCase();
+
+      Object.keys(MARKET_TOKENS).forEach(key => {
+        const item = MARKET_TOKENS[key];
+        if (q && !key.toLowerCase().includes(q) && !item.name.toLowerCase().includes(q)) return;
+
+        const card = document.createElement('div');
+        card.className = 'vip-tier-item';
+        card.style.cursor = 'pointer';
+        card.onclick = () => {
+          switchToken(key);
+          closeCoinSelectorModal();
+        };
+
+        const isUp = item.change >= 0;
+        card.innerHTML = `
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-size:22px;">${item.icon}</div>
+            <div>
+              <div style="font-weight:800; font-size:13px; color:#fff;">${key} <span style="font-size:10px; color:var(--text-muted); font-weight:normal;">(${item.name})</span></div>
+              <div style="font-size:10px; color:${item.cat === 'new' ? 'var(--accent-gold)' : item.cat === 'upcoming' ? 'var(--accent-cyan)' : 'var(--text-muted)'}; font-family:'JetBrains Mono';">
+                ${item.cat === 'new' ? '⭐ Recién Listada' : item.cat === 'upcoming' ? '🚀 Próximo Listado (OTC)' : '💎 Top Mercado'}
+              </div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:800; font-size:13px; font-family:'JetBrains Mono'; color:#fff;">${formatCryptoPrice(item.price)}</div>
+            <div style="font-size:11px; font-weight:700; font-family:'JetBrains Mono'; color:${isUp ? 'var(--accent-cyan)' : 'var(--accent-red)'};">
+              ${isUp ? '+' : ''}${item.change.toFixed(2)}%
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterSelectorModal(val) {
+      renderCoinSelectorGrid(val);
     }
 
     function renderTokenChips() {
@@ -1719,9 +1871,22 @@
 
     function switchToken(tokenKey) {
       currentSelectedToken = tokenKey;
+
+      const tokenItem = MARKET_TOKENS[tokenKey];
+      if (tokenItem && currentCategory !== 'all' && tokenItem.cat !== currentCategory) {
+        currentCategory = 'all';
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+        const allBtn = document.getElementById('cat-all');
+        if (allBtn) allBtn.classList.add('active');
+        renderTokenChips();
+      }
+
       document.querySelectorAll('.token-chip').forEach(c => c.classList.remove('active'));
       const activeBtn = document.getElementById(`chip-${tokenKey}`);
-      if (activeBtn) activeBtn.classList.add('active');
+      if (activeBtn) {
+        activeBtn.classList.add('active');
+        activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
 
       updateChartUI();
       fetchKlines(tokenKey);
@@ -2048,6 +2213,28 @@
     fetchKlines('TON');
     fetchFearAndGreed();
     fetchRealWhaleTrades();
+
+    // Mouse Drag-To-Scroll for Desktop
+    const chipSlider = document.getElementById('tokenChipsContainer');
+    if (chipSlider) {
+      let isDown = false;
+      let startX;
+      let scrollLeft;
+      chipSlider.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - chipSlider.offsetLeft;
+        scrollLeft = chipSlider.scrollLeft;
+      });
+      chipSlider.addEventListener('mouseleave', () => { isDown = false; });
+      chipSlider.addEventListener('mouseup', () => { isDown = false; });
+      chipSlider.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - chipSlider.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        chipSlider.scrollLeft = scrollLeft - walk;
+      });
+    }
 
     // Fast Polling
     priceIntervalTimer = setInterval(fetchRealCryptoPrices, 3500);
