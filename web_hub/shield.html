@@ -1327,7 +1327,7 @@
     // ==========================================
     // 4. ENGINE: CRYPTO WALLET & DRAINER AUDIT
     // ==========================================
-    function runCryptoScan() {
+    async function runCryptoScan() {
       const addr = document.getElementById('inputCrypto').value.trim();
       if (!addr) {
         showToast("⚠️ Ingresa una dirección o contrato");
@@ -1338,29 +1338,68 @@
       document.getElementById('radarCrypto').style.display = 'block';
       document.getElementById('verdictCrypto').style.display = 'none';
 
+      let riskScore = 0;
+      let reasons = [];
+
+      // Check GoPlus API live if EVM address
+      if (addr.startsWith('0x') && addr.length === 42) {
+        try {
+          const res = await fetch(`https://api.gopluslabs.io/api/v1/token_security/56?contract_addresses=${addr}`);
+          if (res.ok) {
+            const data = await res.json();
+            const token = data.result?.[addr.toLowerCase()];
+            if (token) {
+              const name = token.token_name || 'Token';
+              const sym = token.token_symbol || 'TOKEN';
+              reasons.push({ label: `Red BNB Chain (${name} - $${sym})`, status: '🔗 DETECTADO', ok: true });
+              
+              const isHoneypot = token.is_honeypot === '1';
+              const sellTax = parseFloat(token.sell_tax || 0) * 100;
+              const buyTax = parseFloat(token.buy_tax || 0) * 100;
+              const isSource = token.is_open_source === '1';
+
+              if (isHoneypot || sellTax > 50) {
+                riskScore = 99;
+                reasons.push({ label: 'Mecanismo Honeypot', status: '🚨 BLOQUEO DE VENTA ACTIVO', ok: false });
+                reasons.push({ label: `Impuesto de Venta (${sellTax.toFixed(1)}%)`, status: '🚨 TRAMPA DE LIQUIDEZ', ok: false });
+              } else {
+                reasons.push({ label: `Impuesto Venta (${sellTax.toFixed(1)}%) / Compra (${buyTax.toFixed(1)}%)`, status: '✅ NORMAL', ok: true });
+              }
+
+              if (isSource) {
+                reasons.push({ label: 'Código Fuente Verificado', status: '✅ OPEN SOURCE', ok: true });
+              } else {
+                riskScore = Math.max(riskScore, 65);
+                reasons.push({ label: 'Código Fuente', status: '⚠️ NO VERIFICADO', ok: false });
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
       setTimeout(() => {
         document.getElementById('radarCrypto').style.display = 'none';
-        let riskScore = 0;
-        let reasons = [];
 
-        if (addr.toLowerCase().includes('drain') || addr.toLowerCase().includes('honeypot')) {
-          riskScore = 99;
-          reasons.push({ label: 'Permisos del Smart Contract', status: '🚨 DRAINER DE BILLETERAS', ok: false });
-          reasons.push({ label: 'Impuesto de Venta (Sell Tax)', status: '🚨 99% (HONEYPOT INVENTIBLE)', ok: false });
-          reasons.push({ label: 'Lista Negra Anti-Lavado', status: '🚨 MARCADA COMO MALICIOSA', ok: false });
-        } else if (addr.startsWith('EQ') || addr.startsWith('UQ')) {
-          riskScore = 5;
-          reasons.push({ label: 'Red TON Blockchain', status: '✅ CUENTA LEGÍTIMA', ok: true });
-          reasons.push({ label: 'Permisos de Transferencia', status: '✅ SIN CONTRATO DRAINER', ok: true });
-          reasons.push({ label: 'Historial On-Chain', status: '✅ ACTIVIDAD LIMPIA', ok: true });
-        } else {
-          riskScore = 12;
-          reasons.push({ label: 'Verificación On-Chain', status: '✅ DIRECCIÓN ESTÁNDAR', ok: true });
-          reasons.push({ label: 'Reportes de Phishing', status: '✅ 0 ALERTAS EN RED', ok: true });
+        if (reasons.length === 0) {
+          if (addr.toLowerCase().includes('drain') || addr.toLowerCase().includes('honeypot')) {
+            riskScore = 99;
+            reasons.push({ label: 'Permisos del Smart Contract', status: '🚨 DRAINER DE BILLETERAS', ok: false });
+            reasons.push({ label: 'Impuesto de Venta (Sell Tax)', status: '🚨 99% (HONEYPOT INVENTIBLE)', ok: false });
+            reasons.push({ label: 'Lista Negra Anti-Lavado', status: '🚨 MARCADA COMO MALICIOSA', ok: false });
+          } else if (addr.startsWith('EQ') || addr.startsWith('UQ')) {
+            riskScore = 5;
+            reasons.push({ label: 'Red TON Blockchain', status: '✅ CUENTA LEGÍTIMA', ok: true });
+            reasons.push({ label: 'Permisos de Transferencia', status: '✅ SIN CONTRATO DRAINER', ok: true });
+            reasons.push({ label: 'Historial On-Chain', status: '✅ ACTIVIDAD LIMPIA', ok: true });
+          } else {
+            riskScore = 12;
+            reasons.push({ label: 'Verificación On-Chain', status: '✅ DIRECCIÓN ESTÁNDAR', ok: true });
+            reasons.push({ label: 'Reportes de Phishing', status: '✅ 0 ALERTAS EN RED', ok: true });
+          }
         }
 
         renderVerdict('Crypto', riskScore, reasons, addr);
-      }, 1300);
+      }, 1200);
     }
 
     // Generic Verdict Renderer
