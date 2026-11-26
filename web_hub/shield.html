@@ -1067,6 +1067,34 @@
     </div>
   </div>
 
+  <!-- Web Trial Limit Modal -->
+  <div class="modal-overlay" id="webLimitModal">
+    <div class="modal-card" style="border-color:var(--accent-cyber); text-align:center;">
+      <button class="modal-close" onclick="closeWebLimitModal()">✕</button>
+      <div style="font-size:42px; margin-bottom:10px; filter:drop-shadow(0 0 15px rgba(255,184,0,0.5));">🛡️⚡</div>
+      <div style="font-size:18px; font-weight:800; color:#fff; margin-bottom:8px; line-height:1.3;">
+        ¡Has completado tus <span style="color:var(--accent-warn);">3 Auditorías Gratuitas</span> en la Web!
+      </div>
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:18px; line-height:1.5;">
+        Para continuar auditando enlaces, tiendas, mensajes, contratos cripto y recibos de forma <b style="color:#fff;">ilimitada y en tiempo real</b>, continúa directamente en nuestra Telegram Mini App oficial.
+      </div>
+
+      <div style="background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.25); border-radius:12px; padding:12px; margin-bottom:18px; text-align:left; font-size:11px; color:var(--text-main); line-height:1.5;">
+        <div>✅ <b>Auditorías forenses ilimitadas sin restricciones</b></div>
+        <div>✅ <b>Alertas preventivas 24/7 y certificados SHA-256</b></div>
+        <div>✅ <b>Acceso gratis sin contraseñas ni registros</b></div>
+      </div>
+
+      <a href="https://t.me/cybershield_defense_bot?start=web_limit_3" style="display:flex; align-items:center; justify-content:center; gap:8px; background:linear-gradient(135deg, var(--accent-cyber), #0077ff); color:#000; font-weight:900; font-size:13px; padding:14px; border-radius:12px; text-decoration:none; box-shadow:0 0 25px rgba(0,229,255,0.4);" target="_blank" rel="noopener">
+        <span>🚀</span> Abrir en Telegram (@cybershield_defense_bot)
+      </a>
+
+      <div style="font-size:11px; color:var(--text-muted); margin-top:12px;">
+        Redirigiendo a Telegram en <b id="webCountdown" style="color:var(--accent-cyber);">5</b> segundos...
+      </div>
+    </div>
+  </div>
+
   <script>
     // Audio Context Synthesizer for High-Tech Cyber SFX
     let audioCtx = null;
@@ -1164,14 +1192,70 @@
     }
 
     // ==========================================
+    // Web Trial Limit Engine (Max 3 tests on Web)
+    // ==========================================
+    function isWebBrowser() {
+      return !Boolean(window.Telegram?.WebApp?.initData);
+    }
+
+    let webCountdownInterval = null;
+    function showWebLimitModal() {
+      const modal = document.getElementById('webLimitModal');
+      if (modal) modal.classList.add('open');
+      
+      let sec = 5;
+      const el = document.getElementById('webCountdown');
+      if (el) el.innerText = sec;
+      if (webCountdownInterval) clearInterval(webCountdownInterval);
+      webCountdownInterval = setInterval(() => {
+        sec--;
+        if (el) el.innerText = sec;
+        if (sec <= 0) {
+          clearInterval(webCountdownInterval);
+          window.location.href = 'https://t.me/cybershield_defense_bot?start=web_limit_3';
+        }
+      }, 1000);
+    }
+
+    function closeWebLimitModal() {
+      const modal = document.getElementById('webLimitModal');
+      if (modal) modal.classList.remove('open');
+      if (webCountdownInterval) clearInterval(webCountdownInterval);
+    }
+
+    function checkWebTrialLimit() {
+      if (!isWebBrowser()) return true;
+      const used = parseInt(localStorage.getItem('cybershield_web_free_tests') || '0', 10);
+      if (used >= 3) {
+        showWebLimitModal();
+        return false;
+      }
+      return true;
+    }
+
+    function recordWebTrial() {
+      if (!isWebBrowser()) return;
+      const used = parseInt(localStorage.getItem('cybershield_web_free_tests') || '0', 10);
+      const newUsed = used + 1;
+      localStorage.setItem('cybershield_web_free_tests', newUsed.toString());
+      if (newUsed >= 3) {
+        setTimeout(() => {
+          showWebLimitModal();
+        }, 2200);
+      }
+    }
+
+    // ==========================================
     // 1. ENGINE: URL & FAKE SHOP SCANNER
     // ==========================================
     function runUrlScan() {
+      if (!checkWebTrialLimit()) return;
       const url = document.getElementById('inputUrl').value.trim();
       if (!url) {
         showToast("⚠️ Ingresa un link o dominio");
         return;
       }
+      recordWebTrial();
 
       playCyberSound(400, 'sawtooth', 0.15, 2, 0.1);
       document.getElementById('radarWeb').style.display = 'block';
@@ -1230,11 +1314,13 @@
     // 2. ENGINE: CHAT & FAKE JOB SCANNER
     // ==========================================
     function runChatScan() {
+      if (!checkWebTrialLimit()) return;
       const text = document.getElementById('inputChat').value.trim();
       if (!text) {
         showToast("⚠️ Pega el mensaje para analizar");
         return;
       }
+      recordWebTrial();
 
       playCyberSound(450, 'triangle', 0.15, 2, 0.1);
       document.getElementById('radarChat').style.display = 'block';
@@ -1324,6 +1410,8 @@
     }
 
     function runReceiptScan(isFakeSimulated = true) {
+      if (!checkWebTrialLimit()) return;
+      recordWebTrial();
       playCyberSound(500, 'square', 0.12, 2, 0.1);
       document.getElementById('radarReceipt').style.display = 'block';
       document.getElementById('verdictReceipt').style.display = 'none';
@@ -1352,11 +1440,13 @@
     // 4. ENGINE: CRYPTO WALLET & DRAINER AUDIT
     // ==========================================
     async function runCryptoScan() {
+      if (!checkWebTrialLimit()) return;
       const addr = document.getElementById('inputCrypto').value.trim();
       if (!addr) {
         showToast("⚠️ Ingresa una dirección o contrato");
         return;
       }
+      recordWebTrial();
 
       playCyberSound(550, 'sawtooth', 0.12, 2, 0.1);
       document.getElementById('radarCrypto').style.display = 'block';

@@ -497,6 +497,26 @@ class CyberShieldBot:
                         "👑 **Investigador Vitalicio (299 ⭐):** Acceso permanente sin límites.",
                         keyboard
                     )
+                elif len(parts) > 1 and "web_limit" in parts[1]:
+                    fresh_url = f"{self.webapp_url}?v={int(time.time())}"
+                    keyboard = {
+                        "inline_keyboard": [
+                            [{"text": "🛡️ Abrir Escudo Forense Ilimitado", "web_app": {"url": fresh_url}}],
+                            [{"text": "⭐ Ver Planes Sentinel VIP", "callback_data": "cmd_vip"}]
+                        ]
+                    }
+                    self.send_message(
+                        chat_id,
+                        "🛡️ *¡BIENVENIDO A CYBERSHIELD AI EN TELEGRAM!* ⚡\n"
+                        "━━━━━━━━━━━━━━━━━━━━━\n"
+                        "Has completado tus pruebas de demostración en la web. Aquí en Telegram tienes acceso completo a nuestro **Radar Forense Anti-Estafas**:\n\n"
+                        "• 🌐 *Auditoría de Enlaces:* Detección de tiendas falsas y phishing.\n"
+                        "• 💬 *Detector de Mensajes:* Alertas sobre ofertas de empleo fraudulentas y esquemas Ponzi.\n"
+                        "• 🧾 *Inspector de Recibos:* Escáner de capturas bancarias editadas.\n"
+                        "• 🪙 *Escáner Cripto:* Análisis GoPlus de tokens y wallets maliciosas.\n\n"
+                        "👇 *Toca el botón abajo para abrir la Mini App sin restricciones o pega directamente un link o mensaje en este chat:*",
+                        keyboard
+                    )
                 else:
                     self.handle_start(user_id, chat_id, username)
             elif text.startswith("/ayuda"):
