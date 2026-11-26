@@ -302,6 +302,17 @@ class CyberShieldBot:
 
     def handle_start(self, user_id, chat_id, username):
         user = get_or_create_user(user_id, username)
+        try:
+            self.call_api("setChatMenuButton", {
+                "chat_id": chat_id,
+                "menu_button": {
+                    "type": "web_app",
+                    "text": "CyberShield 🛡️",
+                    "web_app": {"url": f"{self.webapp_url}?v=5.0"}
+                }
+            })
+        except Exception:
+            pass
         welcome_text = (
             "🛡️ *BIENVENIDO A CYBERSHIELD AI* ⚡\n"
             "━━━━━━━━━━━━━━━━━━━━━\n"
