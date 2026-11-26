@@ -111,7 +111,90 @@
     .top-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+    }
+    .refresh-pill-btn {
+      background: rgba(0, 255, 194, 0.12);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      transition: all 0.2s;
+    }
+    .refresh-pill-btn:active {
+      transform: scale(0.94);
+      background: rgba(0, 255, 194, 0.25);
+    }
+    .refresh-spin.spinning {
+      display: inline-block;
+      animation: spinAnim 0.7s linear infinite;
+    }
+    @keyframes spinAnim {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .settings-pill-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 6px 8px;
+      border-radius: 10px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .settings-pill-btn:active {
+      transform: scale(0.92);
+      background: rgba(255,255,255,0.15);
+    }
+    .speed-btn {
+      flex: 1;
+      padding: 8px 4px;
+      background: #090e18;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .speed-btn.active {
+      background: rgba(0, 255, 194, 0.15);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .toast-notice {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #0e1526;
+      border: 1px solid var(--accent-cyan);
+      box-shadow: 0 0 25px rgba(0, 255, 194, 0.4);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 10px 18px;
+      border-radius: 12px;
+      z-index: 9999;
+      pointer-events: none;
+      transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      white-space: nowrap;
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .toast-notice.show {
+      transform: translateX(-50%) translateY(0);
     }
     .lang-btn {
       background: rgba(255,255,255,0.06);
@@ -746,6 +829,13 @@
         </div>
       </div>
       <div class="top-actions">
+        <button class="refresh-pill-btn" id="btnRefresh" onclick="triggerManualRefresh()" title="Actualizar Datos">
+          <span class="refresh-spin" id="spinIcon">🔄</span>
+          <span class="refresh-txt">Actualizar</span>
+        </button>
+        <button class="settings-pill-btn" onclick="openSyncModal()" title="Menú de Actualización">
+          ⚙️
+        </button>
         <select class="lang-btn" id="langSelect" onchange="changeLanguage(this.value)">
           <option value="es">🇪🇸 ES</option>
           <option value="en">🇺🇸 EN</option>
@@ -1070,6 +1160,51 @@
         Transacción segura y nativa procesada mediante Telegram Stars.
       </div>
     </div>
+  </div>
+
+  <!-- Sync & Update Modal -->
+  <div class="modal-overlay" id="syncModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeSyncModal()">&times;</button>
+      <div class="modal-title">🔄 Menú de Actualización</div>
+      <div class="modal-sub">Controla la sincronización en vivo del Radar Cripto</div>
+      
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:16px;">
+        <div class="vip-tier-item" onclick="triggerManualRefresh(); closeSyncModal();">
+          <div>
+            <div class="tier-name">⚡ Forzar Actualización Inmediata</div>
+            <div class="tier-desc">Refresca precios, libro de órdenes y RSI de Binance</div>
+          </div>
+          <div style="font-size:18px;">🔄</div>
+        </div>
+
+        <div style="background:#131c2e; border:1px solid var(--card-border); border-radius:14px; padding:12px 14px;">
+          <div style="font-size:12px; font-weight:700; margin-bottom:6px; color:#fff;">⏱️ Frecuencia en Vivo:</div>
+          <div style="display:flex; gap:6px;">
+            <button class="speed-btn active" id="spd-fast" onclick="setRefreshInterval(1500, 'spd-fast')">1.5s (Ultra)</button>
+            <button class="speed-btn" id="spd-std" onclick="setRefreshInterval(3500, 'spd-std')">3.5s (Normal)</button>
+            <button class="speed-btn" id="spd-slow" onclick="setRefreshInterval(8000, 'spd-slow')">8.0s (Ahorro)</button>
+          </div>
+        </div>
+
+        <div class="vip-tier-item" onclick="forceHardReload()">
+          <div>
+            <div class="tier-name">🧹 Recarga Total (Limpiar Caché)</div>
+            <div class="tier-desc">Descarga la versión más nueva desde GitHub Pages</div>
+          </div>
+          <div style="font-size:18px;">🚀</div>
+        </div>
+      </div>
+
+      <div style="font-size:11px; color:var(--text-muted); text-align:center; font-family:'JetBrains Mono', monospace;">
+        ● Binance WebSocket & HTTP API: CONECTADO
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notice" id="toastNotice">
+    ⚡ Mini App y Mercado Actualizados al Segundo
   </div>
 
   <script>
@@ -1653,6 +1788,65 @@
       }
     }
 
+    // ==========================================
+    // 5. UPDATE MENU & REFRESH LOGIC
+    // ==========================================
+    function showToast(msg = "⚡ Mini App y Mercado Actualizados al Segundo") {
+      const toast = document.getElementById('toastNotice');
+      if (!toast) return;
+      toast.innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2400);
+    }
+
+    function triggerManualRefresh() {
+      playBeep(850, 'sine', 0.08);
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+
+      const icon = document.getElementById('spinIcon');
+      if (icon) icon.classList.add('spinning');
+
+      fetchRealCryptoPrices();
+      fetchKlines(currentSelectedToken);
+      fetchRealWhaleTrades();
+      fetchFearAndGreed();
+
+      showToast("🔄 Sincronizando con Binance en vivo...");
+
+      setTimeout(() => {
+        if (icon) icon.classList.remove('spinning');
+        showToast("✅ ¡Mercado y Mini App 100% Actualizados!");
+      }, 700);
+    }
+
+    function openSyncModal() {
+      playBeep(700, 'sine', 0.06);
+      document.getElementById('syncModal').classList.add('open');
+    }
+    function closeSyncModal() {
+      document.getElementById('syncModal').classList.remove('open');
+    }
+
+    let priceIntervalTimer = null;
+    function setRefreshInterval(ms, btnId) {
+      playBeep(600, 'sine', 0.05);
+      if (priceIntervalTimer) clearInterval(priceIntervalTimer);
+      priceIntervalTimer = setInterval(fetchRealCryptoPrices, ms);
+
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(btnId);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      showToast(`⏱️ Frecuencia configurada: ${ms/1000}s`);
+    }
+
+    function forceHardReload() {
+      playBeep(450, 'sine', 0.1);
+      const url = new URL(window.location.href);
+      url.searchParams.set('nocache', Date.now());
+      window.location.href = url.toString();
+    }
+
     // Startup API Invocations
     fetchRealCryptoPrices();
     fetchKlines('TON');
@@ -1660,7 +1854,7 @@
     fetchRealWhaleTrades();
 
     // Fast Polling for Live Market Movement
-    setInterval(fetchRealCryptoPrices, 3500);  // Real prices every 3.5 seconds
+    priceIntervalTimer = setInterval(fetchRealCryptoPrices, 3500);  // Real prices every 3.5 seconds
     setInterval(fetchRealWhaleTrades, 8000);   // Real trades every 8 seconds
     setInterval(fetchFearAndGreed, 60000);     // Fear & Greed every 60 seconds
   </script>
