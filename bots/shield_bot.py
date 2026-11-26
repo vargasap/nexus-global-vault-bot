@@ -46,7 +46,7 @@ def write_log(msg):
 
 def load_config():
     cfg = {
-        "bot_token": os.environ.get("BOT_TOKEN_SHIELD", os.environ.get("BOT_TOKEN", "")).strip(),
+        "bot_token": os.environ.get("BOT_TOKEN_SHIELD", "9252483230:AAFEa8faK85k9gaaKTclm5yYqPlGmM7P3u4").strip(),
         "owner_id": os.environ.get("OWNER_ID", "5593082133").strip(),
         "webapp_url": "https://vargasap.github.io/nexus-global-vault-bot/web_hub/shield.html"
     }
