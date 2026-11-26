@@ -1055,70 +1055,89 @@
             }
         };
 
-        // State & LocalStorage
-        let currentLang = 'en';
-        let currentSpins = parseInt(localStorage.getItem('lva_spins') || '7');
-        let currentStars = parseInt(localStorage.getItem('lva_stars') || '250');
-
-        // Dynamic URL Params Synchronizer from Telegram Bot Database
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('spins')) {
-                const pSpins = parseInt(urlParams.get('spins'));
-                if (!isNaN(pSpins) && pSpins >= 0) {
-                    currentSpins = pSpins;
-                    localStorage.setItem('lva_spins', currentSpins);
-                }
-            }
-            if (urlParams.has('stars')) {
-                const pStars = parseInt(urlParams.get('stars'));
-                if (!isNaN(pStars) && pStars >= 0) {
-                    currentStars = pStars;
-                    localStorage.setItem('lva_stars', currentStars);
-                }
-            }
-        } catch(e) {}
-        let currentXp = parseInt(localStorage.getItem('lva_xp') || '25');
-        let currentLevel = parseInt(localStorage.getItem('lva_level') || '1');
-        let streakDay = parseInt(localStorage.getItem('lva_streak_day') || '1');
-        let lastDailyTimestamp = parseInt(localStorage.getItem('lva_last_daily') || '0');
-        let feverSpinsLeft = parseInt(localStorage.getItem('lva_fever') || '0');
-        let friendsInvited = parseInt(localStorage.getItem('lva_invited') || '0');
-
-        function saveState() {
-            localStorage.setItem('lva_spins', currentSpins);
-            localStorage.setItem('lva_stars', currentStars);
-            localStorage.setItem('lva_xp', currentXp);
-            localStorage.setItem('lva_level', currentLevel);
-            localStorage.setItem('lva_streak_day', streakDay);
-            localStorage.setItem('lva_last_daily', lastDailyTimestamp);
-            localStorage.setItem('lva_fever', feverSpinsLeft);
-            localStorage.setItem('lva_invited', friendsInvited);
-            localStorage.setItem('lva_lang', currentLang);
-        }
-
-        // Telegram WebApp Setup
+        // Telegram WebApp Setup & Multi-User Isolation
         const tg = window.Telegram?.WebApp;
         if (tg) {
-            tg.ready();
-            tg.expand();
             try {
-                if (tg.initDataUnsafe?.user) {
-                    const u = tg.initDataUnsafe.user;
-                    const name = u.first_name || u.username || 'Player';
-                    document.getElementById('userName').textContent = name;
-                    document.getElementById('avatarLetter').textContent = name[0].toUpperCase();
-                    // Detect language
-                    if (u.language_code) {
-                        const langPrefix = u.language_code.toLowerCase().slice(0, 2);
-                        if (I18N[langPrefix]) currentLang = langPrefix;
-                    }
-                }
+                tg.ready();
+                tg.expand();
             } catch(e) {}
         }
-        // Check saved lang
-        const savedLang = localStorage.getItem('lva_lang');
+
+        // Dynamic URL Params & User Extraction
+        const urlParams = new URLSearchParams(window.location.search);
+        const tgUser = tg?.initDataUnsafe?.user || {};
+
+        // Identify Individual Player ID (Ensures complete isolation from Creator)
+        let activeUserId = "guest";
+        if (tgUser.id) {
+            activeUserId = String(tgUser.id);
+        } else if (urlParams.has('id')) {
+            activeUserId = String(urlParams.get('id'));
+        }
+
+        // Display individual player's name & avatar initial
+        const playerName = tgUser.first_name || tgUser.username || (activeUserId !== "guest" ? `Player_${activeUserId.slice(-4)}` : "Jugador");
+        document.getElementById('userName').textContent = playerName;
+        document.getElementById('avatarLetter').textContent = (playerName[0] || 'J').toUpperCase();
+
+        // Detect Player Language from their Telegram Client
+        let currentLang = 'es';
+        if (tgUser.language_code) {
+            const langPrefix = tgUser.language_code.toLowerCase().slice(0, 2);
+            if (I18N[langPrefix]) currentLang = langPrefix;
+        }
+        const savedLang = localStorage.getItem('lva_lang_' + activeUserId);
         if (savedLang && I18N[savedLang]) currentLang = savedLang;
+
+        // Player Independent State (Stored separately per activeUserId)
+        const storagePrefix = 'lva_' + activeUserId + '_';
+
+        let currentSpins = 5; // Default 5 free welcome spins for any new player
+        let currentStars = 100; // Default 100 welcome stars
+
+        // Check if player has saved data on their device
+        const savedSpins = localStorage.getItem(storagePrefix + 'spins');
+        const savedStars = localStorage.getItem(storagePrefix + 'stars');
+
+        if (savedSpins !== null) {
+            currentSpins = parseInt(savedSpins);
+        } else if (urlParams.has('spins')) {
+            currentSpins = parseInt(urlParams.get('spins'));
+        }
+
+        if (savedStars !== null) {
+            currentStars = parseInt(savedStars);
+        } else if (urlParams.has('stars')) {
+            currentStars = parseInt(urlParams.get('stars'));
+        }
+
+        // If URL has fresh server-verified spins (e.g. from purchase or daily claim)
+        if (urlParams.has('spins')) {
+            const serverSpins = parseInt(urlParams.get('spins'));
+            if (!isNaN(serverSpins)) {
+                currentSpins = Math.max(currentSpins, serverSpins);
+            }
+        }
+
+        let currentXp = parseInt(localStorage.getItem(storagePrefix + 'xp') || '0');
+        let currentLevel = parseInt(localStorage.getItem(storagePrefix + 'level') || '1');
+        let streakDay = parseInt(localStorage.getItem(storagePrefix + 'streak_day') || '1');
+        let lastDailyTimestamp = parseInt(localStorage.getItem(storagePrefix + 'last_daily') || '0');
+        let feverSpinsLeft = parseInt(localStorage.getItem(storagePrefix + 'fever') || '0');
+        let friendsInvited = parseInt(localStorage.getItem(storagePrefix + 'invited') || '0');
+
+        function saveState() {
+            localStorage.setItem(storagePrefix + 'spins', currentSpins);
+            localStorage.setItem(storagePrefix + 'stars', currentStars);
+            localStorage.setItem(storagePrefix + 'xp', currentXp);
+            localStorage.setItem(storagePrefix + 'level', currentLevel);
+            localStorage.setItem(storagePrefix + 'streak_day', streakDay);
+            localStorage.setItem(storagePrefix + 'last_daily', lastDailyTimestamp);
+            localStorage.setItem(storagePrefix + 'fever', feverSpinsLeft);
+            localStorage.setItem(storagePrefix + 'invited', friendsInvited);
+            localStorage.setItem('lva_lang_' + activeUserId, currentLang);
+        }
 
         function setLanguage(lang) {
             if (!I18N[lang]) return;
@@ -1585,10 +1604,7 @@
 
         // Viral Share Invite (100% hooked to @lucky_vault_arcade_bot)
         function shareInviteLink() {
-            let userId = "";
-            try {
-                userId = tg?.initDataUnsafe?.user?.id || "";
-            } catch(e) {}
+            let userId = activeUserId !== "guest" ? activeUserId : (tg?.initDataUnsafe?.user?.id || "");
             const botUrl = "https://t.me/lucky_vault_arcade_bot" + (userId ? `?start=ref_${userId}` : "");
             const shareText = "🎰 Come play Lucky Vault Arcade on Telegram! Spin the 60 FPS Wheel of Fortune, open mystery vaults, and win Telegram Stars! 💎⚡";
             const shareUrl = "https://t.me/share/url?url=" + encodeURIComponent(botUrl) + "&text=" + encodeURIComponent(shareText);
