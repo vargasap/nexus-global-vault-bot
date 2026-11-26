@@ -55,6 +55,18 @@ def log(msg):
 
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
+        # Si visitan la raíz o /cybershield, servir la Landing Page oficial
+        if self.path in ["/", "/cybershield", "/cybershield.html", "/index.html"]:
+            landing_path = os.path.join(BASE_DIR, "web_hub", "cybershield.html")
+            if os.path.exists(landing_path):
+                self.send_response(200)
+                self.send_header("Content-type", "text/html; charset=utf-8")
+                self.end_headers()
+                with open(landing_path, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+
+        # Para endpoints de monitoreo /healthz o /status
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
