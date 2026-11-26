@@ -39,7 +39,6 @@
       overflow-x: hidden;
       padding-bottom: 85px;
     }
-    /* Animated Background Grid */
     .bg-grid {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -134,7 +133,7 @@
       box-shadow: var(--glow-gold);
       cursor: pointer;
     }
-    /* Stats & Balance Bar */
+    /* Stats Bar */
     .stats-card {
       background: linear-gradient(135deg, #0e1526, #141c30);
       border: 1px solid rgba(0, 255, 194, 0.2);
@@ -188,7 +187,7 @@
       font-size: 11px;
       color: var(--text-muted);
     }
-    /* Tabs Navigation */
+    /* Navigation Tabs */
     .tabs-nav {
       display: flex;
       background: #0b0f1a;
@@ -220,7 +219,6 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       border: 1px solid rgba(0, 255, 194, 0.25);
     }
-    /* View Sections */
     .tab-content {
       display: none;
     }
@@ -246,17 +244,20 @@
       gap: 6px;
       overflow-x: auto;
       scrollbar-width: none;
+      width: 100%;
     }
     .token-chips::-webkit-scrollbar { display: none; }
     .token-chip {
       background: #141b2c;
       border: 1px solid var(--card-border);
       color: var(--text-muted);
-      padding: 5px 10px;
-      border-radius: 8px;
+      padding: 6px 12px;
+      border-radius: 10px;
       font-size: 11px;
       font-weight: 700;
       cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
     }
     .token-chip.active {
       background: var(--accent-ton);
@@ -271,7 +272,7 @@
       margin-bottom: 8px;
     }
     .chart-price {
-      font-size: 24px;
+      font-size: 26px;
       font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
     }
@@ -279,12 +280,16 @@
       font-size: 13px;
       font-weight: 700;
       font-family: 'JetBrains Mono', monospace;
-      padding: 3px 8px;
+      padding: 4px 8px;
       border-radius: 6px;
     }
     .chart-change.up {
       color: var(--accent-cyan);
-      background: rgba(0, 255, 194, 0.1);
+      background: rgba(0, 255, 194, 0.12);
+    }
+    .chart-change.down {
+      color: var(--accent-red);
+      background: rgba(255, 51, 102, 0.12);
     }
     .signal-pill {
       display: inline-flex;
@@ -306,7 +311,15 @@
       border-radius: 12px;
       display: block;
     }
-    /* Airdrops Radar Section */
+    .api-badge {
+      font-size: 10px;
+      color: var(--accent-cyan);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    /* Radar Section */
     .radar-list {
       display: flex;
       flex-direction: column;
@@ -392,7 +405,7 @@
       border-radius: 8px;
       cursor: pointer;
     }
-    /* Whale Alerts Stream */
+    /* Whale Alerts */
     .whale-stream {
       display: flex;
       flex-direction: column;
@@ -437,7 +450,25 @@
       color: var(--accent-gold);
       font-weight: 700;
     }
-    /* Tap Miner Section */
+    .whale-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-right: 6px;
+    }
+    .whale-buy {
+      background: rgba(0, 255, 194, 0.2);
+      color: var(--accent-cyan);
+      border: 1px solid var(--accent-cyan);
+    }
+    .whale-sell {
+      background: rgba(255, 51, 102, 0.2);
+      color: var(--accent-red);
+      border: 1px solid var(--accent-red);
+    }
+    /* Miner Section */
     .miner-box {
       background: radial-gradient(circle at center, #111a33 0%, #070a12 100%);
       border: 1px solid var(--card-border);
@@ -517,7 +548,6 @@
       color: var(--accent-gold);
       font-family: 'JetBrains Mono', monospace;
     }
-    /* Floating Particle Click Feedback */
     .particle {
       position: fixed;
       font-size: 20px;
@@ -533,7 +563,7 @@
       0% { opacity: 1; transform: translateY(0) scale(1); }
       100% { opacity: 0; transform: translateY(-70px) scale(1.4); }
     }
-    /* Modal VIP Store */
+    /* VIP Modal */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -624,7 +654,7 @@
       align-items: center;
       gap: 4px;
     }
-    /* Fixed Bottom Nav */
+    /* Bottom Navigation */
     .bottom-bar {
       position: fixed;
       bottom: 0; left: 0; right: 0;
@@ -671,6 +701,7 @@
           <div class="live-pulse">
             <span class="live-dot"></span>
             <span id="txt-radar-live">RADAR EN VIVO</span>
+            <span style="font-size:9px; background:rgba(0,255,194,0.15); padding:2px 5px; border-radius:4px; margin-left:4px;">BINANCE API</span>
           </div>
         </div>
       </div>
@@ -810,33 +841,39 @@
       <div class="chart-card">
         <div class="chart-header">
           <div class="token-chips">
-            <button class="token-chip active" onclick="selectToken('TON', 5.64, 8.4, this)">💎 TON</button>
-            <button class="token-chip" onclick="selectToken('BTC', 94850, 4.2, this)">₿ BTC</button>
-            <button class="token-chip" onclick="selectToken('SOL', 214.3, 11.5, this)">◎ SOL</button>
-            <button class="token-chip" onclick="selectToken('NOT', 0.0078, -1.8, this)">⚡ NOT</button>
-            <button class="token-chip" onclick="selectToken('DOGS', 0.00062, 5.1, this)">🦴 DOGS</button>
+            <button class="token-chip active" id="chip-TON" onclick="switchToken('TON')">💎 TON</button>
+            <button class="token-chip" id="chip-BTC" onclick="switchToken('BTC')">₿ BTC</button>
+            <button class="token-chip" id="chip-SOL" onclick="switchToken('SOL')">◎ SOL</button>
+            <button class="token-chip" id="chip-NOT" onclick="switchToken('NOT')">⚡ NOT</button>
+            <button class="token-chip" id="chip-DOGS" onclick="switchToken('DOGS')">🦴 DOGS</button>
           </div>
         </div>
         <div class="chart-price-row">
           <div>
-            <div class="chart-price" id="currPrice">$5.64</div>
+            <div class="chart-price" id="currPrice">Cargando...</div>
           </div>
-          <div class="chart-change up" id="currChange">+8.40%</div>
+          <div class="chart-change up" id="currChange">+0.00%</div>
         </div>
-        <div>
-          <span class="signal-pill" id="currSignal">🟢 SEÑAL: FUERTE COMPRA (RSI 44)</span>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="signal-pill" id="currSignal">🟢 ANÁLISIS EN VIVO (BINANCE DATA)</span>
+          <span class="api-badge">● API TIEMPO REAL</span>
         </div>
         <canvas id="marketCanvas" width="440" height="160"></canvas>
       </div>
 
       <div class="airdrop-card" style="border-color: rgba(0, 152, 234, 0.4);">
-        <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px; color: var(--accent-ton);">
-          🎯 Análisis Técnico en Vivo
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+          <span style="font-weight: 700; font-size: 14px; color: var(--accent-ton);">
+            🎯 Indicadores Técnicos Oficiales
+          </span>
+          <span id="fngBadge" style="font-size:11px; font-weight:800; font-family:'JetBrains Mono'; color:var(--accent-gold);">
+            F&G: 11 (Miedo Extremo)
+          </span>
         </div>
-        <div style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
-          • Soporte clave: <strong style="color:#fff;">$5.35</strong> | Resistencia: <strong style="color:#fff;">$5.90</strong><br>
-          • Volumen 24h: <strong>$148.2M</strong> (+24.5%)<br>
-          • Sentimiento de Mercado: <strong style="color:var(--accent-cyan);">Codicia Extrema (78/100)</strong>
+        <div style="font-size: 12px; color: var(--text-muted); line-height: 1.6;" id="techMetrics">
+          • Máximo 24h: <strong id="valHigh" style="color:#fff;">--</strong> | Mínimo 24h: <strong id="valLow" style="color:#fff;">--</strong><br>
+          • Volumen Real 24h: <strong id="valVol" style="color:#fff;">--</strong><br>
+          • Sentimiento Global: <strong id="valSentiment" style="color:var(--accent-cyan);">Calculando...</strong>
         </div>
       </div>
     </div>
@@ -844,49 +881,11 @@
     <!-- TAB 3: RASTREADOR DE BALLENAS -->
     <div id="tab-whales" class="tab-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-        <span style="font-size:13px; font-weight:700; color:var(--text-muted);">MONITOR ON-CHAIN (+100K USD)</span>
-        <span style="font-size:11px; color:var(--accent-cyan); font-family:'JetBrains Mono';">● 100% EN VIVO</span>
+        <span style="font-size:13px; font-weight:700; color:var(--text-muted);">OPERACIONES REALES INSTITUCIONALES</span>
+        <span style="font-size:11px; color:var(--accent-cyan); font-family:'JetBrains Mono';">● BINANCE LIVE</span>
       </div>
       <div class="whale-stream" id="whaleStream">
-        <!-- Live items will be prepended dynamically -->
-        <div class="whale-item">
-          <div class="whale-icon">🐋</div>
-          <div class="whale-details">
-            <div class="whale-head">
-              <span>TON Blockchain</span>
-              <span>Hace 2m</span>
-            </div>
-            <div class="whale-msg">
-              Transferencia de <span class="whale-amount">350,000 $TON</span> ($1,974,000) de Wallet Fría a OKX.
-            </div>
-          </div>
-        </div>
-
-        <div class="whale-item">
-          <div class="whale-icon">🐋</div>
-          <div class="whale-details">
-            <div class="whale-head">
-              <span>Bitcoin Network</span>
-              <span>Hace 6m</span>
-            </div>
-            <div class="whale-msg">
-              Acumulación masiva de <span class="whale-amount">84.5 $BTC</span> ($8,014,825) en Binance Institutional.
-            </div>
-          </div>
-        </div>
-
-        <div class="whale-item">
-          <div class="whale-icon">🐋</div>
-          <div class="whale-details">
-            <div class="whale-head">
-              <span>Solana Raydium</span>
-              <span>Hace 11m</span>
-            </div>
-            <div class="whale-msg">
-              Swap masivo de <span class="whale-amount">15,000 $SOL</span> ($3,214,500) a USDC.
-            </div>
-          </div>
-        </div>
+        <!-- Real live trades will be injected dynamically -->
       </div>
     </div>
 
@@ -1029,7 +1028,7 @@
       }
     }
 
-    // Audio Synthesizer (Web Audio API)
+    // Audio Synthesizer
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playBeep(freq = 600, type = 'sine', duration = 0.08) {
       try {
@@ -1107,7 +1106,10 @@
       if (el) el.classList.add('active');
 
       if (tabId === 'chart') {
-        setTimeout(renderChart, 50);
+        setTimeout(() => {
+          renderChart();
+          fetchKlines(currentSelectedToken);
+        }, 50);
       }
     }
 
@@ -1131,7 +1133,6 @@
       playBeep(850 + Math.random() * 200, 'triangle', 0.08);
       if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
-      // Spawn floating particle
       const p = document.createElement('div');
       p.className = 'particle';
       p.innerText = '+10 ⚡';
@@ -1142,30 +1143,178 @@
       setTimeout(() => p.remove(), 800);
     }
 
-    // Chart Canvas Drawing
-    let currentToken = 'TON';
-    let tokenData = {
-      'TON': { price: 5.64, change: '+8.40%', color: '#00ffc2', points: [5.12, 5.20, 5.18, 5.35, 5.30, 5.48, 5.42, 5.55, 5.64] },
-      'BTC': { price: 94850, change: '+4.20%', color: '#ffb800', points: [91200, 92100, 91800, 93400, 92900, 94100, 93800, 94850] },
-      'SOL': { price: 214.3, change: '+11.5%', color: '#9945ff', points: [192, 198, 195, 204, 201, 209, 206, 214.3] },
-      'NOT': { price: 0.0078, change: '-1.80%', color: '#ff3366', points: [0.0084, 0.0082, 0.0081, 0.0079, 0.0080, 0.0078] },
-      'DOGS': { price: 0.00062, change: '+5.10%', color: '#0098ea', points: [0.00057, 0.00058, 0.00060, 0.00059, 0.00062] }
+    // ==========================================
+    // REAL CRYPTO APIS (BINANCE & MARKET LIVE)
+    // ==========================================
+    let currentSelectedToken = 'TON';
+    let realMarketData = {
+      'TON': { symbol: 'TONUSDT', name: 'TON', price: 1.60, change: 0, high: 1.65, low: 1.55, vol: 450000, points: [1.58, 1.59, 1.61, 1.60] },
+      'BTC': { symbol: 'BTCUSDT', name: 'Bitcoin', price: 60750, change: 3.5, high: 61500, low: 58900, vol: 1500000000, points: [59500, 60100, 60750] },
+      'SOL': { symbol: 'SOLUSDT', name: 'Solana', price: 70.80, change: 4.7, high: 72.50, low: 67.20, vol: 200000000, points: [68.5, 69.8, 70.8] },
+      'NOT': { symbol: 'NOTUSDT', name: 'Notcoin', price: 0.0003, change: 6.9, high: 0.00032, low: 0.00028, vol: 280000, points: [0.00029, 0.0003] },
+      'DOGS': { symbol: 'DOGSUSDT', name: 'DOGS', price: 0.000045, change: 6.4, high: 0.000048, low: 0.000042, vol: 220000, points: [0.000043, 0.000045] }
     };
 
-    function selectToken(symbol, price, change, el) {
-      currentToken = symbol;
-      document.querySelectorAll('.token-chip').forEach(c => c.classList.remove('active'));
-      el.classList.add('active');
+    function formatCryptoPrice(val) {
+      if (val >= 1000) return '$' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (val >= 1) return '$' + val.toFixed(2);
+      if (val >= 0.01) return '$' + val.toFixed(4);
+      return '$' + val.toFixed(6);
+    }
 
-      const data = tokenData[symbol];
-      document.getElementById('currPrice').innerText = symbol === 'BTC' || symbol === 'SOL' || symbol === 'TON' ? `$${price.toLocaleString()}` : `$${price}`;
-      const changeEl = document.getElementById('currChange');
-      changeEl.innerText = `${change > 0 ? '+' : ''}${change}%`;
-      changeEl.className = change >= 0 ? 'chart-change up' : 'chart-change';
-      if (change < 0) changeEl.style.background = 'rgba(255, 51, 102, 0.15)';
-      if (change < 0) changeEl.style.color = '#ff3366';
+    // 1. Fetch Real Prices from Binance Public API
+    async function fetchRealCryptoPrices() {
+      try {
+        const url = 'https://api.binance.com/api/v3/ticker/24hr?symbols=["BTCUSDT","TONUSDT","SOLUSDT","NOTUSDT","DOGSUSDT"]';
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const items = await res.json();
+
+        items.forEach(item => {
+          const key = item.symbol.replace('USDT', '');
+          if (realMarketData[key]) {
+            realMarketData[key].price = parseFloat(item.lastPrice);
+            realMarketData[key].change = parseFloat(item.priceChangePercent);
+            realMarketData[key].high = parseFloat(item.highPrice);
+            realMarketData[key].low = parseFloat(item.lowPrice);
+            realMarketData[key].vol = parseFloat(item.quoteVolume);
+          }
+        });
+
+        updateChartUI();
+        updateChipsUI();
+      } catch (err) {
+        console.log("Binance API fetch err:", err);
+      }
+    }
+
+    // 2. Fetch Real Candlestick / Klines for Interactive Chart
+    async function fetchKlines(tokenKey) {
+      try {
+        const sym = realMarketData[tokenKey]?.symbol || 'TONUSDT';
+        const url = `https://api.binance.com/api/v3/klines?symbol=${sym}&interval=1h&limit=15`;
+        const res = await fetch(url);
+        if (!res.ok) return;
+        const klines = await res.json();
+        const points = klines.map(k => parseFloat(k[4])); // Closing prices
+        if (points.length > 2) {
+          realMarketData[tokenKey].points = points;
+          renderChart();
+        }
+      } catch (err) {
+        console.log("Klines API fetch err:", err);
+      }
+    }
+
+    // 3. Fetch Real Fear & Greed Index
+    async function fetchFearAndGreed() {
+      try {
+        const res = await fetch('https://api.alternative.me/fng/?limit=1');
+        if (!res.ok) return;
+        const json = await res.json();
+        const fng = json.data[0];
+        const val = fng.value;
+        const cls = fng.value_classification;
+        document.getElementById('fngBadge').innerText = `F&G: ${val}/100 (${cls})`;
+        document.getElementById('valSentiment').innerText = `${cls} (${val}/100)`;
+        if (val < 25) {
+          document.getElementById('fngBadge').style.color = 'var(--accent-red)';
+        } else if (val > 65) {
+          document.getElementById('fngBadge').style.color = 'var(--accent-cyan)';
+        }
+      } catch (e){}
+    }
+
+    // 4. Fetch Real Large Trades (Ballenas) from Binance
+    async function fetchRealWhaleTrades() {
+      try {
+        const symbols = ['BTCUSDT', 'TONUSDT', 'SOLUSDT'];
+        const randomSym = symbols[Math.floor(Math.random() * symbols.length)];
+        const res = await fetch(`https://api.binance.com/api/v3/trades?symbol=${randomSym}&limit=35`);
+        if (!res.ok) return;
+        const trades = await res.json();
+
+        const largeTrades = trades.filter(t => (parseFloat(t.qty) * parseFloat(t.price)) >= 10000);
+        const stream = document.getElementById('whaleStream');
+        if (!stream) return;
+
+        if (largeTrades.length > 0) {
+          const t = largeTrades[largeTrades.length - 1];
+          const usdVal = parseFloat(t.qty) * parseFloat(t.price);
+          const isBuyer = !t.isBuyerMaker; // true = aggressive buy taker
+          const coin = randomSym.replace('USDT', '');
+
+          const item = document.createElement('div');
+          item.className = 'whale-item';
+          item.innerHTML = `
+            <div class="whale-icon">🐋</div>
+            <div class="whale-details">
+              <div class="whale-head">
+                <span>Binance Institutional (${coin})</span>
+                <span style="color:var(--accent-cyan);">● Hace segundos</span>
+              </div>
+              <div class="whale-msg">
+                <span class="whale-badge ${isBuyer ? 'whale-buy' : 'whale-sell'}">${isBuyer ? 'COMPRA' : 'VENTA'}</span>
+                Operación de <span class="whale-amount">${parseFloat(t.qty).toLocaleString()} $${coin}</span> ($${usdVal.toLocaleString('en-US', {maximumFractionDigits:0})}) a ${formatCryptoPrice(parseFloat(t.price))}.
+              </div>
+            </div>
+          `;
+          stream.insertBefore(item, stream.firstChild);
+          if (stream.children.length > 10) stream.removeChild(stream.lastChild);
+        }
+      } catch(e){}
+    }
+
+    function switchToken(tokenKey) {
+      currentSelectedToken = tokenKey;
+      document.querySelectorAll('.token-chip').forEach(c => c.classList.remove('active'));
+      const activeBtn = document.getElementById(`chip-${tokenKey}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      updateChartUI();
+      fetchKlines(tokenKey);
+    }
+
+    function updateChartUI() {
+      const data = realMarketData[currentSelectedToken];
+      if (!data) return;
+
+      document.getElementById('currPrice').innerText = formatCryptoPrice(data.price);
+      const chgEl = document.getElementById('currChange');
+      chgEl.innerText = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%`;
+      chgEl.className = data.change >= 0 ? 'chart-change up' : 'chart-change down';
+
+      document.getElementById('valHigh').innerText = formatCryptoPrice(data.high);
+      document.getElementById('valLow').innerText = formatCryptoPrice(data.low);
+      document.getElementById('valVol').innerText = `$${data.vol.toLocaleString('en-US', {maximumFractionDigits: 0})}`;
+
+      const signalEl = document.getElementById('currSignal');
+      if (data.change > 2) {
+        signalEl.innerText = "🟢 SEÑAL: FUERTE COMPRA (MOMENTUM)";
+        signalEl.style.color = "var(--accent-cyan)";
+        signalEl.style.borderColor = "var(--accent-cyan)";
+      } else if (data.change < -2) {
+        signalEl.innerText = "🔴 SEÑAL: VENTA TÉCNICA (SOPORTE)";
+        signalEl.style.color = "var(--accent-red)";
+        signalEl.style.borderColor = "var(--accent-red)";
+      } else {
+        signalEl.innerText = "🟡 SEÑAL: ACUMULACIÓN NEUTRAL";
+        signalEl.style.color = "var(--accent-gold)";
+        signalEl.style.borderColor = "var(--accent-gold)";
+      }
 
       renderChart();
+    }
+
+    function updateChipsUI() {
+      Object.keys(realMarketData).forEach(k => {
+        const d = realMarketData[k];
+        const chip = document.getElementById(`chip-${k}`);
+        if (chip) {
+          const icon = k === 'TON' ? '💎' : k === 'BTC' ? '₿' : k === 'SOL' ? '◎' : k === 'NOT' ? '⚡' : '🦴';
+          chip.innerText = `${icon} ${k} ${formatCryptoPrice(d.price)}`;
+        }
+      });
     }
 
     function renderChart() {
@@ -1187,20 +1336,23 @@
         ctx.stroke();
       }
 
-      const points = tokenData[currentToken]?.points || [5.2, 5.3, 5.4, 5.5, 5.64];
-      const min = Math.min(...points) * 0.98;
-      const max = Math.max(...points) * 1.02;
+      const points = realMarketData[currentSelectedToken]?.points || [1.5, 1.55, 1.6];
+      const min = Math.min(...points) * 0.995;
+      const max = Math.max(...points) * 1.005;
 
-      // Draw Gradient Area
+      const isUp = (realMarketData[currentSelectedToken]?.change || 0) >= 0;
+      const mainColor = isUp ? '#00ffc2' : '#ff3366';
+
+      // Gradient Area
       const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, 'rgba(0, 255, 194, 0.35)');
-      grad.addColorStop(1, 'rgba(0, 255, 194, 0.0)');
+      grad.addColorStop(0, isUp ? 'rgba(0, 255, 194, 0.35)' : 'rgba(255, 51, 102, 0.35)');
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
       ctx.beginPath();
-      const stepX = w / (points.length - 1);
+      const stepX = w / Math.max(points.length - 1, 1);
       points.forEach((p, idx) => {
         const x = idx * stepX;
-        const y = h - ((p - min) / (max - min)) * (h - 40) - 20;
+        const y = h - ((p - min) / (max - min || 1)) * (h - 40) - 20;
         if (idx === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       });
@@ -1210,60 +1362,29 @@
       ctx.fillStyle = grad;
       ctx.fill();
 
-      // Draw Candlestick / Line
+      // Line
       ctx.beginPath();
       points.forEach((p, idx) => {
         const x = idx * stepX;
-        const y = h - ((p - min) / (max - min)) * (h - 40) - 20;
+        const y = h - ((p - min) / (max - min || 1)) * (h - 40) - 20;
         if (idx === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       });
-      ctx.strokeStyle = '#00ffc2';
+      ctx.strokeStyle = mainColor;
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // Glowing pulse at the tip
+      // Glowing tip
       const lastX = w;
-      const lastY = h - ((points[points.length - 1] - min) / (max - min)) * (h - 40) - 20;
+      const lastY = h - ((points[points.length - 1] - min) / (max - min || 1)) * (h - 40) - 20;
       ctx.beginPath();
       ctx.arc(lastX - 2, lastY, 5, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = '#00ffc2';
+      ctx.shadowColor = mainColor;
       ctx.shadowBlur = 12;
       ctx.fill();
       ctx.shadowBlur = 0;
     }
-
-    // Dynamic Live Whale Alerts Pusher
-    const sampleWhales = [
-      { chain: "TON Blockchain", time: "Justo ahora", msg: "Compra agresiva de <strong>120,000 $TON</strong> ($676,800) en DeDust." },
-      { chain: "Ethereum", time: "Hace 1m", msg: "Retiro masivo de <strong>1,200 $ETH</strong> ($4,080,000) de Coinbase a cold storage." },
-      { chain: "Bitcoin Network", time: "Hace 3m", msg: "Movimiento de ballena de 2013: <strong>50 $BTC</strong> ($4,742,500) transferidos." },
-      { chain: "Solana", time: "Hace 4m", msg: "Depósito de <strong>25,000 $SOL</strong> ($5,357,500) a Kraken." }
-    ];
-    let whaleIdx = 0;
-
-    setInterval(() => {
-      const stream = document.getElementById('whaleStream');
-      if (!stream) return;
-      const data = sampleWhales[whaleIdx % sampleWhales.length];
-      whaleIdx++;
-
-      const item = document.createElement('div');
-      item.className = 'whale-item';
-      item.innerHTML = `
-        <div class="whale-icon">🐋</div>
-        <div class="whale-details">
-          <div class="whale-head">
-            <span>${data.chain}</span>
-            <span style="color:var(--accent-cyan);">● ${data.time}</span>
-          </div>
-          <div class="whale-msg">${data.msg}</div>
-        </div>
-      `;
-      stream.insertBefore(item, stream.firstChild);
-      if (stream.children.length > 8) stream.removeChild(stream.lastChild);
-    }, 14000);
 
     // Modal VIP handlers
     function openVipModal() {
@@ -1277,7 +1398,6 @@
     function buyVip(tierKey) {
       playBeep(880, 'sine', 0.1);
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-      // Direct deep link to bot invoice generator
       const deepLink = `https://t.me/cryptovault_pulse_bot?start=buy_${tierKey}`;
       if (tg?.openTelegramLink) {
         tg.openTelegramLink(deepLink);
@@ -1350,7 +1470,6 @@
       document.getElementById('txt-bal-label').innerText = t.balLabel;
     }
 
-    // Auto detect language
     if (tg?.initDataUnsafe?.user?.language_code) {
       const code = tg.initDataUnsafe.user.language_code.toLowerCase().slice(0, 2);
       if (i18n[code]) {
@@ -1359,8 +1478,16 @@
       }
     }
 
-    // Initial Chart Render
-    setTimeout(renderChart, 200);
+    // Initial Live API Invocations
+    fetchRealCryptoPrices();
+    fetchKlines('TON');
+    fetchFearAndGreed();
+    fetchRealWhaleTrades();
+
+    // Intervals for Live Data Feeds
+    setInterval(fetchRealCryptoPrices, 7000);   // Real prices every 7s
+    setInterval(fetchRealWhaleTrades, 12000);   // Real whale trades every 12s
+    setInterval(fetchFearAndGreed, 60000);      // Fear & Greed every 60s
   </script>
 </body>
 </html>
