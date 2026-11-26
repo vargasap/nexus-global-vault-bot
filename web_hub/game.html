@@ -1059,6 +1059,25 @@
         let currentLang = 'en';
         let currentSpins = parseInt(localStorage.getItem('lva_spins') || '7');
         let currentStars = parseInt(localStorage.getItem('lva_stars') || '250');
+
+        // Dynamic URL Params Synchronizer from Telegram Bot Database
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('spins')) {
+                const pSpins = parseInt(urlParams.get('spins'));
+                if (!isNaN(pSpins) && pSpins >= 0) {
+                    currentSpins = pSpins;
+                    localStorage.setItem('lva_spins', currentSpins);
+                }
+            }
+            if (urlParams.has('stars')) {
+                const pStars = parseInt(urlParams.get('stars'));
+                if (!isNaN(pStars) && pStars >= 0) {
+                    currentStars = pStars;
+                    localStorage.setItem('lva_stars', currentStars);
+                }
+            }
+        } catch(e) {}
         let currentXp = parseInt(localStorage.getItem('lva_xp') || '25');
         let currentLevel = parseInt(localStorage.getItem('lva_level') || '1');
         let streakDay = parseInt(localStorage.getItem('lva_streak_day') || '1');
