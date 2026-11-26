@@ -13,5 +13,7 @@ services:
         sync: false
       - key: BOT_TOKEN_PULSE
         sync: false
+      - key: BOT_TOKEN_SHIELD
+        sync: false
       - key: OWNER_ID
         value: 5593082133

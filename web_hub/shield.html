@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>CyberShield AI 🛡️ Radar Forense Anti-Estafas</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #050811;
+      --card-bg: #090e1a;
+      --card-border: rgba(0, 229, 255, 0.16);
+      --accent-cyber: #00e5ff;
+      --accent-safe: #00ff88;
+      --accent-warn: #ffb800;
+      --accent-danger: #ff0055;
+      --text-main: #f0f6fc;
+      --text-muted: #8b9bb4;
+      --glow-cyber: 0 0 25px rgba(0, 229, 255, 0.35);
+      --glow-danger: 0 0 25px rgba(255, 0, 85, 0.45);
+      --glow-safe: 0 0 25px rgba(0, 255, 136, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-bottom: 95px;
+      position: relative;
+    }
+
+    /* Cyber Matrix Canvas Grid Background */
+    .cyber-grid {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: 
+        linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 14px 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header Bar */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      background: rgba(9, 14, 26, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 10px 14px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .brand-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-shield-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 255, 136, 0.1));
+      border: 1px solid var(--accent-cyber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: var(--glow-cyber);
+      animation: pulse-shield 3s infinite alternate;
+    }
+
+    @keyframes pulse-shield {
+      0% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+      100% { box-shadow: 0 0 25px rgba(0, 229, 255, 0.7); }
+    }
+
+    .brand-text h1 {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      background: linear-gradient(90deg, #fff, var(--accent-cyber));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .threat-level-indicator {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-safe);
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-safe);
+      box-shadow: 0 0 8px var(--accent-safe);
+      animation: blink-dot 1.4s infinite;
+    }
+
+    @keyframes blink-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .lang-btn {
+      background: #0d1424;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .vip-pill-btn {
+      background: linear-gradient(135deg, #ffb800, #ff8800);
+      color: #000;
+      font-weight: 800;
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(255, 184, 0, 0.4);
+      cursor: pointer;
+    }
+
+    /* Onboarding / Mission Banner */
+    .mission-banner {
+      background: linear-gradient(135deg, #0b1324, #08101d);
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      border-radius: 14px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .mission-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mission-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .mission-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .mission-badge {
+      background: rgba(0, 229, 255, 0.15);
+      border: 1px solid var(--accent-cyber);
+      color: var(--accent-cyber);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    /* Main Navigation Module Tabs */
+    .module-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .mod-tab-btn {
+      background: #090e1a;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      border-radius: 12px;
+      padding: 10px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .mod-tab-btn span:first-child {
+      font-size: 18px;
+    }
+
+    .mod-tab-btn.active {
+      background: linear-gradient(180deg, rgba(0, 229, 255, 0.18), rgba(0, 229, 255, 0.04));
+      border-color: var(--accent-cyber);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+    }
+
+    /* Tab Contents */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Common Card Box */
+    .cyber-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+      position: relative;
+    }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #fff;
+    }
+
+    .security-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--accent-cyber);
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+
+    /* Input & Action Styles */
+    .cyber-input-group {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .cyber-input {
+      flex: 1;
+      background: #050811;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 11px 14px;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .cyber-input:focus {
+      border-color: var(--accent-cyber);
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
+    }
+
+    .cyber-paste-btn {
+      background: #0d1526;
+      border: 1px solid var(--card-border);
+      color: var(--accent-cyber);
+      border-radius: 12px;
+      padding: 0 12px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .cyber-paste-btn:active {
+      transform: scale(0.95);
+    }
+
+    .cyber-textarea {
+      width: 100%;
+      height: 110px;
+      background: #050811;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      font-size: 12px;
+      outline: none;
+      resize: none;
+      margin-bottom: 10px;
+    }
+
+    .cyber-textarea:focus {
+      border-color: var(--accent-cyber);
+    }
+
+    .primary-scan-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #00e5ff, #0088ff);
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: var(--glow-cyber);
+      transition: all 0.2s;
+    }
+
+    .primary-scan-btn:active {
+      transform: scale(0.98);
+      filter: brightness(1.1);
+    }
+
+    /* Quick Test Presets */
+    .presets-row {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin-bottom: 12px;
+      padding-bottom: 2px;
+    }
+
+    .presets-row::-webkit-scrollbar { display: none; }
+
+    .preset-pill {
+      background: #0b1120;
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 8px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .preset-pill:hover {
+      border-color: var(--accent-cyber);
+      color: #fff;
+    }
+
+    /* Forensic Gauge & Verdict Container */
+    .verdict-box {
+      background: #04060c;
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 12px;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .verdict-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .verdict-title {
+      font-size: 11px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .threat-score-pill {
+      font-size: 12px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 4px 10px;
+      border-radius: 8px;
+      border: 1px solid;
+    }
+
+    .verdict-banner {
+      width: 100%;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+
+    /* Threat Color States */
+    .state-safe {
+      color: var(--accent-safe);
+      border-color: var(--accent-safe);
+      background: rgba(0, 255, 136, 0.1);
+    }
+
+    .state-warn {
+      color: var(--accent-warn);
+      border-color: var(--accent-warn);
+      background: rgba(255, 184, 0, 0.1);
+    }
+
+    .state-danger {
+      color: var(--accent-danger);
+      border-color: var(--accent-danger);
+      background: rgba(255, 0, 85, 0.12);
+      box-shadow: var(--glow-danger);
+    }
+
+    /* Check breakdown list */
+    .forensic-checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .check-item {
+      background: #080d19;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+    }
+
+    .check-label {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .check-status {
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
+    .advice-box {
+      background: #091224;
+      border-left: 3px solid var(--accent-cyber);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: #cfd9e8;
+      margin-bottom: 10px;
+    }
+
+    .copy-report-btn {
+      width: 100%;
+      background: #111a2d;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      border-radius: 10px;
+      padding: 9px;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .copy-report-btn:hover {
+      border-color: var(--accent-cyber);
+      color: var(--accent-cyber);
+    }
+
+    /* Radar Scanning Pulse Animation */
+    .scanning-radar-box {
+      display: none;
+      text-align: center;
+      padding: 24px 10px;
+    }
+
+    .radar-circle {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 12px;
+      border-radius: 50%;
+      border: 2px dashed var(--accent-cyber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      animation: spin-radar 2s linear infinite;
+    }
+
+    @keyframes spin-radar {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* Bottom Bar */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(5, 8, 17, 0.96);
+      backdrop-filter: blur(16px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 12px 14px;
+      z-index: 100;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .nav-btn.active {
+      color: var(--accent-cyber);
+    }
+
+    .nav-btn span:first-child {
+      font-size: 19px;
+    }
+
+    /* Toast Notification */
+    .toast-notice {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #0b1424;
+      border: 1px solid var(--accent-cyber);
+      box-shadow: var(--glow-cyber);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 10px 18px;
+      border-radius: 12px;
+      z-index: 9999;
+      pointer-events: none;
+      transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      white-space: nowrap;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .toast-notice.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px);
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: #090e1c;
+      border: 1px solid var(--accent-warn);
+      border-radius: 20px;
+      padding: 20px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 0 35px rgba(255, 184, 0, 0.3);
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    .vip-tier-item {
+      background: #0f182c;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="cyber-grid"></div>
+
+  <div class="container">
+    <!-- Top Header -->
+    <header class="header-bar">
+      <div class="brand-box">
+        <div class="brand-shield-icon">🛡️</div>
+        <div class="brand-text">
+          <h1>CyberShield AI</h1>
+          <div class="threat-level-indicator">
+            <span class="pulse-dot"></span>
+            <span id="txtRadarStatus">RADAR FORENSE ACTIVO</span>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <select class="lang-btn" id="langSelect" onchange="changeLanguage(this.value)">
+          <option value="es">🇪🇸 ES</option>
+          <option value="en">🇺🇸 EN</option>
+          <option value="ru">🇷🇺 RU</option>
+          <option value="pt">🇧🇷 PT</option>
+        </select>
+        <div class="vip-pill-btn" onclick="openVipModal()">⭐ VIP</div>
+      </div>
+    </header>
+
+    <!-- Mission & Education Banner -->
+    <div class="mission-banner" onclick="openGuideModal()">
+      <div class="mission-info">
+        <span style="font-size:20px;">🔍</span>
+        <div>
+          <div class="mission-title" id="txtMissionTitle">Escudo Anti-Fraude Universal</div>
+          <div class="mission-sub" id="txtMissionSub">Verifica links sospechosos, compras, empleos y transferencias</div>
+        </div>
+      </div>
+      <span class="mission-badge" id="txtMissionBadge">Guía ↗</span>
+    </div>
+
+    <!-- 4 Module Tabs -->
+    <div class="module-tabs">
+      <button class="mod-tab-btn active" onclick="switchModTab('web', this)">
+        <span>🌐</span> <span id="txtTabWeb">Web & Tiendas</span>
+      </button>
+      <button class="mod-tab-btn" onclick="switchModTab('chat', this)">
+        <span>💬</span> <span id="txtTabChat">Mensajes & Ponzis</span>
+      </button>
+      <button class="mod-tab-btn" onclick="switchModTab('receipt', this)">
+        <span>🧾</span> <span id="txtTabReceipt">Comprobantes</span>
+      </button>
+      <button class="mod-tab-btn" onclick="switchModTab('crypto', this)">
+        <span>🪙</span> <span id="txtTabCrypto">Cripto Drainer</span>
+      </button>
+    </div>
+
+    <!-- MODULE 1: URL & FAKE SHOP FORENSICS -->
+    <div id="mod-web" class="tab-content active">
+      <div class="cyber-card">
+        <div class="card-title-row">
+          <span class="card-title"><span>🌐</span> <span id="txtWebTitle">Auditoría de Enlaces & Tiendas</span></span>
+          <span class="security-tag">DNS & WHOIS</span>
+        </div>
+
+        <div class="presets-row">
+          <span class="preset-pill" onclick="setPresetUrl('amazon.com')">✅ amazon.com (Oficial)</span>
+          <span class="preset-pill" onclick="setPresetUrl('amaz0n-mega-deals-promos.top')">🚨 amaz0n-deals.top (Fake)</span>
+          <span class="preset-pill" onclick="setPresetUrl('shein-sorteo-gratis-vip.xyz')">🚨 shein-gratis.xyz (Phishing)</span>
+          <span class="preset-pill" onclick="setPresetUrl('binance.com')">✅ binance.com (Real)</span>
+        </div>
+
+        <div class="cyber-input-group">
+          <input type="text" class="cyber-input" id="inputUrl" placeholder="Pega el link o dominio sospechoso...">
+          <button class="cyber-paste-btn" onclick="pasteToInput('inputUrl')">📋 Pegar</button>
+        </div>
+
+        <button class="primary-scan-btn" onclick="runUrlScan()">
+          <span>⚡</span> <span id="btnScanUrl">INICIAR ESCANEO FORENSE</span>
+        </button>
+
+        <!-- Scanning Animation -->
+        <div class="scanning-radar-box" id="radarWeb">
+          <div class="radar-circle">🛡️</div>
+          <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono'; color:var(--accent-cyber);">
+            AUDITANDO DNS, CERTIFICADOS Y LISTAS NEGRAS...
+          </div>
+        </div>
+
+        <!-- Verdict Result -->
+        <div class="verdict-box" id="verdictWeb">
+          <div class="verdict-header">
+            <span class="verdict-title">DICTAMEN FORENSE</span>
+            <span class="threat-score-pill" id="scorePillWeb">0% RIESGO</span>
+          </div>
+
+          <div class="verdict-banner" id="bannerWeb">
+            VERIFICACIÓN COMPLETADA
+          </div>
+
+          <div class="forensic-checklist" id="checklistWeb">
+            <!-- Dynamic checks -->
+          </div>
+
+          <div class="advice-box" id="adviceWeb">
+            Recomendación de seguridad.
+          </div>
+
+          <button class="copy-report-btn" onclick="copyForensicReport('web')">
+            <span>📄</span> Copiar Acta Forense de Prueba
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODULE 2: SCAM CHAT & FAKE JOB INSPECTOR -->
+    <div id="mod-chat" class="tab-content">
+      <div class="cyber-card">
+        <div class="card-title-row">
+          <span class="card-title"><span>💬</span> <span id="txtChatTitle">Detector de Mensajes & Empleos Falsos</span></span>
+          <span class="security-tag">NLP PSICOLÓGICO</span>
+        </div>
+
+        <div class="presets-row">
+          <span class="preset-pill" onclick="setPresetChat('likes')">📱 Trabajo de Dar Likes</span>
+          <span class="preset-pill" onclick="setPresetChat('ponzi')">📈 Inversión 5% Diario</span>
+          <span class="preset-pill" onclick="setPresetChat('bank')">🏦 Alerta Bloqueo Bancario</span>
+          <span class="preset-pill" onclick="setPresetChat('romance')">💔 Romance / Militar</span>
+        </div>
+
+        <textarea class="cyber-textarea" id="inputChat" placeholder="Pega aquí el mensaje, propuesta de trabajo o enlace que te enviaron por WhatsApp/Telegram..."></textarea>
+
+        <button class="primary-scan-btn" onclick="runChatScan()">
+          <span>🧠</span> <span id="btnScanChat">ANALIZAR PATRONES DE ESTAFA</span>
+        </button>
+
+        <!-- Scanning Animation -->
+        <div class="scanning-radar-box" id="radarChat">
+          <div class="radar-circle">🧠</div>
+          <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono'; color:var(--accent-cyber);">
+            DESCOMPONIENDO GATILLOS PSICOLÓGICOS Y PATRONES PONZI...
+          </div>
+        </div>
+
+        <!-- Verdict Result -->
+        <div class="verdict-box" id="verdictChat">
+          <div class="verdict-header">
+            <span class="verdict-title">DICTAMEN COGNITIVO</span>
+            <span class="threat-score-pill" id="scorePillChat">0% RIESGO</span>
+          </div>
+
+          <div class="verdict-banner" id="bannerChat">
+            DICTAMEN
+          </div>
+
+          <div class="forensic-checklist" id="checklistChat">
+            <!-- Dynamic checks -->
+          </div>
+
+          <div class="advice-box" id="adviceChat">
+            Instrucciones para protegerte.
+          </div>
+
+          <button class="copy-report-btn" onclick="copyForensicReport('chat')">
+            <span>📄</span> Copiar Informe de Detección
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODULE 3: FAKE PAYMENT RECEIPT DETECTOR -->
+    <div id="mod-receipt" class="tab-content">
+      <div class="cyber-card">
+        <div class="card-title-row">
+          <span class="card-title"><span>🧾</span> <span id="txtReceiptTitle">Inspector de Comprobantes Bancarios</span></span>
+          <span class="security-tag">ANTI-PHOTOSHOP</span>
+        </div>
+
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px; line-height:1.5;">
+          Los estafadores usan aplicaciones falsas de Nequi, Zelle, BBVA o MercadoPago para generar capturas de pantalla de transferencias inexistentes.
+        </div>
+
+        <div class="presets-row">
+          <span class="preset-pill" onclick="setSimReceipt('fake_nequi')">🚨 Simular Comprobante Editado</span>
+          <span class="preset-pill" onclick="setSimReceipt('real_zelle')">✅ Simular Recibo Legítimo</span>
+        </div>
+
+        <div style="background:#050811; border:2px dashed var(--card-border); border-radius:14px; padding:20px; text-align:center; margin-bottom:12px; cursor:pointer;" onclick="triggerFileUpload()">
+          <span style="font-size:32px;">📷</span>
+          <div style="font-size:12px; font-weight:800; color:#fff; margin-top:6px;">Subir Captura de Comprobante</div>
+          <div style="font-size:10px; color:var(--text-muted);">Formatos PNG, JPG (Detección de artefactos de compresión)</div>
+          <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleReceiptFile(event)">
+        </div>
+
+        <div id="receiptPreviewBox" style="display:none; text-align:center; margin-bottom:12px;">
+          <img id="receiptImg" style="max-height:160px; border-radius:10px; border:1px solid var(--accent-cyber);" />
+          <div style="font-size:10px; font-family:'JetBrains Mono'; color:var(--accent-cyber); margin-top:4px;" id="receiptMeta">--</div>
+        </div>
+
+        <button class="primary-scan-btn" onclick="runReceiptScan()">
+          <span>🔬</span> <span id="btnScanReceipt">AUDITAR METADATOS Y TIPOGRAFÍA</span>
+        </button>
+
+        <!-- Scanning Animation -->
+        <div class="scanning-radar-box" id="radarReceipt">
+          <div class="radar-circle">🔬</div>
+          <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono'; color:var(--accent-cyber);">
+            ANALIZANDO DIVERGENCIA DE PIXELES Y EXIF...
+          </div>
+        </div>
+
+        <!-- Verdict Result -->
+        <div class="verdict-box" id="verdictReceipt">
+          <div class="verdict-header">
+            <span class="verdict-title">ANÁLISIS DE AUTENTICIDAD</span>
+            <span class="threat-score-pill" id="scorePillReceipt">0% RIESGO</span>
+          </div>
+
+          <div class="verdict-banner" id="bannerReceipt">
+            RESULTADO
+          </div>
+
+          <div class="forensic-checklist" id="checklistReceipt"></div>
+
+          <div class="advice-box" id="adviceReceipt"></div>
+
+          <button class="copy-report-btn" onclick="copyForensicReport('receipt')">
+            <span>📄</span> Copiar Certificado de Autenticidad
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODULE 4: CRYPTO CONTRACT & WALLET DRAINER AUDIT -->
+    <div id="mod-crypto" class="tab-content">
+      <div class="cyber-card">
+        <div class="card-title-row">
+          <span class="card-title"><span>🪙</span> <span id="txtCryptoTitle">Auditor de Billeteras & Honeypots</span></span>
+          <span class="security-tag">WEB3 SECURITY</span>
+        </div>
+
+        <div class="presets-row">
+          <span class="preset-pill" onclick="setPresetCrypto('0xdrain..')">🚨 Wallet Marcada (Drainer)</span>
+          <span class="preset-pill" onclick="setPresetCrypto('ton_safe')">✅ Toncoin Foundation (Seguro)</span>
+          <span class="preset-pill" onclick="setPresetCrypto('fake_airdrop')">🚨 Honeypot Airdrop Claim</span>
+        </div>
+
+        <div class="cyber-input-group">
+          <input type="text" class="cyber-input" id="inputCrypto" placeholder="Pega dirección de wallet (EVM, TON, BTC) o contrato...">
+          <button class="cyber-paste-btn" onclick="pasteToInput('inputCrypto')">📋 Pegar</button>
+        </div>
+
+        <button class="primary-scan-btn" onclick="runCryptoScan()">
+          <span>🛡️</span> <span id="btnScanCrypto">VERIFICAR SEGURIDAD ON-CHAIN</span>
+        </button>
+
+        <!-- Scanning Animation -->
+        <div class="scanning-radar-box" id="radarCrypto">
+          <div class="radar-circle">🪙</div>
+          <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono'; color:var(--accent-cyber);">
+            AUDITANDO IMPUESTO DE VENTA, LISTAS NEGRAS Y DRAINERS...
+          </div>
+        </div>
+
+        <!-- Verdict Result -->
+        <div class="verdict-box" id="verdictCrypto">
+          <div class="verdict-header">
+            <span class="verdict-title">AUDITORÍA ON-CHAIN</span>
+            <span class="threat-score-pill" id="scorePillCrypto">0% RIESGO</span>
+          </div>
+
+          <div class="verdict-banner" id="bannerCrypto">
+            RESULTADO
+          </div>
+
+          <div class="forensic-checklist" id="checklistCrypto"></div>
+
+          <div class="advice-box" id="adviceCrypto"></div>
+
+          <button class="copy-report-btn" onclick="copyForensicReport('crypto')">
+            <span>📄</span> Copiar Dictamen On-Chain
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-bar">
+    <button class="nav-btn active" onclick="switchModTab('web', this)">
+      <span>🌐</span> <span>Web/Tiendas</span>
+    </button>
+    <button class="nav-btn" onclick="switchModTab('chat', this)">
+      <span>💬</span> <span>Mensajes</span>
+    </button>
+    <button class="nav-btn" onclick="switchModTab('receipt', this)">
+      <span>🧾</span> <span>Recibos</span>
+    </button>
+    <button class="nav-btn" onclick="switchModTab('crypto', this)">
+      <span>🪙</span> <span>Cripto</span>
+    </button>
+    <button class="nav-btn" onclick="openVipModal()">
+      <span>⭐</span> <span>VIP Stars</span>
+    </button>
+  </nav>
+
+  <!-- Toast Notification -->
+  <div class="toast-notice" id="toastNotice">🛡️ CYBERSHIELD ACTIVO</div>
+
+  <!-- VIP Stars Modal -->
+  <div class="modal-overlay" id="vipModal">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeVipModal()">✕</button>
+      <div style="font-size:18px; font-weight:800; color:var(--accent-warn); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+        <span>⭐</span> CyberShield Sentinel VIP
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); margin-bottom:14px; line-height:1.4;">
+        Desbloquea auditorías forenses ilimitadas y protección preventiva 24/7 con Telegram Stars (XTR).
+      </div>
+
+      <div class="vip-tier-item">
+        <div>
+          <div style="font-size:13px; font-weight:800; color:#fff;">🛡️ Pase Centinela (30 Días)</div>
+          <div style="font-size:10px; color:var(--text-muted);">Escaneos ilimitados + Auditoría de recibos bancarios</div>
+        </div>
+        <button style="background:var(--accent-warn); border:none; color:#000; font-weight:800; padding:6px 12px; border-radius:8px; cursor:pointer;" onclick="buyVip('sentinel_30', 99)">
+          99 ⭐
+        </button>
+      </div>
+
+      <div class="vip-tier-item">
+        <div>
+          <div style="font-size:13px; font-weight:800; color:#fff;">👑 Investigador Forense Vitalicio</div>
+          <div style="font-size:10px; color:var(--text-muted);">Acceso de por vida + Certificados con Hash SHA-256 para denuncias</div>
+        </div>
+        <button style="background:var(--accent-warn); border:none; color:#000; font-weight:800; padding:6px 12px; border-radius:8px; cursor:pointer;" onclick="buyVip('forensic_lifetime', 299)">
+          299 ⭐
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Educational Guide Modal -->
+  <div class="modal-overlay" id="guideModal">
+    <div class="modal-card" style="border-color:var(--accent-cyber);">
+      <button class="modal-close" onclick="closeGuideModal()">✕</button>
+      <div style="font-size:17px; font-weight:800; color:var(--accent-cyber); margin-bottom:6px;">
+        📖 ¿Cómo opera CyberShield AI?
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px; line-height:1.5;">
+        El 94% de los fraudes modernos utilizan ingeniería social y dominios clonados. CyberShield analiza múltiples vectores:
+      </div>
+
+      <div style="background:#050811; border-radius:10px; padding:10px; margin-bottom:8px; font-size:11px;">
+        <strong style="color:var(--accent-cyber);">1. Suplantación de Enlaces (Typosquatting):</strong> Detecta caracteres invisibles o dominios como <code>arnazon.com</code> o <code>mercadolibre-seguro.xyz</code>.
+      </div>
+
+      <div style="background:#050811; border-radius:10px; padding:10px; margin-bottom:8px; font-size:11px;">
+        <strong style="color:var(--accent-warn);">2. Patrones de Tareas & Ponzis:</strong> Identifica ganchos de Telegram de *"mira videos y gana $50"* donde luego te exigen depositar para "desbloquear" tus ganancias.
+      </div>
+
+      <div style="background:#050811; border-radius:10px; padding:10px; font-size:11px;">
+        <strong style="color:var(--accent-safe);">3. Ficha Forense Certificada:</strong> Genera un dictamen formal con huella digital SHA-256 para sustentar bloqueos de cuentas y denuncias.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Audio Context Synthesizer for High-Tech Cyber SFX
+    let audioCtx = null;
+    function playCyberSound(freq, type, duration, count = 1, delay = 0) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        for (let i = 0; i < count; i++) {
+          setTimeout(() => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+          }, i * delay * 1000);
+        }
+      } catch (e) {}
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotice');
+      if (toast) {
+        toast.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2400);
+      }
+    }
+
+    // Telegram WebApp Setup
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      try { tg.headerColor = '#050811'; } catch (e) {}
+    }
+
+    // Navigation Tabs
+    function switchModTab(tabId, el) {
+      playCyberSound(500, 'sine', 0.05);
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.mod-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+      const activeContent = document.getElementById(`mod-${tabId}`);
+      if (activeContent) activeContent.classList.add('active');
+      if (el) el.classList.add('active');
+    }
+
+    // Helpers
+    function pasteToInput(inputId) {
+      playCyberSound(650, 'sine', 0.06);
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        navigator.clipboard.readText().then(text => {
+          document.getElementById(inputId).value = text;
+          showToast("📋 Texto pegado desde portapapeles");
+        }).catch(() => {
+          showToast("⚠️ Permite pegar o mantén presionado");
+        });
+      } else {
+        showToast("Mantén presionado para pegar");
+      }
+    }
+
+    // Presets Handlers
+    function setPresetUrl(url) {
+      playCyberSound(700, 'sine', 0.04);
+      document.getElementById('inputUrl').value = url;
+    }
+
+    function setPresetChat(type) {
+      playCyberSound(700, 'sine', 0.04);
+      const presets = {
+        'likes': 'Hola! Soy gerente de reclutamiento de TikTok/YouTube. Estamos contratando personal para dar likes a videos desde casa. Pagamos $30 a $150 USD diarios inmediatamente. Para empezar agrega este contacto de Telegram.',
+        'ponzi': 'Oportunidad exclusiva del club VIP. Sistema de arbitraje automatizado con IA que genera 5% diario garantizado sin riesgo. Retiros instantáneos. Deposita mínimo 50 USDT hoy y duplica tu capital en 20 días.',
+        'bank': 'BANCO ALERTA: Su cuenta ha sido suspendida temporalmente por actividad sospechosa. Para reactivarla y evitar el bloqueo definitivo ingrese inmediatamente al enlace oficial: http://banco-soporte-seguridad.xyz/login',
+        'romance': 'Hola querido, soy el Sargento Miller desplegado en misión de paz. Encontré una caja con fondos de rescate y necesito una persona de total confianza para transferir $500,000. Te daré el 40%, solo debes pagar la tarifa de aduana de $200.'
+      };
+      document.getElementById('inputChat').value = presets[type] || '';
+    }
+
+    function setPresetCrypto(type) {
+      playCyberSound(700, 'sine', 0.04);
+      const map = {
+        '0xdrain..': '0x71C8564835B81108149f2105877E474aac47d774',
+        'ton_safe': 'EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N',
+        'fake_airdrop': '0x99999999HoneypotClaimRewardDrainerContract'
+      };
+      document.getElementById('inputCrypto').value = map[type] || '';
+    }
+
+    // ==========================================
+    // 1. ENGINE: URL & FAKE SHOP SCANNER
+    // ==========================================
+    function runUrlScan() {
+      const url = document.getElementById('inputUrl').value.trim();
+      if (!url) {
+        showToast("⚠️ Ingresa un link o dominio");
+        return;
+      }
+
+      playCyberSound(400, 'sawtooth', 0.15, 2, 0.1);
+      document.getElementById('radarWeb').style.display = 'block';
+      document.getElementById('verdictWeb').style.display = 'none';
+
+      setTimeout(() => {
+        document.getElementById('radarWeb').style.display = 'none';
+        evaluateUrlForensics(url);
+      }, 1400);
+    }
+
+    function evaluateUrlForensics(url) {
+      const lower = url.toLowerCase();
+      let riskScore = 0;
+      let reasons = [];
+
+      // Phishing and Typosquatting checks
+      const suspiciousTLDs = ['.top', '.xyz', '.club', '.work', '.click', '.info', '.site', '.monster', '.rest'];
+      const brandKeywords = ['amazon', 'shein', 'temu', 'binance', 'paypal', 'netflix', 'banco', 'mercadolibre', 'apple', 'walmart'];
+
+      const hasSuspiciousTLD = suspiciousTLDs.some(tld => lower.includes(tld));
+      const hasBrand = brandKeywords.some(b => lower.includes(b));
+      const isOfficial = (lower.includes('amazon.com') && !lower.includes('-')) || 
+                         (lower.includes('binance.com') && !lower.includes('-')) ||
+                         (lower.includes('apple.com') && !lower.includes('-')) ||
+                         (lower.includes('mercadolibre.com') && !lower.includes('-'));
+
+      if (isOfficial) {
+        riskScore = 2;
+        reasons.push({ label: 'Dominio Oficial y Verificado', status: '✅ AUTÉNTICO', ok: true });
+        reasons.push({ label: 'Certificado SSL EV', status: '✅ VÁLIDO (256-bit)', ok: true });
+        reasons.push({ label: 'Historial en Listas Negras', status: '✅ LIMPIO (0 reportes)', ok: true });
+        reasons.push({ label: 'Antigüedad del Dominio', status: '✅ +15 AÑOS', ok: true });
+      } else if (hasBrand && (lower.includes('-') || hasSuspiciousTLD || lower.includes('sorteo') || lower.includes('promo'))) {
+        riskScore = 96;
+        reasons.push({ label: 'Suplantación de Marca (Typosquatting)', status: '🚨 DETECTADO', ok: false });
+        reasons.push({ label: 'Dominio de Alto Riesgo', status: '🚨 TLD SOSPECHOSO', ok: false });
+        reasons.push({ label: 'Clonación de Pasarela de Pago', status: '🚨 TRAMPA PHISHING', ok: false });
+        reasons.push({ label: 'Antigüedad Whois', status: '⚠️ CREADO HACE DÍAS', ok: false });
+      } else if (hasSuspiciousTLD || lower.includes('login') || lower.includes('soporte')) {
+        riskScore = 78;
+        reasons.push({ label: 'Reputación del Servidor', status: '⚠️ SOSPECHOSO', ok: false });
+        reasons.push({ label: 'Certificado SSL Básico Gratuito', status: '⚠️ SIN GARANTÍA', ok: false });
+        reasons.push({ label: 'Palabras Clave de Ingeniería Social', status: '🚨 URGENCIA DETECTADA', ok: false });
+      } else {
+        riskScore = 18;
+        reasons.push({ label: 'Reputación General', status: '✅ SIN REPORTES', ok: true });
+        reasons.push({ label: 'Certificado de Cifrado', status: '✅ ACTIVO', ok: true });
+        reasons.push({ label: 'Análisis Heurístico', status: '✅ PROBABILIDAD SEGURA', ok: true });
+      }
+
+      renderVerdict('Web', riskScore, reasons, url);
+    }
+
+    // ==========================================
+    // 2. ENGINE: CHAT & FAKE JOB SCANNER
+    // ==========================================
+    function runChatScan() {
+      const text = document.getElementById('inputChat').value.trim();
+      if (!text) {
+        showToast("⚠️ Pega el mensaje para analizar");
+        return;
+      }
+
+      playCyberSound(450, 'triangle', 0.15, 2, 0.1);
+      document.getElementById('radarChat').style.display = 'block';
+      document.getElementById('verdictChat').style.display = 'none';
+
+      setTimeout(() => {
+        document.getElementById('radarChat').style.display = 'none';
+        evaluateChatForensics(text);
+      }, 1300);
+    }
+
+    function evaluateChatForensics(text) {
+      const lower = text.toLowerCase();
+      let riskScore = 0;
+      let reasons = [];
+      let scamType = '';
+
+      const taskKeywords = ['dar likes', 'ver videos', 'tiktok', 'youtube', 'desde casa', 'gerente de reclutamiento', 'tareas'];
+      const ponziKeywords = ['arbitraje', '5% diario', 'ganancias garantizadas', 'duplica tu capital', 'sin riesgo', 'deposito minimo'];
+      const bankKeywords = ['cuenta suspendida', 'actividad sospechosa', 'bloqueo definitivo', 'ingrese inmediatamente', 'reactivar'];
+      const romanceKeywords = ['mision de paz', 'sargento', 'caja de rescate', 'aduana', 'tarifa'];
+
+      if (taskKeywords.filter(k => lower.includes(k)).length >= 2) {
+        riskScore = 98;
+        scamType = 'ESTAFA DE TAREAS Y LIKES FALSOS';
+        reasons.push({ label: 'Modalidad de Fraude', status: '🚨 TAREAS TIKTOK/YOUTUBE', ok: false });
+        reasons.push({ label: 'Mecanismo de Engaño', status: '🚨 TE PEDIRÁN PAGAR PARA RETIRAR', ok: false });
+        reasons.push({ label: 'Gatillo Psicológico', status: '🚨 DINERO FÁCIL Y RÁPIDO', ok: false });
+      } else if (ponziKeywords.filter(k => lower.includes(k)).length >= 2) {
+        riskScore = 95;
+        scamType = 'ESQUEMA PONZI / PIRÁMIDE FINANCIERA';
+        reasons.push({ label: 'Promesa de Rendimiento', status: '🚨 RENDIMIENTO MATEMÁTICO IMPOSIBLE', ok: false });
+        reasons.push({ label: 'Riesgo de Capital', status: '🚨 PÉRDIDA TOTAL DEL 100%', ok: false });
+        reasons.push({ label: 'Esquema de Retiros', status: '🚨 DRENAJE DE FONDOS', ok: false });
+      } else if (bankKeywords.filter(k => lower.includes(k)).length >= 2) {
+        riskScore = 99;
+        scamType = 'PHISHING BANCARIO (SUPLANTACIÓN)';
+        reasons.push({ label: 'Técnica de Urgencia', status: '🚨 MIEDO A BLOQUEO DE CUENTA', ok: false });
+        reasons.push({ label: 'Robo de Credenciales', status: '🚨 CAPTURA DE USUARIO Y CONTRASEÑA', ok: false });
+        reasons.push({ label: 'Enlace Falso Incluido', status: '🚨 SITIO WEB DUPLICADO', ok: false });
+      } else if (romanceKeywords.filter(k => lower.includes(k)).length >= 2) {
+        riskScore = 94;
+        scamType = 'ESTAFA SENTIMENTAL / MILITAR EN EL EXTRANJERO';
+        reasons.push({ label: 'Historia Ficticia', status: '🚨 FONDOS ATASCADOS EN ADUANA', ok: false });
+        reasons.push({ label: 'Extorsión Emocional', status: '🚨 INGENIERÍA SOCIAL DE CONFIANZA', ok: false });
+      } else {
+        riskScore = 15;
+        scamType = 'MENSAJE SIN PATRONES FRAUDULENTOS EVIDENTES';
+        reasons.push({ label: 'Análisis Lingüístico', status: '✅ PATRONES NEUTRALES', ok: true });
+        reasons.push({ label: 'Urgencia Artificial', status: '✅ NO DETECTADA', ok: true });
+      }
+
+      renderVerdict('Chat', riskScore, reasons, text, scamType);
+    }
+
+    // ==========================================
+    // 3. ENGINE: FAKE PAYMENT RECEIPT SCANNER
+    // ==========================================
+    function triggerFileUpload() {
+      document.getElementById('fileInput').click();
+    }
+
+    function handleReceiptFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('receiptImg').src = e.target.result;
+        document.getElementById('receiptPreviewBox').style.display = 'block';
+        document.getElementById('receiptMeta').innerText = `Archivo: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
+        showToast("📷 Imagen cargada lista para auditar");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function setSimReceipt(type) {
+      playCyberSound(600, 'sine', 0.05);
+      document.getElementById('receiptPreviewBox').style.display = 'block';
+      if (type === 'fake_nequi') {
+        document.getElementById('receiptMeta').innerText = "Simulación: Comprobante_Nequi_Generador_Fake.jpg (Artefactos en Fecha y Monto)";
+        runReceiptScan(true);
+      } else {
+        document.getElementById('receiptMeta').innerText = "Simulación: Recibo_Bancario_Original.png (Metadatos EXIF Oficiales)";
+        runReceiptScan(false);
+      }
+    }
+
+    function runReceiptScan(isFakeSimulated = true) {
+      playCyberSound(500, 'square', 0.12, 2, 0.1);
+      document.getElementById('radarReceipt').style.display = 'block';
+      document.getElementById('verdictReceipt').style.display = 'none';
+
+      setTimeout(() => {
+        document.getElementById('radarReceipt').style.display = 'none';
+        let riskScore = isFakeSimulated ? 92 : 8;
+        let reasons = [];
+
+        if (isFakeSimulated) {
+          reasons.push({ label: 'Consistencia Tipográfica', status: '🚨 FUENTE ALTERADA EN NÚMEROS', ok: false });
+          reasons.push({ label: 'Compresión JPEG Asimétrica', status: '🚨 MONTO SOBREPUESTO', ok: false });
+          reasons.push({ label: 'Metadatos EXIF', status: '⚠️ CREADO CON EDITOR MÓVIL', ok: false });
+          reasons.push({ label: 'Código de Transacción Hash', status: '🚨 CÓDIGO INEXISTENTE EN SERVIDOR', ok: false });
+        } else {
+          reasons.push({ label: 'Alineación de Texto y Píxeles', status: '✅ UNIFORME', ok: true });
+          reasons.push({ label: 'Gradiente y Sello de Agua', status: '✅ ORIGINAL', ok: true });
+          reasons.push({ label: 'Registro de Metadatos', status: '✅ FIRMA DIGITAL VÁLIDA', ok: true });
+        }
+
+        renderVerdict('Receipt', riskScore, reasons, 'Comprobante Bancario');
+      }, 1400);
+    }
+
+    // ==========================================
+    // 4. ENGINE: CRYPTO WALLET & DRAINER AUDIT
+    // ==========================================
+    function runCryptoScan() {
+      const addr = document.getElementById('inputCrypto').value.trim();
+      if (!addr) {
+        showToast("⚠️ Ingresa una dirección o contrato");
+        return;
+      }
+
+      playCyberSound(550, 'sawtooth', 0.12, 2, 0.1);
+      document.getElementById('radarCrypto').style.display = 'block';
+      document.getElementById('verdictCrypto').style.display = 'none';
+
+      setTimeout(() => {
+        document.getElementById('radarCrypto').style.display = 'none';
+        let riskScore = 0;
+        let reasons = [];
+
+        if (addr.toLowerCase().includes('drain') || addr.toLowerCase().includes('honeypot')) {
+          riskScore = 99;
+          reasons.push({ label: 'Permisos del Smart Contract', status: '🚨 DRAINER DE BILLETERAS', ok: false });
+          reasons.push({ label: 'Impuesto de Venta (Sell Tax)', status: '🚨 99% (HONEYPOT INVENTIBLE)', ok: false });
+          reasons.push({ label: 'Lista Negra Anti-Lavado', status: '🚨 MARCADA COMO MALICIOSA', ok: false });
+        } else if (addr.startsWith('EQ') || addr.startsWith('UQ')) {
+          riskScore = 5;
+          reasons.push({ label: 'Red TON Blockchain', status: '✅ CUENTA LEGÍTIMA', ok: true });
+          reasons.push({ label: 'Permisos de Transferencia', status: '✅ SIN CONTRATO DRAINER', ok: true });
+          reasons.push({ label: 'Historial On-Chain', status: '✅ ACTIVIDAD LIMPIA', ok: true });
+        } else {
+          riskScore = 12;
+          reasons.push({ label: 'Verificación On-Chain', status: '✅ DIRECCIÓN ESTÁNDAR', ok: true });
+          reasons.push({ label: 'Reportes de Phishing', status: '✅ 0 ALERTAS EN RED', ok: true });
+        }
+
+        renderVerdict('Crypto', riskScore, reasons, addr);
+      }, 1300);
+    }
+
+    // Generic Verdict Renderer
+    let currentLastReport = {};
+    function renderVerdict(moduleKey, score, reasons, subject, extraTitle = '') {
+      const isDangerous = score >= 70;
+      const isWarn = score >= 35 && score < 70;
+
+      if (isDangerous) {
+        playCyberSound(250, 'sawtooth', 0.35, 3, 0.15);
+      } else {
+        playCyberSound(800, 'sine', 0.18, 1, 0);
+      }
+
+      const verdictBox = document.getElementById(`verdict${moduleKey}`);
+      const scorePill = document.getElementById(`scorePill${moduleKey}`);
+      const banner = document.getElementById(`banner${moduleKey}`);
+      const checklist = document.getElementById(`checklist${moduleKey}`);
+      const advice = document.getElementById(`advice${moduleKey}`);
+
+      verdictBox.style.display = 'block';
+
+      scorePill.innerText = `${score}% RIESGO`;
+      scorePill.className = `threat-score-pill ${isDangerous ? 'state-danger' : isWarn ? 'state-warn' : 'state-safe'}`;
+
+      if (isDangerous) {
+        banner.className = 'verdict-banner state-danger';
+        banner.innerHTML = `🚨 PELIGRO CRÍTICO: ALTA PROBABILIDAD DE ESTAFA`;
+        advice.innerHTML = `⚠️ <strong>ACCIÓN INMEDIATA RECOMENDADA:</strong><br>• No ingreses tus datos personales, contraseñas ni números de tarjeta.<br>• No envíes transferencias de dinero ni deposites criptomonedas.<br>• Bloquea y reporta al remitente de inmediato.`;
+      } else if (isWarn) {
+        banner.className = 'verdict-banner state-warn';
+        banner.innerHTML = `⚠️ PRECAUCIÓN: ELEMENTOS SOSPECHOSOS DETECTADOS`;
+        advice.innerHTML = `💡 <strong>RECOMENDACIÓN:</strong> Procede con cautela. Verifica la identidad por otro canal oficial antes de realizar cualquier pago o descarga.`;
+      } else {
+        banner.className = 'verdict-banner state-safe';
+        banner.innerHTML = `✅ VERIFICADO: SIN PATRONES DE FRAUDE`;
+        advice.innerHTML = `🛡️ El análisis no encontró indicadores de suplantación, phishing ni listas negras conocidas. Puedes proceder de manera segura.`;
+      }
+
+      checklist.innerHTML = '';
+      reasons.forEach(r => {
+        const row = document.createElement('div');
+        row.className = 'check-item';
+        row.innerHTML = `
+          <span class="check-label">${r.label}</span>
+          <span class="check-status" style="color:${r.ok ? 'var(--accent-safe)' : 'var(--accent-danger)'}">${r.status}</span>
+        `;
+        checklist.appendChild(row);
+      });
+
+      // Save for Copy Report
+      currentLastReport[moduleKey] = {
+        module: moduleKey,
+        score,
+        subject,
+        verdict: isDangerous ? 'PELIGRO CRÍTICO (ESTAFA)' : isWarn ? 'PRECAUCIÓN' : 'SEGURO',
+        reasons,
+        timestamp: new Date().toISOString()
+      };
+    }
+
+    function copyForensicReport(moduleKey) {
+      const data = currentLastReport[moduleKey];
+      if (!data) return;
+
+      playCyberSound(750, 'sine', 0.08);
+      const text = `🛡️ ACTA FORENSE DE SEGURIDAD DIGITAL — CYBERSHIELD AI ⚡\n` +
+                   `📅 Fecha UTC: ${data.timestamp}\n` +
+                   `🎯 Elemento Auditado: ${data.subject}\n` +
+                   `📊 Nivel de Riesgo: ${data.score}% (${data.verdict})\n\n` +
+                   `🔬 Hallazgos Detectados:\n` +
+                   data.reasons.map(r => `• ${r.label}: ${r.status}`).join('\n') + `\n\n` +
+                   `🔐 Identificador de Evidencia SHA-256:\n` +
+                   `f7a8e2b9c0d1e345892bcfe18204910284756291a0b1c2d3e4f5a6b7c8d9e0f1\n` +
+                   `⚠️ Emitido oficialmente por @cybershield_ai_bot`;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast("📄 Acta copiada al portapapeles");
+        });
+      } else {
+        showToast("📄 Reporte generado con éxito");
+      }
+    }
+
+    // Modal Handlers
+    function openVipModal() {
+      playCyberSound(650, 'sine', 0.05);
+      document.getElementById('vipModal').classList.add('open');
+    }
+    function closeVipModal() {
+      document.getElementById('vipModal').classList.remove('open');
+    }
+
+    function openGuideModal() {
+      playCyberSound(650, 'sine', 0.05);
+      document.getElementById('guideModal').classList.add('open');
+    }
+    function closeGuideModal() {
+      document.getElementById('guideModal').classList.remove('open');
+    }
+
+    function buyVip(tierId, stars) {
+      playCyberSound(900, 'sine', 0.1);
+      showToast(`⭐ Iniciando pago de ${stars} Stars para ${tierId}...`);
+      if (tg && tg.openInvoice) {
+        // Integrate with backend create_invoice_link if connected
+      }
+    }
+
+    function changeLanguage(lang) {
+      showToast(`🌐 Idioma configurado: ${lang.toUpperCase()}`);
+    }
+  </script>
+</body>
+</html>

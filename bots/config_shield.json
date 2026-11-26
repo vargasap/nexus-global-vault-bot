@@ -1,0 +1,21 @@
+{
+  "packages": {
+    "sentinel_30": {
+      "title": "🛡️ Pase Centinela VIP (30 Días)",
+      "description": "Auditorías forenses ilimitadas de enlaces, mensajes y comprobantes bancarios, más alertas preventivas 24/7.",
+      "price_stars": 99,
+      "multiplier": 1
+    },
+    "forensic_lifetime": {
+      "title": "👑 Investigador Forense Vitalicio",
+      "description": "Acceso permanente de por vida, auditoría de contratos cripto y certificados oficiales con Hash SHA-256.",
+      "price_stars": 299,
+      "multiplier": 3
+    }
+  },
+  "promo_codes": {
+    "CYBER100": 100,
+    "SHIELDVIP": 250,
+    "ANTIFRAUD": 500
+  }
+}

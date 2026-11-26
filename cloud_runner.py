@@ -37,6 +37,12 @@ BOT_SCRIPTS = [
         "script": os.path.join(BASE_DIR, "bots", "crypto_bot.py"),
         "cwd": os.path.join(BASE_DIR, "bots"),
         "token_env": "BOT_TOKEN_PULSE"
+    },
+    {
+        "name": "CyberShield AI Bot (Anti-Scam & Forensics)",
+        "script": os.path.join(BASE_DIR, "bots", "shield_bot.py"),
+        "cwd": os.path.join(BASE_DIR, "bots"),
+        "token_env": "BOT_TOKEN_SHIELD"
     }
 ]
 
