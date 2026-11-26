@@ -1081,14 +1081,66 @@
         document.getElementById('userName').textContent = playerName;
         document.getElementById('avatarLetter').textContent = (playerName[0] || 'J').toUpperCase();
 
-        // Detect Player Language from their Telegram Client
-        let currentLang = 'es';
-        if (tgUser.language_code) {
-            const langPrefix = tgUser.language_code.toLowerCase().slice(0, 2);
-            if (I18N[langPrefix]) currentLang = langPrefix;
+        // Intelligent Country / IP / Timezone / Locale Auto-Detection
+        function detectUserLanguage() {
+            // 1. Manually saved choice takes first priority
+            const saved = localStorage.getItem('lva_lang_' + activeUserId);
+            if (saved && I18N[saved]) return saved;
+
+            // 2. Telegram Native Client Language
+            if (tgUser.language_code) {
+                const tgLang = tgUser.language_code.toLowerCase().slice(0, 2);
+                if (I18N[tgLang]) return tgLang;
+            }
+
+            // 3. Browser Language
+            const navLang = (navigator.language || (navigator.languages && navigator.languages[0]) || "").toLowerCase().slice(0, 2);
+            if (I18N[navLang]) return navLang;
+
+            // 4. Timezone to Country mapping (Instant zero-latency)
+            try {
+                const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+                if (/Madrid|Canary|Bogota|Caracas|Buenos_Aires|Santiago|Lima|Mexico_City|Guatemala|Havana|Panama|Costa_Rica|Santo_Domingo|Montevideo|Asuncion|La_Paz/i.test(tz)) return 'es';
+                if (/Moscow|Samara|Yekaterinburg|Omsk|Krasnoyarsk|Irkutsk|Yakutsk|Vladivostok|Almaty|Minsk|Novosibirsk/i.test(tz)) return 'ru';
+                if (/Sao_Paulo|Fortaleza|Manaus|Recife|Cuiaba|Belem|Lisbon/i.test(tz)) return 'pt';
+                if (/Calcutta|Kolkata/i.test(tz)) return 'hi';
+                if (/Riyadh|Dubai|Cairo|Qatar|Kuwait|Baghdad|Muscat|Amman|Beirut/i.test(tz)) return 'ar';
+            } catch(e) {}
+
+            return 'en';
         }
-        const savedLang = localStorage.getItem('lva_lang_' + activeUserId);
-        if (savedLang && I18N[savedLang]) currentLang = savedLang;
+
+        let currentLang = detectUserLanguage();
+
+        // 5. Background Geo-IP Country Detection (Refines language based on user's real network origin)
+        async function checkGeoIpLanguage() {
+            if (localStorage.getItem('lva_lang_' + activeUserId)) return;
+            try {
+                const res = await fetch('https://api.country.is/');
+                if (res.ok) {
+                    const data = await res.json();
+                    const cc = (data.country || "").toUpperCase();
+                    const spanishCountries = ["ES","MX","CO","AR","PE","VE","CL","EC","GT","CU","BO","DO","HN","PY","SV","NI","CR","PA","UY","PR","GQ"];
+                    const russianCountries = ["RU","BY","KZ","KG","UZ","TJ"];
+                    const portugueseCountries = ["BR","PT","AO","MZ","CV","GW","ST","TL"];
+                    const arabicCountries = ["SA","AE","EG","QA","KW","OM","BH","IQ","JO","LB","DZ","MA","TN","LY"];
+
+                    let detected = null;
+                    if (spanishCountries.includes(cc)) detected = 'es';
+                    else if (russianCountries.includes(cc)) detected = 'ru';
+                    else if (portugueseCountries.includes(cc)) detected = 'pt';
+                    else if (cc === "IN") detected = 'hi';
+                    else if (arabicCountries.includes(cc)) detected = 'ar';
+                    else detected = 'en';
+
+                    if (detected && detected !== currentLang) {
+                        currentLang = detected;
+                        applyLanguage();
+                    }
+                }
+            } catch(e) {}
+        }
+        checkGeoIpLanguage();
 
         // Player Independent State (Stored separately per activeUserId)
         const storagePrefix = 'lva_' + activeUserId + '_';
