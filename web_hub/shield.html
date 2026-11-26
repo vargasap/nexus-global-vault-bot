@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>CyberShield AI 🛡️ Radar Forense Anti-Estafas</title>
   <meta name="theme-color" content="#00e5ff">
@@ -65,9 +68,10 @@
     }
 
     .container {
-      max-width: 480px;
+      max-width: 540px;
+      width: 100%;
       margin: 0 auto;
-      padding: 14px 16px;
+      padding: 16px 18px;
       position: relative;
       z-index: 1;
     }
@@ -77,31 +81,31 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
-      background: rgba(9, 14, 26, 0.85);
+      margin-bottom: 14px;
+      background: rgba(9, 14, 26, 0.9);
       backdrop-filter: blur(16px);
       border: 1px solid var(--card-border);
-      border-radius: 18px;
-      padding: 10px 14px;
+      border-radius: 20px;
+      padding: 12px 16px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     }
 
     .brand-box {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .brand-shield-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
+      width: 46px;
+      height: 46px;
+      border-radius: 14px;
       background: linear-gradient(135deg, rgba(0, 229, 255, 0.2), rgba(0, 255, 136, 0.1));
       border: 1px solid var(--accent-cyber);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
+      font-size: 26px;
       box-shadow: var(--glow-cyber);
       animation: pulse-shield 3s infinite alternate;
     }
@@ -112,7 +116,7 @@
     }
 
     .brand-text h1 {
-      font-size: 16px;
+      font-size: 19px;
       font-weight: 800;
       letter-spacing: -0.3px;
       background: linear-gradient(90deg, #fff, var(--accent-cyber));
@@ -123,15 +127,16 @@
     .threat-level-indicator {
       display: flex;
       align-items: center;
-      gap: 5px;
-      font-size: 10px;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
       font-family: 'JetBrains Mono', monospace;
       color: var(--accent-safe);
     }
 
     .pulse-dot {
-      width: 7px;
-      height: 7px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--accent-safe);
       box-shadow: 0 0 8px var(--accent-safe);
@@ -146,27 +151,27 @@
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
     .lang-btn {
       background: #0d1424;
       border: 1px solid var(--card-border);
       color: #fff;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 700;
-      padding: 6px 8px;
-      border-radius: 8px;
+      padding: 7px 10px;
+      border-radius: 10px;
       cursor: pointer;
     }
 
     .vip-pill-btn {
       background: linear-gradient(135deg, #ffb800, #ff8800);
       color: #000;
-      font-weight: 800;
-      font-size: 11px;
-      padding: 6px 10px;
-      border-radius: 10px;
+      font-weight: 900;
+      font-size: 13px;
+      padding: 8px 14px;
+      border-radius: 12px;
       box-shadow: 0 0 15px rgba(255, 184, 0, 0.4);
       cursor: pointer;
     }
@@ -175,9 +180,9 @@
     .mission-banner {
       background: linear-gradient(135deg, #0b1324, #08101d);
       border: 1px solid rgba(0, 229, 255, 0.25);
-      border-radius: 14px;
-      padding: 10px 14px;
-      margin-bottom: 12px;
+      border-radius: 16px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -187,17 +192,17 @@
     .mission-info {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .mission-title {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 800;
       color: #fff;
     }
 
     .mission-sub {
-      font-size: 10px;
+      font-size: 11px;
       color: var(--text-muted);
     }
 
@@ -205,9 +210,9 @@
       background: rgba(0, 229, 255, 0.15);
       border: 1px solid var(--accent-cyber);
       color: var(--accent-cyber);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 800;
-      padding: 4px 8px;
+      padding: 5px 10px;
       border-radius: 8px;
     }
 
@@ -223,20 +228,20 @@
       background: #090e1a;
       border: 1px solid var(--card-border);
       color: var(--text-muted);
-      border-radius: 12px;
-      padding: 10px 4px;
-      font-size: 11px;
+      border-radius: 14px;
+      padding: 12px 6px;
+      font-size: 13px;
       font-weight: 700;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       transition: all 0.2s;
     }
 
     .mod-tab-btn span:first-child {
-      font-size: 18px;
+      font-size: 22px;
     }
 
     .mod-tab-btn.active {
@@ -265,9 +270,9 @@
     .cyber-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 18px;
-      padding: 16px;
-      margin-bottom: 12px;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 14px;
       box-shadow: 0 12px 30px rgba(0,0,0,0.4);
       position: relative;
     }
@@ -276,45 +281,45 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .card-title {
-      font-size: 13px;
+      font-size: 16px;
       font-weight: 800;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       color: #fff;
     }
 
     .security-tag {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       color: var(--accent-cyber);
       background: rgba(0, 229, 255, 0.1);
       border: 1px solid rgba(0, 229, 255, 0.25);
-      padding: 2px 6px;
-      border-radius: 6px;
+      padding: 4px 8px;
+      border-radius: 8px;
     }
 
     /* Input & Action Styles */
     .cyber-input-group {
       display: flex;
-      gap: 6px;
-      margin-bottom: 10px;
+      gap: 8px;
+      margin-bottom: 12px;
     }
 
     .cyber-input {
       flex: 1;
       background: #050811;
       border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 11px 14px;
+      border-radius: 14px;
+      padding: 14px 16px;
       color: #fff;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
+      font-size: 14px;
       outline: none;
       transition: border-color 0.2s;
     }
@@ -328,14 +333,14 @@
       background: #0d1526;
       border: 1px solid var(--card-border);
       color: var(--accent-cyber);
-      border-radius: 12px;
-      padding: 0 12px;
-      font-size: 11px;
+      border-radius: 14px;
+      padding: 0 16px;
+      font-size: 13px;
       font-weight: 800;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       white-space: nowrap;
     }
 
@@ -345,17 +350,17 @@
 
     .cyber-textarea {
       width: 100%;
-      height: 110px;
+      height: 125px;
       background: #050811;
       border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 10px 12px;
+      border-radius: 14px;
+      padding: 14px;
       color: #fff;
       font-family: 'Outfit', sans-serif;
-      font-size: 12px;
+      font-size: 14px;
       outline: none;
       resize: none;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .cyber-textarea:focus {
@@ -367,15 +372,15 @@
       background: linear-gradient(135deg, #00e5ff, #0088ff);
       color: #000;
       border: none;
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 13px;
-      font-weight: 800;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 15px;
+      font-weight: 900;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
       box-shadow: var(--glow-cyber);
       transition: all 0.2s;
     }
@@ -388,11 +393,11 @@
     /* Quick Test Presets */
     .presets-row {
       display: flex;
-      gap: 6px;
+      gap: 8px;
       overflow-x: auto;
       scrollbar-width: none;
-      margin-bottom: 12px;
-      padding-bottom: 2px;
+      margin-bottom: 14px;
+      padding-bottom: 4px;
     }
 
     .presets-row::-webkit-scrollbar { display: none; }
@@ -401,11 +406,13 @@
       background: #0b1120;
       border: 1px solid var(--card-border);
       color: var(--text-muted);
-      font-size: 10px;
+      font-size: 12px;
       font-weight: 700;
-      padding: 5px 10px;
-      border-radius: 8px;
+      padding: 7px 12px;
+      border-radius: 10px;
       white-space: nowrap;
+      cursor: pointer;
+    }
       cursor: pointer;
     }
 
@@ -418,9 +425,9 @@
     .verdict-box {
       background: #04060c;
       border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 14px;
-      margin-top: 12px;
+      border-radius: 16px;
+      padding: 16px 18px;
+      margin-top: 14px;
       display: none;
       animation: fadeIn 0.3s ease;
     }
@@ -429,39 +436,40 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .verdict-title {
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
       color: var(--text-muted);
       text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .threat-score-pill {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
-      padding: 4px 10px;
-      border-radius: 8px;
+      padding: 6px 14px;
+      border-radius: 10px;
       border: 1px solid;
     }
 
     .verdict-banner {
       width: 100%;
       text-align: center;
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 900;
       font-family: 'JetBrains Mono', monospace;
-      padding: 10px 12px;
-      border-radius: 10px;
-      margin-bottom: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
       border: 1px solid;
       box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
@@ -490,43 +498,43 @@
     .forensic-checklist {
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      margin-bottom: 12px;
+      gap: 8px;
+      margin-bottom: 14px;
     }
 
     .check-item {
       background: #080d19;
       border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 8px;
-      padding: 8px 10px;
+      border-radius: 10px;
+      padding: 10px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      font-size: 11px;
+      font-size: 13px;
     }
 
     .check-label {
       color: var(--text-muted);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
     }
 
     .check-status {
       font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 11px;
+      font-size: 13px;
     }
 
     .advice-box {
       background: #091224;
-      border-left: 3px solid var(--accent-cyber);
-      border-radius: 8px;
-      padding: 10px;
-      font-size: 11px;
-      line-height: 1.5;
+      border-left: 4px solid var(--accent-cyber);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      line-height: 1.55;
       color: #cfd9e8;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .copy-report-btn {
@@ -534,15 +542,15 @@
       background: #111a2d;
       border: 1px solid var(--card-border);
       color: #fff;
-      border-radius: 10px;
-      padding: 9px;
-      font-size: 11px;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
       font-weight: 800;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
       transition: all 0.2s;
     }
 
@@ -585,9 +593,9 @@
       border-top: 1px solid var(--card-border);
       display: flex;
       justify-content: space-around;
-      padding: 8px 12px 14px;
+      padding: 10px 14px 18px;
       z-index: 100;
-      max-width: 480px;
+      max-width: 540px;
       margin: 0 auto;
     }
 
@@ -595,11 +603,11 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
+      gap: 4px;
       background: none;
       border: none;
       color: var(--text-muted);
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       cursor: pointer;
     }
@@ -609,7 +617,7 @@
     }
 
     .nav-btn span:first-child {
-      font-size: 19px;
+      font-size: 22px;
     }
 
     /* Toast Notification */
@@ -622,10 +630,10 @@
       border: 1px solid var(--accent-cyber);
       box-shadow: var(--glow-cyber);
       color: #fff;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 800;
-      padding: 10px 18px;
-      border-radius: 12px;
+      padding: 12px 20px;
+      border-radius: 14px;
       z-index: 9999;
       pointer-events: none;
       transition: transform 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
@@ -657,10 +665,10 @@
     .modal-card {
       background: #090e1c;
       border: 1px solid var(--accent-warn);
-      border-radius: 20px;
-      padding: 20px;
+      border-radius: 22px;
+      padding: 22px 20px;
       width: 100%;
-      max-width: 400px;
+      max-width: 440px;
       box-shadow: 0 0 35px rgba(255, 184, 0, 0.3);
       position: relative;
     }
@@ -672,14 +680,15 @@
       background: none;
       border: none;
       color: var(--text-muted);
-      font-size: 22px;
+      font-size: 24px;
       cursor: pointer;
     }
 
     .vip-tier-item {
       background: #0f182c;
       border: 1px solid var(--card-border);
-      border-radius: 12px;
+      border-radius: 14px;
+      padding: 14px 16px;
       padding: 12px;
       margin-bottom: 8px;
       display: flex;
@@ -999,45 +1008,45 @@
   <div class="modal-overlay" id="vipModal">
     <div class="modal-card">
       <button class="modal-close" onclick="closeVipModal()">✕</button>
-      <div style="font-size:18px; font-weight:800; color:var(--accent-warn); margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+      <div style="font-size:20px; font-weight:800; color:var(--accent-warn); margin-bottom:6px; display:flex; align-items:center; gap:8px;">
         <span>⭐</span> CyberShield Sentinel VIP
       </div>
-      <div style="font-size:11px; color:var(--text-muted); margin-bottom:14px; line-height:1.4;">
+      <div style="font-size:12px; color:var(--text-muted); margin-bottom:16px; line-height:1.45;">
         Desbloquea auditorías forenses ilimitadas y protección preventiva 24/7 con Telegram Stars (XTR).
       </div>
 
       <div class="vip-tier-item">
         <div>
-          <div style="font-size:13px; font-weight:800; color:#fff;">⚡ Auditoría Forense Express</div>
-          <div style="font-size:10px; color:var(--text-muted);">1 Auditoría profunda con certificado criptográfico SHA-256</div>
+          <div style="font-size:14px; font-weight:800; color:#fff;">⚡ Auditoría Forense Express</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">1 Auditoría profunda con certificado SHA-256</div>
         </div>
-        <button style="background:var(--accent-warn); border:none; color:#000; font-weight:800; padding:6px 12px; border-radius:8px; cursor:pointer;" onclick="buyVip('audit_single', 25)">
+        <button style="background:var(--accent-warn); border:none; color:#000; font-weight:900; font-size:13px; padding:8px 14px; border-radius:10px; cursor:pointer;" onclick="buyVip('audit_single', 25)">
           25 ⭐
         </button>
       </div>
 
       <div class="vip-tier-item">
         <div>
-          <div style="font-size:13px; font-weight:800; color:#fff;">🛡️ Pase Centinela (30 Días)</div>
-          <div style="font-size:10px; color:var(--text-muted);">Escaneos ilimitados + Auditoría de recibos bancarios</div>
+          <div style="font-size:14px; font-weight:800; color:#fff;">🛡️ Pase Centinela (30 Días)</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Escaneos ilimitados + Auditoría de recibos bancarios</div>
         </div>
-        <button style="background:var(--accent-warn); border:none; color:#000; font-weight:800; padding:6px 12px; border-radius:8px; cursor:pointer;" onclick="buyVip('sentinel_30', 99)">
+        <button style="background:var(--accent-warn); border:none; color:#000; font-weight:900; font-size:13px; padding:8px 14px; border-radius:10px; cursor:pointer;" onclick="buyVip('sentinel_30', 99)">
           99 ⭐
         </button>
       </div>
 
       <div class="vip-tier-item">
         <div>
-          <div style="font-size:13px; font-weight:800; color:#fff;">👑 Investigador Forense Vitalicio</div>
-          <div style="font-size:10px; color:var(--text-muted);">Acceso de por vida + Certificados con Hash SHA-256 para denuncias</div>
+          <div style="font-size:14px; font-weight:800; color:#fff;">👑 Investigador Forense Vitalicio</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Acceso de por vida + Certificados con Hash SHA-256</div>
         </div>
-        <button style="background:var(--accent-warn); border:none; color:#000; font-weight:800; padding:6px 12px; border-radius:8px; cursor:pointer;" onclick="buyVip('forensic_lifetime', 299)">
+        <button style="background:var(--accent-warn); border:none; color:#000; font-weight:900; font-size:13px; padding:8px 14px; border-radius:10px; cursor:pointer;" onclick="buyVip('forensic_lifetime', 299)">
           299 ⭐
         </button>
       </div>
 
-      <div style="margin-top:14px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08); text-align:center;">
-        <button onclick="payInBotChat()" style="background:rgba(0,229,255,0.08); border:1px solid var(--accent-cyber); color:var(--accent-cyber); padding:8px 14px; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer; width:100%;">
+      <div style="margin-top:16px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); text-align:center;">
+        <button onclick="payInBotChat()" style="background:rgba(0,229,255,0.1); border:1px solid var(--accent-cyber); color:var(--accent-cyber); padding:10px 16px; border-radius:10px; font-size:12px; font-weight:800; cursor:pointer; width:100%;">
           💬 Pagar con Factura Directa en el Chat (@cybershield_defense_bot)
         </button>
       </div>
@@ -1131,12 +1140,19 @@
       }
     }
 
-    // Telegram WebApp Setup
+    // Telegram WebApp Setup (Expansive Mobile & Fullscreen View)
     const tg = window.Telegram?.WebApp;
     if (tg) {
       tg.ready();
       tg.expand();
+      if (typeof tg.requestFullscreen === 'function') {
+        try { tg.requestFullscreen(); } catch (e) {}
+      }
+      if (typeof tg.disableVerticalSwipes === 'function') {
+        try { tg.disableVerticalSwipes(); } catch (e) {}
+      }
       try { tg.headerColor = '#050811'; } catch (e) {}
+      try { tg.backgroundColor = '#050811'; } catch (e) {}
     }
 
     // Navigation Tabs
@@ -1619,9 +1635,9 @@
     }
 
     const VIP_INVOICES = {
-      'audit_single': 'https://t.me/$Xm23uqMmQEQrAQAAzDUFl9PFkb4',
-      'sentinel_30': 'https://t.me/$1mPVs6MmQEQsAQAAJvGjmdZ7KdY',
-      'forensic_lifetime': 'https://t.me/$_k9DFaMmQEQtAQAAL2XRoFdYgxo'
+      'audit_single': 'https://t.me/$m2acf6MmQERAAQAAaJaViHeNn40',
+      'sentinel_30': 'https://t.me/$Grmvt6MmQERBAQAA43mzbB7R43Q',
+      'forensic_lifetime': 'https://t.me/$3q1_dqMmQERCAQAAhPhdm551vhY'
     };
 
     function buyVip(tierId, stars) {
@@ -1631,7 +1647,7 @@
       
       const tgApp = window.Telegram?.WebApp;
       
-      // Intentar openInvoice nativo
+      // 1. Intentar pasarela nativa openInvoice de Telegram
       if (tgApp && typeof tgApp.openInvoice === 'function') {
         try {
           tgApp.openInvoice(invoiceUrl, function(status) {
@@ -1643,25 +1659,38 @@
             } else if (status === 'cancelled') {
               showToast('ℹ️ Pago cancelado.');
             } else if (status === 'failed') {
-              showToast('❌ El pago no pudo completarse.');
+              showToast('⚠️ Abriendo pago directo en Telegram...');
+              if (typeof tgApp.openTelegramLink === 'function') {
+                tgApp.openTelegramLink(invoiceUrl);
+              }
             } else {
               showToast(`Estado: ${status}`);
             }
           });
           return;
         } catch (e) {
-          console.warn('openInvoice falló, usando openTelegramLink:', e);
+          console.warn('openInvoice falló, usando fallback directo:', e);
         }
       }
 
-      // Si openInvoice no está soportado o falla (p.ej. versión web/desktop), abrir enlace nativo
+      // 2. Respaldo nativo Telegram Desktop / Web (openTelegramLink)
       if (tgApp && typeof tgApp.openTelegramLink === 'function') {
         tgApp.openTelegramLink(invoiceUrl);
         return;
       }
 
-      // Respaldo en navegador tradicional
+      // 3. Respaldo en navegador externo
       window.open(invoiceUrl, '_blank');
+    }
+
+    function payInBotChat() {
+      const tgApp = window.Telegram?.WebApp;
+      const botUrl = 'https://t.me/cybershield_defense_bot?start=vip';
+      if (tgApp && typeof tgApp.openTelegramLink === 'function') {
+        tgApp.openTelegramLink(botUrl);
+      } else {
+        window.open(botUrl, '_blank');
+      }
     }
 
     function payInBotChat() {

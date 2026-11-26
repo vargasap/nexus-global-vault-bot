@@ -548,7 +548,7 @@ class CyberShieldBot:
                             [{"text": "⚡ Auditoría Express (25 ⭐)", "callback_data": "buy_express"}],
                             [{"text": "🛡️ Pase Centinela 30 Días (99 ⭐)", "callback_data": "buy_sentinel"}],
                             [{"text": "👑 Investigador Vitalicio (299 ⭐)", "callback_data": "buy_lifetime"}],
-                            [{"text": "📱 Abrir Tienda en Mini App", "web_app": {"url": f"{self.webapp_url}?v=3.5"}}]
+                            [{"text": "📱 Abrir Tienda en Mini App", "web_app": {"url": f"{self.webapp_url}?v=5.0"}}]
                         ]
                     }
                     self.send_message(
@@ -659,7 +659,7 @@ class CyberShieldBot:
                     "menu_button": {
                         "type": "web_app",
                         "text": "CyberShield 🛡️",
-                        "web_app": {"url": f"{self.webapp_url}?v=3.5"}
+                        "web_app": {"url": f"{self.webapp_url}?v=5.0"}
                     }
                 })
             except Exception as e:
