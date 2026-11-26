@@ -1,0 +1,28 @@
+{
+  "packages": {
+    "whale_pass": {
+      "title": "🐋 Pase Ballena VIP (30 Días)",
+      "description": "Acceso a señales de trading 24/7 y alertas push de transferencias de ballenas on-chain (+100K).",
+      "price_stars": 99,
+      "multiplier": 2
+    },
+    "alpha_lifetime": {
+      "title": "💎 Alpha Airdrop Vitalicio",
+      "description": "Acceso permanente a guías secretas de airdrops, checklist de elegibilidad y x3 en minería $PULSE.",
+      "price_stars": 299,
+      "multiplier": 3
+    },
+    "elite_vip": {
+      "title": "👑 Whale Elite VIP Club",
+      "description": "Membresía institucional completa: grupo VIP de ballenas, señales de futuros y x10 minería $PULSE.",
+      "price_stars": 499,
+      "multiplier": 10
+    }
+  },
+  "promo_codes": {
+    "PULSE100": 100,
+    "AIRDROP2025": 250,
+    "TONVIP": 500,
+    "VIPSTAR": 1000
+  }
+}

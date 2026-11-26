@@ -445,39 +445,55 @@
       color: var(--accent-red);
       background: rgba(255, 51, 102, 0.12);
     }
-    /* Advanced Quantitative Signal Badge */
+    /* Advanced Quantitative Signal Breakdown Box */
     .quant-signal-box {
       background: #090e18;
       border: 1px solid var(--card-border);
       border-radius: 14px;
-      padding: 10px 12px;
+      padding: 12px;
       margin-bottom: 12px;
     }
-    .quant-verdict-row {
+    .quant-verdict-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 8px;
-      gap: 6px;
-      flex-wrap: wrap;
     }
-    .verdict-badge {
+    .quant-algorithm-lbl {
       font-size: 10px;
       font-weight: 800;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
       font-family: 'JetBrains Mono', monospace;
-      padding: 4px 8px;
-      border-radius: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      border: 1px solid;
-      white-space: nowrap;
     }
     .confidence-badge {
       font-size: 10px;
       font-weight: 800;
       color: var(--accent-gold);
+      background: rgba(255, 184, 0, 0.12);
+      border: 1px solid rgba(255, 184, 0, 0.35);
+      padding: 3px 8px;
+      border-radius: 8px;
       font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+    }
+    .verdict-badge {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 12px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 8px 12px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid;
+      white-space: nowrap;
+      text-align: center;
+      margin-bottom: 8px;
     }
     .targets-grid {
       display: grid;
@@ -501,11 +517,111 @@
       font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
     }
-    .tech-sub-details {
+    .tech-sub-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .tech-card-cell {
+      background: #050810;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      padding: 6px 4px;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .tech-card-title {
+      font-size: 9px;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 2px;
+    }
+    .tech-card-data {
+      font-size: 11px;
+      font-weight: 800;
+      display: block;
+      white-space: nowrap;
+    }
+    .coin-selector-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0d1526;
+      border: 1px solid rgba(0, 152, 234, 0.3);
+      border-radius: 10px;
+      padding: 7px 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .coin-selector-bar:hover {
+      border-color: var(--accent-ton);
+    }
+    .coin-selector-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .coin-selector-toggle-btn {
+      background: rgba(0, 152, 234, 0.2);
+      border: 1px solid var(--accent-ton);
+      color: var(--accent-ton);
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    /* Inline Grid View of Coins */
+    .coins-inline-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+      max-height: 220px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      padding: 4px;
+      background: #080d1a;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+    }
+    .coin-card-btn {
+      background: #111a2e;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 6px 8px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .coin-card-btn:active {
+      transform: scale(0.97);
+    }
+    .coin-card-btn.active {
+      background: rgba(0, 152, 234, 0.25);
+      border-color: var(--accent-ton);
+      box-shadow: 0 0 10px rgba(0, 152, 234, 0.4);
+    }
+    .coin-card-top {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+    }
+    .coin-card-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       font-size: 10px;
-      color: var(--text-muted);
       font-family: 'JetBrains Mono', monospace;
     }
     #marketCanvas {
@@ -946,9 +1062,9 @@
         </div>
       </div>
       <div class="top-actions">
-        <button class="refresh-pill-btn" id="btnRefresh" onclick="triggerManualRefresh()" title="Actualizar Datos">
+        <button class="refresh-pill-btn" id="btnRefresh" onclick="forceHardRefresh()" title="Limpiar Caché y Actualizar a v3.1">
           <span class="refresh-spin" id="spinIcon">🔄</span>
-          <span class="refresh-txt">Actualizar</span>
+          <span class="refresh-txt">v3.1 Actualizar</span>
         </button>
         <button class="settings-pill-btn" onclick="openSyncModal()" title="Menú de Actualización">
           ⚙️
@@ -1018,8 +1134,24 @@
             <button class="cat-pill" id="cat-upcoming" onclick="filterTokens('upcoming', this)">🚀 Próximo</button>
           </div>
           <button class="select-coin-btn" onclick="openCoinSelectorModal()" title="Elegir cualquier moneda">
-            <span>🪙 Elegir</span> <span>▾</span>
+            <span>🪙 Buscar</span> <span>▾</span>
           </button>
+        </div>
+
+        <!-- Category Dropdown / Grid Toggle Bar -->
+        <div class="coin-selector-bar" onclick="toggleCoinsInlineGrid()" title="Toca para desplegar todas las monedas de esta categoría">
+          <div class="coin-selector-info">
+            <span>🪙</span>
+            <span id="txtActiveCatSummary">Monedas: Todas (14 disponibles)</span>
+          </div>
+          <button class="coin-selector-toggle-btn" id="btnToggleGrid">
+            🗂️ Ver Cuadrícula ▾
+          </button>
+        </div>
+
+        <!-- Collapsible / Expandable Coins Grid -->
+        <div class="coins-inline-grid" id="coinsInlineGrid" style="display:none;">
+          <!-- Dynamically injected coins -->
         </div>
 
         <!-- Horizontal Token Scroll with Visible Navigation Arrows -->
@@ -1040,10 +1172,11 @@
 
         <!-- Advanced Quantitative Signal Breakdown Box -->
         <div class="quant-signal-box">
-          <div class="quant-verdict-row">
-            <span class="verdict-badge" id="valVerdict">⚡ CALCULANDO ALGORITMO...</span>
-            <span class="confidence-badge" id="valConfidence">92% PRECISIÓN</span>
+          <div class="quant-verdict-header">
+            <span class="quant-algorithm-lbl">⚡ ALGORITMO CUANTITATIVO (EMA + RSI + MACD)</span>
+            <span class="confidence-badge" id="valConfidence">⭐ 94% PRECISIÓN</span>
           </div>
+          <div class="verdict-badge" id="valVerdict">⚡ CALCULANDO ALGORITMO...</div>
 
           <!-- Suggested Entry, Stop Loss, Take Profit -->
           <div class="targets-grid">
@@ -1061,10 +1194,20 @@
             </div>
           </div>
 
-          <div class="tech-sub-details">
-            <span>RSI(14): <strong id="valRSI" style="color:#fff;">--</strong></span>
-            <span>EMA(9/21): <strong id="valEMA" style="color:var(--accent-cyan);">Alcista</strong></span>
-            <span>MACD: <strong id="valMACD" style="color:var(--accent-gold);">Cruce Positivo</strong></span>
+          <!-- Clean 3-Column Indicator Cards -->
+          <div class="tech-sub-grid">
+            <div class="tech-card-cell">
+              <span class="tech-card-title">RSI (14)</span>
+              <span class="tech-card-data" id="valRSI" style="color:#fff;">--</span>
+            </div>
+            <div class="tech-card-cell">
+              <span class="tech-card-title">EMA (9/21)</span>
+              <span class="tech-card-data" id="valEMA" style="color:var(--accent-cyan);">Alcista</span>
+            </div>
+            <div class="tech-card-cell">
+              <span class="tech-card-title">MACD</span>
+              <span class="tech-card-data" id="valMACD" style="color:var(--accent-gold);">Cruce (+)</span>
+            </div>
           </div>
         </div>
 
@@ -1630,6 +1773,54 @@
       renderCoinSelectorGrid(val);
     }
 
+    function toggleCoinsInlineGrid() {
+      playBeep(600, 'sine', 0.05);
+      const grid = document.getElementById('coinsInlineGrid');
+      const btn = document.getElementById('btnToggleGrid');
+      if (!grid) return;
+      if (grid.style.display === 'none' || grid.style.display === '') {
+        renderCoinsInlineGrid();
+        grid.style.display = 'grid';
+        if (btn) btn.innerHTML = '▲ Ocultar Lista';
+      } else {
+        grid.style.display = 'none';
+        if (btn) btn.innerHTML = '🗂️ Ver Cuadrícula ▾';
+      }
+    }
+
+    function renderCoinsInlineGrid() {
+      const grid = document.getElementById('coinsInlineGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+
+      Object.keys(MARKET_TOKENS).forEach(key => {
+        const item = MARKET_TOKENS[key];
+        if (currentCategory !== 'all' && item.cat !== currentCategory) return;
+
+        const isUp = item.change >= 0;
+        const card = document.createElement('div');
+        card.className = `coin-card-btn ${key === currentSelectedToken ? 'active' : ''}`;
+        card.onclick = () => {
+          switchToken(key);
+          renderCoinsInlineGrid();
+        };
+
+        card.innerHTML = `
+          <div class="coin-card-top">
+            <span>${item.icon} ${key}</span>
+            <span style="color:${isUp ? 'var(--accent-cyan)' : 'var(--accent-red)'}; font-size:10px;">
+              ${isUp ? '+' : ''}${item.change.toFixed(1)}%
+            </span>
+          </div>
+          <div class="coin-card-bottom">
+            <span style="color:var(--text-muted); font-size:9px;">${item.name}</span>
+            <span style="font-weight:800; color:#fff;">${formatCryptoPrice(item.price)}</span>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
     function renderTokenChips() {
       const container = document.getElementById('tokenChipsContainer');
       if (!container) return;
@@ -1642,17 +1833,54 @@
         const btn = document.createElement('button');
         btn.className = `token-chip ${key === currentSelectedToken ? 'active' : ''}`;
         btn.id = `chip-${key}`;
-        btn.onclick = () => switchToken(key);
+        btn.onclick = () => {
+          switchToken(key);
+          renderCoinsInlineGrid();
+        };
         btn.innerText = `${item.icon} ${key} ${formatCryptoPrice(item.price)}`;
         container.appendChild(btn);
       });
+
+      renderCoinsInlineGrid();
     }
 
     function filterTokens(cat, el) {
+      playBeep(650, 'sine', 0.04);
       currentCategory = cat;
       document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
       if (el) el.classList.add('active');
+
+      const catLabels = {
+        'all': 'Todas (14 disponibles)',
+        'new': 'Recién Listadas (7 disponibles)',
+        'top': 'Top Mercado (5 disponibles)',
+        'upcoming': 'Próximos Listados (3 disponibles)'
+      };
+
+      const summaryEl = document.getElementById('txtActiveCatSummary');
+      if (summaryEl) {
+        summaryEl.innerText = `Monedas: ${catLabels[cat] || 'Seleccionadas'}`;
+      }
+
+      // Si la moneda actual no pertenece a la categoría filtrada, auto-seleccionar la primera
+      const tokensInCat = Object.keys(MARKET_TOKENS).filter(k => cat === 'all' || MARKET_TOKENS[k].cat === cat);
+      if (tokensInCat.length > 0 && !tokensInCat.includes(currentSelectedToken)) {
+        switchToken(tokensInCat[0]);
+      }
+
       renderTokenChips();
+    }
+
+    function forceHardRefresh() {
+      playBeep(880, 'sine', 0.1);
+      showToast("🔄 Limpiando memoria y actualizando a v3.1...");
+      const spin = document.getElementById('spinIcon');
+      if (spin) spin.classList.add('spinning');
+      setTimeout(() => {
+        const u = new URL(window.location.href);
+        u.searchParams.set('v', Date.now());
+        window.location.href = u.toString();
+      }, 350);
     }
 
     // ==========================================

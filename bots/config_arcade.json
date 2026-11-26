@@ -1,0 +1,31 @@
+{
+  "bot_token": "YOUR_BOT_TOKEN_HERE",
+  "currency": "XTR",
+  "miniapp_url": "https://vargasap.github.io/nexus-global-vault-bot/web_hub/game.html",
+  "plans": {
+    "spins_10": {
+      "id": "spins_10",
+      "spins": 15,
+      "stars": 25,
+      "usd": "0.49",
+      "title": "⚡ Starter Pack (15 Spins)",
+      "desc": "15 Spins + 1 Bronze Chest Key (70% OFF)"
+    },
+    "spins_30": {
+      "id": "spins_30",
+      "spins": 50,
+      "stars": 99,
+      "usd": "1.99",
+      "title": "🔥 Pro Arcade (50 Spins)",
+      "desc": "50 Spins + 2 Silver Keys + Fever Mode 2X"
+    },
+    "spins_vip": {
+      "id": "spins_vip",
+      "spins": 200,
+      "stars": 399,
+      "usd": "7.99",
+      "title": "👑 Legend Vault (200 Spins)",
+      "desc": "200 Spins + Golden Master Key + Lifetime Crown"
+    }
+  }
+}

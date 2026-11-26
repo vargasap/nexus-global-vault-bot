@@ -10,9 +10,14 @@ env/
 
 # Runtime databases and logs
 downloads/
+*.log
 bot_runtime.log
 sales_log.json
 users_db.json
+users_game_db.json
+users_crypto_db.json
+sales_game_log.json
+sales_crypto_log.json
 
 # OS generated files
 .DS_Store

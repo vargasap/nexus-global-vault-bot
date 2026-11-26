@@ -223,7 +223,9 @@ def load_config():
         except Exception:
             pass
 
-    if os.environ.get("BOT_TOKEN"):
+    if os.environ.get("BOT_TOKEN_VAULT"):
+        cfg["bot_token"] = os.environ.get("BOT_TOKEN_VAULT").strip()
+    elif os.environ.get("BOT_TOKEN"):
         cfg["bot_token"] = os.environ.get("BOT_TOKEN").strip()
 
     return cfg
