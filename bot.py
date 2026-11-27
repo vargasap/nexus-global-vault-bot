@@ -104,13 +104,23 @@ def get_audio_duration(audio_file):
         pass
     return 4.0
 
-def merge_image_and_audio_to_video(media_path, audio_path, output_mp4, anim_mode="dance"):
+def merge_image_and_audio_to_video(media_path, audio_path, output_mp4, anim_mode="lipsync"):
     try:
         ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     except Exception:
         ffmpeg_exe = "ffmpeg"
     
     is_video = str(media_path).lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm", ".gif"))
+    
+    if not is_video and anim_mode == "lipsync":
+        try:
+            from lip_sync_engine import generate_lipsync_sticker
+            ok, _face = generate_lipsync_sticker(media_path, audio_path, output_mp4)
+            if ok:
+                return True
+        except Exception as e:
+            print(f"[LipSync fallback] {e}")
+        anim_mode = "dance"
     
     if is_video:
         dur = get_audio_duration(audio_path)
@@ -1089,7 +1099,7 @@ class TelegramStarsBot:
             "reply_markup": json.dumps({"inline_keyboard": keyboard})
         })
 
-    def service_make_sticker(self, chat_id, user_id, username, lang_code, file_id, sound_id="cat_pop", anim_mode="dance", is_video=False, is_edit=False):
+    def service_make_sticker(self, chat_id, user_id, username, lang_code, file_id, sound_id="cat_pop", anim_mode="lipsync", is_video=False, is_edit=False):
         if not is_edit:
             can_use, reason, _ = check_can_use_service(user_id, "sticker", username)
             if not can_use:
@@ -1100,12 +1110,13 @@ class TelegramStarsBot:
         snd_name = sound_info["name"]
         
         mode_names = {
+            "lipsync": "🗣️ Habla y Gestos IA (Lip-Sync)",
             "dance": "🕺 Ritmo & Bailoteo Meme",
             "vibrate": "💥 Vibración Bass Boost",
             "zoom": "🔍 Zoom Dramático Beat",
             "static": "🖼️ Estático con Marco"
         }
-        mode_label = mode_names.get(anim_mode, "🕺 Ritmo Animado")
+        mode_label = mode_names.get(anim_mode, "🗣️ Habla y Gestos IA")
         
         self.call_api("sendMessage", {"chat_id": chat_id, "text": f"🪄 **Creando Sticker Animado con sonido: {snd_name}...**\n🎭 *Efecto:* {mode_label}"})
         
@@ -1575,7 +1586,7 @@ class TelegramStarsBot:
                                 sound_id = data.replace("snd_", "")
                                 photo_id = PENDING_STICKER_PHOTOS.get(user_id) or LAST_STICKER_DATA.get(user_id, {}).get("file_id")
                                 if photo_id:
-                                    last_anim = LAST_STICKER_DATA.get(user_id, {}).get("anim_mode", "dance")
+                                    last_anim = LAST_STICKER_DATA.get(user_id, {}).get("anim_mode", "lipsync")
                                     last_is_vid = LAST_STICKER_DATA.get(user_id, {}).get("is_video", False)
                                     self.service_make_sticker(chat_id, user_id, username, lang_code, photo_id, sound_id=sound_id, anim_mode=last_anim, is_video=last_is_vid, is_edit=(user_id in LAST_STICKER_DATA))
                                 else:
@@ -1588,6 +1599,7 @@ class TelegramStarsBot:
                                     })
                             elif data == "choose_anim":
                                 keyboard = [
+                                    [{"text": "🗣️ Habla y Gestos IA (Lip-Sync)", "callback_data": "anim_lipsync"}],
                                     [{"text": "🕺 Ritmo & Bailoteo Meme", "callback_data": "anim_dance"}, {"text": "💥 Vibración Bass Boost", "callback_data": "anim_vibrate"}],
                                     [{"text": "🔍 Zoom Dramático Beat", "callback_data": "anim_zoom"}, {"text": "🖼️ Estático con Marco", "callback_data": "anim_static"}],
                                     [{"text": "🔙 Volver al Menú", "callback_data": "view_menu"}]
