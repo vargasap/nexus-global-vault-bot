@@ -10,3 +10,4 @@ opencv-python-headless>=4.8.0
 onnxruntime>=1.16.0
 mediapipe>=0.10.14
 gradio_client>=1.0.0
+cryptography>=41.0.0

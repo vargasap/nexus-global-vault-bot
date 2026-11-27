@@ -413,8 +413,6 @@
       white-space: nowrap;
       cursor: pointer;
     }
-      cursor: pointer;
-    }
 
     .preset-pill:hover {
       border-color: var(--accent-cyber);
@@ -510,6 +508,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 10px;
       font-size: 13px;
     }
 
@@ -518,12 +517,16 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      flex: 0 1 42%;
     }
 
     .check-status {
       font-weight: 800;
       font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
+      font-size: 12px;
+      text-align: right;
+      flex: 1 1 56%;
+      word-break: break-word;
     }
 
     .advice-box {
@@ -757,14 +760,14 @@
       <div class="cyber-card">
         <div class="card-title-row">
           <span class="card-title"><span>🌐</span> <span id="txtWebTitle">Auditoría de Enlaces & Tiendas</span></span>
-          <span class="security-tag">DNS & WHOIS</span>
+          <span class="security-tag">VT / DNS / RDAP / OTX</span>
         </div>
 
         <div class="presets-row">
-          <span class="preset-pill" onclick="setPresetUrl('amazon.com')">✅ amazon.com (Oficial)</span>
+          <span class="preset-pill" onclick="setPresetUrl('google.com')">✅ google.com (Real)</span>
+          <span class="preset-pill" onclick="setPresetUrl('binance.com')">✅ binance.com (Oficial)</span>
           <span class="preset-pill" onclick="setPresetUrl('amaz0n-mega-deals-promos.top')">🚨 amaz0n-deals.top (Fake)</span>
           <span class="preset-pill" onclick="setPresetUrl('shein-sorteo-gratis-vip.xyz')">🚨 shein-gratis.xyz (Phishing)</span>
-          <span class="preset-pill" onclick="setPresetUrl('binance.com')">✅ binance.com (Real)</span>
         </div>
 
         <div class="cyber-input-group">
@@ -870,22 +873,17 @@
       <div class="cyber-card">
         <div class="card-title-row">
           <span class="card-title"><span>🧾</span> <span id="txtReceiptTitle">Inspector de Comprobantes Bancarios</span></span>
-          <span class="security-tag">ANTI-PHOTOSHOP</span>
+          <span class="security-tag">ELA + EXIF/XMP REAL</span>
         </div>
 
         <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px; line-height:1.5;">
-          Los estafadores usan aplicaciones falsas de Nequi, Zelle, BBVA o MercadoPago para generar capturas de pantalla de transferencias inexistentes.
-        </div>
-
-        <div class="presets-row">
-          <span class="preset-pill" onclick="setSimReceipt('fake_nequi')">🚨 Simular Comprobante Editado</span>
-          <span class="preset-pill" onclick="setSimReceipt('real_zelle')">✅ Simular Recibo Legítimo</span>
+          Escaneo forense real de píxeles (<b>Error Level Analysis 16×16</b>), detección de software editor (Photoshop, Canva, PicsArt, GIMP) en EXIF/XMP/PNG y huella criptográfica <b>SHA-256</b>.
         </div>
 
         <div style="background:#050811; border:2px dashed var(--card-border); border-radius:14px; padding:20px; text-align:center; margin-bottom:12px; cursor:pointer;" onclick="triggerFileUpload()">
           <span style="font-size:32px;">📷</span>
-          <div style="font-size:12px; font-weight:800; color:#fff; margin-top:6px;">Subir Captura de Comprobante</div>
-          <div style="font-size:10px; color:var(--text-muted);">Formatos PNG, JPG (Detección de artefactos de compresión)</div>
+          <div style="font-size:12px; font-weight:800; color:#fff; margin-top:6px;">Subir Captura Real de Comprobante</div>
+          <div style="font-size:10px; color:var(--text-muted);">Formatos PNG, JPG, WEBP — Procesado local + Mapa ELA visual</div>
           <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="handleReceiptFile(event)">
         </div>
 
@@ -895,21 +893,21 @@
         </div>
 
         <button class="primary-scan-btn" onclick="runReceiptScan()">
-          <span>🔬</span> <span id="btnScanReceipt">AUDITAR METADATOS Y TIPOGRAFÍA</span>
+          <span>🔬</span> <span id="btnScanReceipt">AUDITAR METADATOS Y MAPA ELA</span>
         </button>
 
         <!-- Scanning Animation -->
         <div class="scanning-radar-box" id="radarReceipt">
           <div class="radar-circle">🔬</div>
           <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono'; color:var(--accent-cyber);">
-            ANALIZANDO DIVERGENCIA DE PIXELES Y EXIF...
+            ANALIZANDO METADATOS EXIF/XMP, PARCHES Y ERROR LEVEL ANALYSIS...
           </div>
         </div>
 
         <!-- Verdict Result -->
         <div class="verdict-box" id="verdictReceipt">
           <div class="verdict-header">
-            <span class="verdict-title">ANÁLISIS DE AUTENTICIDAD</span>
+            <span class="verdict-title">ANÁLISIS FORENSE REAL</span>
             <span class="threat-score-pill" id="scorePillReceipt">0% RIESGO</span>
           </div>
 
@@ -917,12 +915,20 @@
             RESULTADO
           </div>
 
+          <div id="elaPreviewBox" style="display:none; text-align:center; margin-bottom:12px; background:#080d19; border:1px solid rgba(0,229,255,0.2); border-radius:12px; padding:10px;">
+            <div style="font-size:11px; font-weight:800; font-family:'JetBrains Mono'; color:var(--accent-cyber); margin-bottom:6px;">
+              🔬 MAPA FORENSE ELA (Zonas editadas brillan distinto al resto)
+            </div>
+            <canvas id="elaCanvas" style="max-width:100%; max-height:220px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); display:none; margin:0 auto;"></canvas>
+            <img id="elaServerImg" style="max-width:100%; max-height:220px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); display:none; margin:0 auto;" />
+          </div>
+
           <div class="forensic-checklist" id="checklistReceipt"></div>
 
           <div class="advice-box" id="adviceReceipt"></div>
 
           <button class="copy-report-btn" onclick="copyForensicReport('receipt')">
-            <span>📄</span> Copiar Certificado de Autenticidad
+            <span>📄</span> Copiar Acta Forense Real
           </button>
         </div>
       </div>
@@ -932,30 +938,32 @@
     <div id="mod-crypto" class="tab-content">
       <div class="cyber-card">
         <div class="card-title-row">
-          <span class="card-title"><span>🪙</span> <span id="txtCryptoTitle">Auditor de Billeteras & Honeypots</span></span>
-          <span class="security-tag">WEB3 SECURITY</span>
+          <span class="card-title"><span>🪙</span> <span id="txtCryptoTitle">Auditor Multi-Red: Contratos & Wallets</span></span>
+          <span class="security-tag">LICENCIA + REPUTACIÓN</span>
         </div>
 
         <div class="presets-row">
-          <span class="preset-pill" onclick="setPresetCrypto('0xdrain..')">🚨 Wallet Marcada (Drainer)</span>
-          <span class="preset-pill" onclick="setPresetCrypto('ton_safe')">✅ Toncoin Foundation (Seguro)</span>
-          <span class="preset-pill" onclick="setPresetCrypto('fake_airdrop')">🚨 Honeypot Airdrop Claim</span>
+          <span class="preset-pill" onclick="setPresetCrypto('usdc_eth')">✅ USDC (Contrato ETH)</span>
+          <span class="preset-pill" onclick="setPresetCrypto('ronin_hack')">🚨 Ronin Hacker (Sancionada)</span>
+          <span class="preset-pill" onclick="setPresetCrypto('usdt_tron')">✅ USDT (TRON TRC-20)</span>
+          <span class="preset-pill" onclick="setPresetCrypto('usdc_sol')">✅ USDC (Solana)</span>
+          <span class="preset-pill" onclick="setPresetCrypto('ton_safe')">✅ TON Foundation</span>
         </div>
 
         <div class="cyber-input-group">
-          <input type="text" class="cyber-input" id="inputCrypto" placeholder="Pega dirección de wallet (EVM, TON, BTC) o contrato...">
+          <input type="text" class="cyber-input" id="inputCrypto" placeholder="Pega contrato o wallet (EVM 0x, TRON T..., Solana, BTC o TON)...">
           <button class="cyber-paste-btn" onclick="pasteToInput('inputCrypto')">📋 Pegar</button>
         </div>
 
         <button class="primary-scan-btn" onclick="runCryptoScan()">
-          <span>🛡️</span> <span id="btnScanCrypto">VERIFICAR SEGURIDAD ON-CHAIN</span>
+          <span>🛡️</span> <span id="btnScanCrypto">AUDITAR RED, LICENCIA Y DENUNCIAS</span>
         </button>
 
         <!-- Scanning Animation -->
         <div class="scanning-radar-box" id="radarCrypto">
           <div class="radar-circle">🪙</div>
           <div style="font-size:12px; font-weight:800; font-family:'JetBrains Mono'; color:var(--accent-cyber);">
-            AUDITANDO IMPUESTO DE VENTA, LISTAS NEGRAS Y DRAINERS...
+            CONSULTANDO RPC MULTI-RED, SOURCIFY/BLOCKSCOUT (SPDX) Y GOPLUS SECURITY...
           </div>
         </div>
 
@@ -969,6 +977,8 @@
           <div class="verdict-banner" id="bannerCrypto">
             RESULTADO
           </div>
+
+          <div id="cryptoMetaStrip" style="display:none; background:#080d19; border:1px solid rgba(0,229,255,0.2); border-radius:10px; padding:10px 12px; margin-bottom:10px; font-family:'JetBrains Mono', monospace; font-size:11px; line-height:1.6;"></div>
 
           <div class="forensic-checklist" id="checklistCrypto"></div>
 
@@ -1202,9 +1212,11 @@
     function setPresetCrypto(type) {
       playCyberSound(700, 'sine', 0.04);
       const map = {
-        '0xdrain..': '0x71C8564835B81108149f2105877E474aac47d774',
-        'ton_safe': 'EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N',
-        'fake_airdrop': '0x99999999HoneypotClaimRewardDrainerContract'
+        'usdc_eth': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        'ronin_hack': '0x098B716B8Aaf21512996dC57EB0615e2383E2f96',
+        'usdt_tron': 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t',
+        'usdc_sol': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        'ton_safe': 'EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N'
       };
       document.getElementById('inputCrypto').value = map[type] || '';
     }
@@ -1220,7 +1232,7 @@
     function showWebLimitModal() {
       const modal = document.getElementById('webLimitModal');
       if (modal) modal.classList.add('open');
-      
+
       let sec = 5;
       const el = document.getElementById('webCountdown');
       if (el) el.innerText = sec;
@@ -1264,139 +1276,390 @@
     }
 
     // ==========================================
-    // 1. ENGINE: URL & FAKE SHOP SCANNER
+    // Shared Security Helpers & Hybrid API Client
     // ==========================================
-    function runUrlScan() {
-      if (!checkWebTrialLimit()) return;
-      const url = document.getElementById('inputUrl').value.trim();
-      if (!url) {
-        showToast("⚠️ Ingresa un link o dominio");
-        return;
+    function escHtml(str) {
+      return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function sha256HexFromBytes(bufferOrStr) {
+      try {
+        const bytes = typeof bufferOrStr === 'string'
+          ? new TextEncoder().encode(bufferOrStr)
+          : bufferOrStr;
+        const hashBuf = await crypto.subtle.digest('SHA-256', bytes);
+        return Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {
+        return 'sha256-unavailable-insecure-context';
       }
+    }
+
+    async function fetchJsonWithTimeout(url, options = {}, timeoutMs = 6500) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+      try {
+        const r = await fetch(url, { ...options, signal: ctrl.signal });
+        if (!r.ok) return { ok: false, status: r.status, data: null };
+        const data = await r.json();
+        return { ok: true, status: r.status, data };
+      } catch (e) {
+        return { ok: false, status: 0, data: null };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function fetchTextWithTimeout(url, timeoutMs = 6500) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+      try {
+        const r = await fetch(url, { signal: ctrl.signal });
+        if (!r.ok) return null;
+        return await r.text();
+      } catch (e) {
+        return null;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function tryBackendPost(endpoint, payload) {
+      if (location.hostname.endsWith('github.io') || location.protocol === 'file:') return null;
+      const res = await fetchJsonWithTimeout(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }, 9500);
+      if (res.ok && res.data && typeof res.data.risk_score === 'number') {
+        return res.data;
+      }
+      return null;
+    }
+
+    const TWO_LEVEL_CCTLDS = new Set([
+      'com.ve','net.ve','org.ve','gob.ve','edu.ve','com.co','net.co','org.co','gov.co',
+      'com.mx','net.mx','org.mx','gob.mx','com.ar','com.br','com.pe','com.ec','com.uy',
+      'com.py','com.bo','com.do','com.gt','co.uk','org.uk','gov.uk','com.au','co.jp','co.in'
+    ]);
+
+    function getRegistrableDomain(host) {
+      const h = host.toLowerCase().replace(/\.+$/, '');
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) return h;
+      const parts = h.split('.').filter(Boolean);
+      if (parts.length <= 2) return h;
+      const last2 = parts.slice(-2).join('.');
+      if (TWO_LEVEL_CCTLDS.has(last2) && parts.length >= 3) return parts.slice(-3).join('.');
+      return last2;
+    }
+
+    let _openPhishCache = null;
+    async function getOpenPhishSet() {
+      if (_openPhishCache && (Date.now() - _openPhishCache.ts < 600000)) return _openPhishCache;
+      const txt = await fetchTextWithTimeout('https://openphish.com/feed.txt', 5000);
+      if (!txt) return null;
+      const urls = new Set(), hosts = new Set();
+      txt.split(/\r?\n/).forEach(line => {
+        const u = line.trim();
+        if (!u) return;
+        urls.add(u.replace(/\/+$/, '').toLowerCase());
+        try { hosts.add(new URL(u).hostname.toLowerCase()); } catch (e) {}
+      });
+      _openPhishCache = { ts: Date.now(), urls, hosts };
+      return _openPhishCache;
+    }
+
+    const OFFICIAL_BRANDS = {
+      amazon: ['amazon.com', 'amazon.es', 'amazon.com.mx', 'amazon.co.uk'],
+      paypal: ['paypal.com', 'paypal.me'],
+      binance: ['binance.com', 'binance.us', 'bnbchain.org'],
+      mercadolibre: ['mercadolibre.com', 'mercadolibre.com.ve', 'mercadolibre.com.co', 'mercadolibre.com.mx', 'mercadopago.com'],
+      google: ['google.com', 'youtube.com', 'gmail.com', 'accounts.google.com'],
+      apple: ['apple.com', 'icloud.com'],
+      microsoft: ['microsoft.com', 'live.com', 'outlook.com'],
+      netflix: ['netflix.com'],
+      shein: ['shein.com', 'shein.com.mx'],
+      temu: ['temu.com'],
+      walmart: ['walmart.com', 'walmart.com.mx'],
+      metamask: ['metamask.io'],
+      coinbase: ['coinbase.com'],
+      bbva: ['bbva.com', 'bbva.es', 'bbva.mx', 'bbva.com.co'],
+      nequi: ['nequi.com.co', 'nequi.com'],
+      zelle: ['zellepay.com'],
+    };
+
+    const RISKY_TLDS = ['.top', '.xyz', '.club', '.work', '.click', '.site', '.monster', '.rest', '.buzz', '.cfd', '.sbs', '.icu', '.tk', '.gq', '.ml'];
+
+    function deLeet(s) {
+      return s.toLowerCase().replace(/0/g, 'o').replace(/1/g, 'l').replace(/3/g, 'e').replace(/4/g, 'a').replace(/5/g, 's').replace(/7/g, 't').replace(/@/g, 'a').replace(/rn/g, 'm');
+    }
+
+    // ==========================================
+    // 1. REAL ENGINE: URL & FAKE SHOP AUDITOR
+    // ==========================================
+    async function evaluateUrlLiveBrowser(rawUrl) {
+      let clean = rawUrl.trim().replace(/[.,;:!?)"'<>]+$/, '');
+      const targetUrl = /^https?:\/\//i.test(clean) ? clean : `https://${clean}`;
+      let parsed;
+      try { parsed = new URL(targetUrl); } catch (e) {
+        return { type: 'url', target: clean, risk_score: 40, verdict_level: 'warn', verdict_title: 'URL INVÁLIDA', checks: [{ label: 'Sintaxis URL', status: 'Formato no válido', ok: false, severity: 'warn' }], advice: 'Revisa el enlace completo.' };
+      }
+      const host = parsed.hostname.toLowerCase();
+      const regDomain = getRegistrableDomain(host);
+      const checks = [];
+      let risk = 0;
+
+      const [dnsRes, cfSecRes, mxRes, rdapRes, otxRes, gpPhishRes, gpDappRes, openPhish] = await Promise.all([
+        fetchJsonWithTimeout(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=A`, { headers: { Accept: 'application/dns-json' } }, 5000),
+        fetchJsonWithTimeout(`https://security.cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=A`, { headers: { Accept: 'application/dns-json' } }, 5000),
+        fetchJsonWithTimeout(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(regDomain)}&type=MX`, { headers: { Accept: 'application/dns-json' } }, 4500),
+        fetchJsonWithTimeout(`https://rdap.org/domain/${encodeURIComponent(regDomain)}`, {}, 6500),
+        fetchJsonWithTimeout(`https://otx.alienvault.com/api/v1/indicators/domain/${encodeURIComponent(regDomain)}/general`, {}, 6000),
+        fetchJsonWithTimeout(`https://api.gopluslabs.io/api/v1/phishing_site?url=${encodeURIComponent(targetUrl)}`, {}, 5500),
+        fetchJsonWithTimeout(`https://api.gopluslabs.io/api/v1/dapp_security?url=${encodeURIComponent(targetUrl)}`, {}, 5500),
+        getOpenPhishSet(),
+      ]);
+
+      const aRecs = (dnsRes.data?.Answer || []).filter(a => a.type === 1).map(a => a.data);
+      const secIps = (cfSecRes.data?.Answer || []).filter(a => a.type === 1).map(a => a.data);
+      const cfBlocked = secIps.includes('0.0.0.0');
+
+      if (cfBlocked) {
+        risk = 95;
+        checks.push({ label: 'Cloudflare Security (1.1.1.2)', status: '🚨 BLOQUEADO: MALWARE / PHISHING', ok: false, severity: 'danger' });
+      } else if (aRecs.length > 0) {
+        checks.push({ label: 'DNS & Cloudflare 1.1.1.2', status: `✅ Limpio | IP: ${aRecs[0]}`, ok: true, severity: 'safe' });
+        const sh = await fetchJsonWithTimeout(`https://internetdb.shodan.io/${aRecs[0]}`, {}, 4000);
+        if (sh.ok && sh.data?.ports) {
+          checks.push({ label: 'Shodan InternetDB (IP)', status: `⚪ Puertos: ${sh.data.ports.slice(0, 5).join(', ')} (${(sh.data.vulns || []).length} CVEs)`, ok: true, severity: 'info' });
+        }
+      } else {
+        risk += 45;
+        checks.push({ label: 'Resolución DNS', status: '🚨 No resuelve IP (caído o dado de baja)', ok: false, severity: 'danger' });
+      }
+
+      // RDAP domain age
+      let ageDays = null;
+      if (rdapRes.ok && rdapRes.data?.events) {
+        const regEv = rdapRes.data.events.find(e => e.eventAction === 'registration');
+        if (regEv?.eventDate) {
+          ageDays = Math.max(0, Math.floor((Date.now() - Date.parse(regEv.eventDate)) / 86400000));
+          const created = regEv.eventDate.slice(0, 10);
+          if (ageDays < 30) {
+            risk += 28;
+            checks.push({ label: 'Antigüedad RDAP/WHOIS', status: `🚨 RECIÉN CREADO: ${ageDays} días (${created})`, ok: false, severity: 'danger' });
+          } else if (ageDays < 180) {
+            risk += 12;
+            checks.push({ label: 'Antigüedad RDAP/WHOIS', status: `⚠️ Joven: ${ageDays} días (${created})`, ok: false, severity: 'warn' });
+          } else {
+            checks.push({ label: 'Antigüedad RDAP/WHOIS', status: `✅ ${(ageDays / 365.25).toFixed(1)} años (${created})`, ok: true, severity: 'safe' });
+          }
+        }
+      }
+
+      const hasMx = (mxRes.data?.Answer || []).some(a => a.type === 15);
+      if (!hasMx && aRecs.length > 0) {
+        checks.push({ label: 'Correo Corporativo (MX)', status: '⚪ Sin registros MX configurados', ok: true, severity: 'info' });
+      }
+
+      // OpenPhish live check
+      if (openPhish) {
+        const normU = targetUrl.replace(/\/+$/, '').toLowerCase();
+        if (openPhish.urls.has(normU) || openPhish.hosts.has(host)) {
+          risk = Math.max(risk, 96);
+          checks.push({ label: 'OpenPhish Feed en Vivo', status: '🚨 PHISHING ACTIVO REPORTADO', ok: false, severity: 'danger' });
+        } else {
+          checks.push({ label: 'OpenPhish Feed en Vivo', status: '✅ Sin coincidencias activas', ok: true, severity: 'safe' });
+        }
+      }
+
+      // AlienVault OTX
+      let otxWhitelisted = false;
+      if (otxRes.ok && otxRes.data) {
+        const pulses = otxRes.data.pulse_info?.count || 0;
+        const vals = (otxRes.data.validation || []).map(v => v.name || '').join(' ').toLowerCase();
+        otxWhitelisted = /whitelist|alexa|akamai|false positive|cloudflare/.test(vals);
+        if (otxWhitelisted) {
+          checks.push({ label: 'AlienVault OTX', status: '✅ Dominio legítimo reconocido', ok: true, severity: 'safe' });
+        } else if (pulses >= 2) {
+          risk = Math.max(risk, 80);
+          checks.push({ label: 'AlienVault OTX', status: `🚨 ${pulses} pulsos de amenaza`, ok: false, severity: 'danger' });
+        } else if (pulses === 1) {
+          risk += 18;
+          checks.push({ label: 'AlienVault OTX', status: '⚠️ 1 pulso de amenaza', ok: false, severity: 'warn' });
+        } else {
+          checks.push({ label: 'AlienVault OTX', status: '✅ 0 pulsos de amenaza', ok: true, severity: 'safe' });
+        }
+      }
+
+      // GoPlus Phishing & dApp
+      let trustedDapp = false;
+      if (gpPhishRes.ok && gpPhishRes.data?.result) {
+        if (String(gpPhishRes.data.result.phishing_site) === '1') {
+          risk = Math.max(risk, 96);
+          checks.push({ label: 'GoPlus Web3 Phishing', status: '🚨 SITIO PHISHING REPORTADO', ok: false, severity: 'danger' });
+        } else {
+          checks.push({ label: 'GoPlus Web3 Phishing', status: '✅ 0 alertas de phishing', ok: true, severity: 'safe' });
+        }
+      }
+      if (gpDappRes.ok && String(gpDappRes.data?.result?.trust_list) === '1') {
+        trustedDapp = true;
+        checks.push({ label: 'GoPlus dApp Verificada', status: `✅ ${gpDappRes.data.result.project_name || regDomain}`, ok: true, severity: 'safe' });
+      }
+
+      // Brand impersonation + Punycode + TLD
+      let matchedBrand = null, isOfficialBrand = false, strongSpoof = false;
+      const dlHost = deLeet(host);
+      for (const [brand, list] of Object.entries(OFFICIAL_BRANDS)) {
+        if (list.includes(regDomain) || list.includes(host)) {
+          isOfficialBrand = true; matchedBrand = brand; break;
+        }
+        if (host.includes(brand) || dlHost.includes(brand)) {
+          matchedBrand = brand;
+          const hasRiskTld = RISKY_TLDS.some(t => host.endsWith(t));
+          const hasBait = /(login|signin|verify|seguro|soporte|sorteo|promo|deals|gratis|claim|wallet|outlet|bloqueo)/.test(host);
+          if (dlHost !== host.toLowerCase() && !host.includes(brand) || hasRiskTld || hasBait || regDomain.includes('-')) {
+            strongSpoof = true;
+          }
+        }
+      }
+      if (strongSpoof && !otxWhitelisted && !trustedDapp) {
+        risk = Math.max(risk, 88);
+        checks.push({ label: 'Suplantación de Marca', status: `🚨 Posible clon de '${matchedBrand}'`, ok: false, severity: 'danger' });
+      } else if (isOfficialBrand && !cfBlocked) {
+        risk = Math.min(risk, 8);
+        checks.push({ label: 'Dominio Oficial', status: `✅ Dominio oficial de ${matchedBrand}`, ok: true, severity: 'safe' });
+      }
+
+      if (host.includes('xn--')) {
+        risk += 25;
+        checks.push({ label: 'Homógrafo IDN', status: '⚠️ Dominio Punycode (xn--)', ok: false, severity: 'warn' });
+      }
+      if (RISKY_TLDS.some(t => host.endsWith(t)) && !otxWhitelisted) {
+        risk += 16;
+        checks.push({ label: 'Extensión de Dominio', status: '⚠️ TLD frecuente en phishing', ok: false, severity: 'warn' });
+      }
+      if (ageDays !== null && ageDays >= 730 && aRecs.length > 0 && !cfBlocked && !strongSpoof && risk < 35) {
+        risk = Math.min(risk, 12);
+      }
+
+      risk = Math.max(0, Math.min(100, Math.round(risk)));
+      const vtUrl = `https://www.virustotal.com/gui/domain/${encodeURIComponent(regDomain)}`;
+      const level = risk >= 70 ? 'danger' : risk >= 35 ? 'warn' : 'safe';
+      const advice = (level === 'danger'
+        ? 'No abras este enlace ni ingreses datos personales o bancarios.'
+        : level === 'warn'
+        ? 'Verifica la identidad por un canal oficial antes de pagar o iniciar sesión.'
+        : 'Las fuentes consultadas no reportan malware ni phishing activo.') +
+        `<br><br>🔎 <a href="${vtUrl}" target="_blank" rel="noopener" style="color:var(--accent-cyber); font-weight:800;">Abrir análisis multi-motor completo en VirusTotal ↗</a>`;
+
+      return {
+        type: 'url',
+        target: targetUrl,
+        risk_score: risk,
+        verdict_level: level,
+        verdict_title: level === 'danger' ? 'PELIGRO CRÍTICO: PHISHING / MALWARE' : level === 'warn' ? 'PRECAUCIÓN: SEÑALES SOSPECHOSAS' : 'SIN AMENAZAS DETECTADAS EN FUENTES',
+        checks,
+        advice,
+        sha256_report: await sha256HexFromBytes(targetUrl),
+      };
+    }
+
+    async function runUrlScan() {
+      if (!checkRateLimit() || !checkWebTrialLimit()) return;
+      const url = document.getElementById('inputUrl').value.trim();
+      if (!url) { showToast("⚠️ Ingresa un link o dominio"); return; }
       recordWebTrial();
 
       playCyberSound(400, 'sawtooth', 0.15, 2, 0.1);
       document.getElementById('radarWeb').style.display = 'block';
       document.getElementById('verdictWeb').style.display = 'none';
 
-      setTimeout(() => {
-        document.getElementById('radarWeb').style.display = 'none';
-        evaluateUrlForensics(url);
-      }, 1400);
-    }
+      let res = await tryBackendPost('/api/scan-url', { url });
+      if (!res) res = await evaluateUrlLiveBrowser(url);
 
-    function evaluateUrlForensics(url) {
-      const lower = url.toLowerCase();
-      let riskScore = 0;
-      let reasons = [];
-
-      // Phishing and Typosquatting checks
-      const suspiciousTLDs = ['.top', '.xyz', '.club', '.work', '.click', '.info', '.site', '.monster', '.rest'];
-      const brandKeywords = ['amazon', 'shein', 'temu', 'binance', 'paypal', 'netflix', 'banco', 'mercadolibre', 'apple', 'walmart'];
-
-      const hasSuspiciousTLD = suspiciousTLDs.some(tld => lower.includes(tld));
-      const hasBrand = brandKeywords.some(b => lower.includes(b));
-      const isOfficial = (lower.includes('amazon.com') && !lower.includes('-')) || 
-                         (lower.includes('binance.com') && !lower.includes('-')) ||
-                         (lower.includes('apple.com') && !lower.includes('-')) ||
-                         (lower.includes('mercadolibre.com') && !lower.includes('-'));
-
-      if (isOfficial) {
-        riskScore = 2;
-        reasons.push({ label: 'Dominio Oficial y Verificado', status: '✅ AUTÉNTICO', ok: true });
-        reasons.push({ label: 'Certificado SSL EV', status: '✅ VÁLIDO (256-bit)', ok: true });
-        reasons.push({ label: 'Historial en Listas Negras', status: '✅ LIMPIO (0 reportes)', ok: true });
-        reasons.push({ label: 'Antigüedad del Dominio', status: '✅ +15 AÑOS', ok: true });
-      } else if (hasBrand && (lower.includes('-') || hasSuspiciousTLD || lower.includes('sorteo') || lower.includes('promo'))) {
-        riskScore = 96;
-        reasons.push({ label: 'Suplantación de Marca (Typosquatting)', status: '🚨 DETECTADO', ok: false });
-        reasons.push({ label: 'Dominio de Alto Riesgo', status: '🚨 TLD SOSPECHOSO', ok: false });
-        reasons.push({ label: 'Clonación de Pasarela de Pago', status: '🚨 TRAMPA PHISHING', ok: false });
-        reasons.push({ label: 'Antigüedad Whois', status: '⚠️ CREADO HACE DÍAS', ok: false });
-      } else if (hasSuspiciousTLD || lower.includes('login') || lower.includes('soporte')) {
-        riskScore = 78;
-        reasons.push({ label: 'Reputación del Servidor', status: '⚠️ SOSPECHOSO', ok: false });
-        reasons.push({ label: 'Certificado SSL Básico Gratuito', status: '⚠️ SIN GARANTÍA', ok: false });
-        reasons.push({ label: 'Palabras Clave de Ingeniería Social', status: '🚨 URGENCIA DETECTADA', ok: false });
-      } else {
-        riskScore = 18;
-        reasons.push({ label: 'Reputación General', status: '✅ SIN REPORTES', ok: true });
-        reasons.push({ label: 'Certificado de Cifrado', status: '✅ ACTIVO', ok: true });
-        reasons.push({ label: 'Análisis Heurístico', status: '✅ PROBABILIDAD SEGURA', ok: true });
-      }
-
-      renderVerdict('Web', riskScore, reasons, url);
+      document.getElementById('radarWeb').style.display = 'none';
+      renderStructuredVerdict('Web', res);
     }
 
     // ==========================================
-    // 2. ENGINE: CHAT & FAKE JOB SCANNER
+    // 2. REAL ENGINE: CHAT & SCAM DETECTOR
     // ==========================================
-    function runChatScan() {
-      if (!checkWebTrialLimit()) return;
+    async function runChatScan() {
+      if (!checkRateLimit() || !checkWebTrialLimit()) return;
       const text = document.getElementById('inputChat').value.trim();
-      if (!text) {
-        showToast("⚠️ Pega el mensaje para analizar");
-        return;
-      }
+      if (!text) { showToast("⚠️ Pega el mensaje para analizar"); return; }
       recordWebTrial();
 
       playCyberSound(450, 'triangle', 0.15, 2, 0.1);
       document.getElementById('radarChat').style.display = 'block';
       document.getElementById('verdictChat').style.display = 'none';
 
-      setTimeout(() => {
-        document.getElementById('radarChat').style.display = 'none';
-        evaluateChatForensics(text);
-      }, 1300);
-    }
+      let res = await tryBackendPost('/api/scan-message', { text });
+      if (!res) {
+        const lower = text.toLowerCase();
+        const checks = [];
+        let risk = 0;
+        const cats = [];
 
-    function evaluateChatForensics(text) {
-      const lower = text.toLowerCase();
-      let riskScore = 0;
-      let reasons = [];
-      let scamType = '';
+        const patterns = [
+          ['Empleo Falso de Likes / Tareas', 92, /(dar likes|ver videos|tiktok|youtube).*(diarios|desde casa|pagamos|reclutamiento|deposito|retirar)/i],
+          ['Esquema Ponzi / ROI Garantizado', 95, /(5% diario|10% diario|ganancias garantizad|duplica tu capital|sin riesgo|arbitraje.*ia|retiros instant)/i],
+          ['Phishing Bancario / OTP', 96, /(cuenta suspendida|actividad sospechosa|bloqueo definitivo|ingrese inmediatamente|reactivar|c[oó]digo otp|clave din[aá]mica)/i],
+          ['Robo de Frase Semilla Cripto', 98, /(frase semilla|seed phrase|12 palabras|24 palabras|clave privada|sincronizar wallet)/i],
+          ['Estafa Aduanal / Romance', 90, /(misi[oó]n de paz|sargento|caja de rescate|aduana|tarifa aduanal|paquete retenido)/i],
+        ];
 
-      const taskKeywords = ['dar likes', 'ver videos', 'tiktok', 'youtube', 'desde casa', 'gerente de reclutamiento', 'tareas'];
-      const ponziKeywords = ['arbitraje', '5% diario', 'ganancias garantizadas', 'duplica tu capital', 'sin riesgo', 'deposito minimo'];
-      const bankKeywords = ['cuenta suspendida', 'actividad sospechosa', 'bloqueo definitivo', 'ingrese inmediatamente', 'reactivar'];
-      const romanceKeywords = ['mision de paz', 'sargento', 'caja de rescate', 'aduana', 'tarifa'];
+        for (const [name, score, rx] of patterns) {
+          if (rx.test(lower)) {
+            cats.push(name);
+            risk = Math.max(risk, score);
+            checks.push({ label: 'Ingeniería Social', status: `🚨 ${name}`, ok: false, severity: 'danger' });
+          }
+        }
 
-      if (taskKeywords.filter(k => lower.includes(k)).length >= 2) {
-        riskScore = 98;
-        scamType = 'ESTAFA DE TAREAS Y LIKES FALSOS';
-        reasons.push({ label: 'Modalidad de Fraude', status: '🚨 TAREAS TIKTOK/YOUTUBE', ok: false });
-        reasons.push({ label: 'Mecanismo de Engaño', status: '🚨 TE PEDIRÁN PAGAR PARA RETIRAR', ok: false });
-        reasons.push({ label: 'Gatillo Psicológico', status: '🚨 DINERO FÁCIL Y RÁPIDO', ok: false });
-      } else if (ponziKeywords.filter(k => lower.includes(k)).length >= 2) {
-        riskScore = 95;
-        scamType = 'ESQUEMA PONZI / PIRÁMIDE FINANCIERA';
-        reasons.push({ label: 'Promesa de Rendimiento', status: '🚨 RENDIMIENTO MATEMÁTICO IMPOSIBLE', ok: false });
-        reasons.push({ label: 'Riesgo de Capital', status: '🚨 PÉRDIDA TOTAL DEL 100%', ok: false });
-        reasons.push({ label: 'Esquema de Retiros', status: '🚨 DRENAJE DE FONDOS', ok: false });
-      } else if (bankKeywords.filter(k => lower.includes(k)).length >= 2) {
-        riskScore = 99;
-        scamType = 'PHISHING BANCARIO (SUPLANTACIÓN)';
-        reasons.push({ label: 'Técnica de Urgencia', status: '🚨 MIEDO A BLOQUEO DE CUENTA', ok: false });
-        reasons.push({ label: 'Robo de Credenciales', status: '🚨 CAPTURA DE USUARIO Y CONTRASEÑA', ok: false });
-        reasons.push({ label: 'Enlace Falso Incluido', status: '🚨 SITIO WEB DUPLICADO', ok: false });
-      } else if (romanceKeywords.filter(k => lower.includes(k)).length >= 2) {
-        riskScore = 94;
-        scamType = 'ESTAFA SENTIMENTAL / MILITAR EN EL EXTRANJERO';
-        reasons.push({ label: 'Historia Ficticia', status: '🚨 FONDOS ATASCADOS EN ADUANA', ok: false });
-        reasons.push({ label: 'Extorsión Emocional', status: '🚨 INGENIERÍA SOCIAL DE CONFIANZA', ok: false });
-      } else {
-        riskScore = 15;
-        scamType = 'MENSAJE SIN PATRONES FRAUDULENTOS EVIDENTES';
-        reasons.push({ label: 'Análisis Lingüístico', status: '✅ PATRONES NEUTRALES', ok: true });
-        reasons.push({ label: 'Urgencia Artificial', status: '✅ NO DETECTADA', ok: true });
+        // Extract and live-audit any embedded URLs or EVM/TRON/TON addresses
+        const urlHits = [...new Set((text.match(/https?:\/\/[^\s"'<>]+|\b[a-z0-9-]+\.(?:com|net|org|xyz|top|club|click|site|info|io)\b[^\s"'<>]*/gi) || []).slice(0, 2))];
+        const evmHits = [...new Set((text.match(/\b0x[a-fA-F0-9]{40}\b/g) || []).slice(0, 1))];
+
+        for (const u of urlHits) {
+          const uRes = await evaluateUrlLiveBrowser(u);
+          risk = Math.max(risk, uRes.risk_score || 0);
+          checks.push({ label: `Link Incrustado (${u.slice(0, 24)})`, status: `${uRes.risk_score}% riesgo — ${uRes.verdict_title.slice(0, 34)}`, ok: uRes.risk_score < 35, severity: uRes.verdict_level });
+        }
+        for (const w of evmHits) {
+          const wRes = await evaluateCryptoLiveBrowser(w);
+          risk = Math.max(risk, wRes.risk_score || 0);
+          checks.push({ label: `Wallet Incrustada (${w.slice(0, 10)}...)`, status: `${wRes.network} — ${wRes.risk_score}% riesgo`, ok: wRes.risk_score < 35, severity: wRes.verdict_level });
+        }
+
+        if (checks.length === 0) {
+          checks.push({ label: 'Patrones & Extractores', status: '✅ Sin patrones Ponzi/phishing ni links maliciosos', ok: true, severity: 'safe' });
+        }
+
+        const level = risk >= 70 ? 'danger' : risk >= 35 ? 'warn' : 'safe';
+        res = {
+          type: 'message',
+          target: text.slice(0, 90),
+          risk_score: risk,
+          verdict_level: level,
+          verdict_title: cats.length ? cats.join(', ') : (level === 'danger' ? 'AMENAZA EN ENLACE/WALLET' : 'SIN PATRONES FRAUDULENTOS EVIDENTES'),
+          checks,
+          advice: level === 'danger' ? 'Bloquea al remitente. Nunca deposites para desbloquear pagos ni abras sus enlaces.' : 'Mantén precaución habitual ante solicitudes de pago o códigos.',
+          sha256_report: await sha256HexFromBytes(text),
+        };
       }
 
-      renderVerdict('Chat', riskScore, reasons, text, scamType);
+      document.getElementById('radarChat').style.display = 'none';
+      renderStructuredVerdict('Chat', res);
     }
 
     // ==========================================
-    // 3. ENGINE: FAKE PAYMENT RECEIPT SCANNER
+    // 3. REAL ENGINE: BANK RECEIPT FORENSICS (EXIF + ELA CANVAS)
     // ==========================================
+    let uploadedReceiptFile = null;
+    let uploadedReceiptDataUrl = '';
+    let uploadedReceiptBytes = null;
+
     function triggerFileUpload() {
       document.getElementById('fileInput').click();
     }
@@ -1404,141 +1667,626 @@
     function handleReceiptFile(event) {
       const file = event.target.files[0];
       if (!file) return;
+      uploadedReceiptFile = file;
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        document.getElementById('receiptImg').src = e.target.result;
+      const readerUrl = new FileReader();
+      readerUrl.onload = function(e) {
+        uploadedReceiptDataUrl = e.target.result;
+        document.getElementById('receiptImg').src = uploadedReceiptDataUrl;
         document.getElementById('receiptPreviewBox').style.display = 'block';
-        document.getElementById('receiptMeta').innerText = `Archivo: ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
-        showToast("📷 Imagen cargada lista para auditar");
+        document.getElementById('receiptMeta').innerText = `Archivo real: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        showToast("📷 Comprobante listo para auditoría forense real");
       };
-      reader.readAsDataURL(file);
+      readerUrl.readAsDataURL(file);
+
+      const readerBuf = new FileReader();
+      readerBuf.onload = function(e) {
+        uploadedReceiptBytes = new Uint8Array(e.target.result);
+      };
+      readerBuf.readAsArrayBuffer(file);
     }
 
-    function setSimReceipt(type) {
-      playCyberSound(600, 'sine', 0.05);
-      document.getElementById('receiptPreviewBox').style.display = 'block';
-      if (type === 'fake_nequi') {
-        document.getElementById('receiptMeta').innerText = "Simulación: Comprobante_Nequi_Generador_Fake.jpg (Artefactos en Fecha y Monto)";
-        runReceiptScan(true);
-      } else {
-        document.getElementById('receiptMeta').innerText = "Simulación: Recibo_Bancario_Original.png (Metadatos EXIF Oficiales)";
-        runReceiptScan(false);
+    async function evaluateReceiptLiveBrowser(file, bytes, dataUrl) {
+      const checks = [];
+      let risk = 0;
+      const sha = await sha256HexFromBytes(bytes);
+
+      // Load image pixels
+      const img = await new Promise((resolve, reject) => {
+        const im = new Image();
+        im.onload = () => resolve(im);
+        im.onerror = reject;
+        im.src = dataUrl;
+      });
+
+      const fmt = file.type || (file.name.split('.').pop() || 'IMG').toUpperCase();
+      checks.push({ label: 'Huella SHA-256 Real', status: `${img.width}x${img.height} (${(bytes.length / 1024).toFixed(1)} KB) ${sha.slice(0, 12)}...`, ok: true, severity: 'info' });
+
+      // Binary metadata scan (head + tail) for editing software
+      const dec = new TextDecoder('latin1');
+      const headStr = dec.decode(bytes.subarray(0, Math.min(bytes.length, 131072)));
+      const tailStr = dec.decode(bytes.subarray(Math.max(0, bytes.length - 65536)));
+      const metaRaw = (headStr + '\n' + tailStr).toLowerCase();
+
+      const editors = [
+        ['adobe photoshop', 'Adobe Photoshop'], ['8bim', 'Photoshop IRB (8BIM)'], ['photoshop', 'Photoshop'],
+        ['canva', 'Canva'], ['picsart', 'PicsArt'], ['gimp', 'GIMP'], ['photopea', 'Photopea'],
+        ['snapseed', 'Snapseed'], ['figma', 'Figma'], ['lightroom', 'Lightroom'], ['paint.net', 'Paint.NET'],
+        ['pixlr', 'Pixlr'], ['inshot', 'InShot'], ['capcut', 'CapCut'], ['corel', 'Corel'], ['procreate', 'Procreate'],
+        ['stevt:softwareagent', 'Traza XMP Editor'], ['xmp:creatortool', 'CreatorTool XMP'],
+      ];
+      const foundEd = [];
+      for (const [needle, label] of editors) {
+        if (metaRaw.includes(needle) && !foundEd.includes(label)) foundEd.push(label);
       }
+
+      if (foundEd.length > 0) {
+        risk += 68;
+        checks.push({ label: 'Metadatos / Software Editor', status: `🚨 FIRMA DETECTADA: ${foundEd.slice(0, 3).join(', ')}`, ok: false, severity: 'danger' });
+      } else {
+        const hasExif = headStr.includes('Exif\x00\x00');
+        checks.push({
+          label: 'Metadatos EXIF / XMP',
+          status: hasExif ? '✅ Contiene EXIF sin editores conocidos' : '⚪ Sin EXIF (común al reenviar por WhatsApp/Telegram)',
+          ok: true,
+          severity: 'info'
+        });
+      }
+
+      // Multi-Quality Canvas Error Level Analysis (Q90 & Q75)
+      const maxDim = 820;
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.max(64, Math.round(img.width * scale));
+      const h = Math.max(64, Math.round(img.height * scale));
+
+      const cOrig = document.createElement('canvas');
+      cOrig.width = w; cOrig.height = h;
+      const ctxO = cOrig.getContext('2d', { willReadFrequently: true });
+      ctxO.drawImage(img, 0, 0, w, h);
+      const origData = ctxO.getImageData(0, 0, w, h).data;
+
+      const gray = new Float32Array(w * h);
+      for (let i = 0; i < w * h; i++) {
+        const p = i * 4;
+        gray[i] = 0.299 * origData[p] + 0.587 * origData[p + 1] + 0.114 * origData[p + 2];
+      }
+
+      async function computeElaMag(qFloat) {
+        const qUrl = cOrig.toDataURL('image/jpeg', qFloat);
+        const imRec = await new Promise((resolve) => {
+          const im2 = new Image();
+          im2.onload = () => resolve(im2);
+          im2.src = qUrl;
+        });
+        const cRec = document.createElement('canvas');
+        cRec.width = w; cRec.height = h;
+        const ctxR = cRec.getContext('2d', { willReadFrequently: true });
+        ctxR.drawImage(imRec, 0, 0, w, h);
+        const recData = ctxR.getImageData(0, 0, w, h).data;
+        const mag = new Float32Array(w * h);
+        for (let i = 0; i < w * h; i++) {
+          const p = i * 4;
+          mag[i] = (Math.abs(origData[p] - recData[p]) + Math.abs(origData[p + 1] - recData[p + 1]) + Math.abs(origData[p + 2] - recData[p + 2])) / 3.0;
+        }
+        return mag;
+      }
+
+      const [elaMag90, elaMag75] = await Promise.all([computeElaMag(0.90), computeElaMag(0.75)]);
+      let chosenMag = elaMag90;
+
+      // Localized 16x16 block + word-cluster ELA statistics over Q90 & Q75
+      const bs = 16;
+      const bh = Math.floor(h / bs), bw = Math.floor(w / bs);
+      if (bh >= 4 && bw >= 4) {
+        let bestRatio = 1.0, bestZ = 0.0, bestDiff = 0.0, bestZone = 'central', bestQLabel = 90;
+        const anomY90 = [];
+
+        for (const [qLabel, elaMag] of [[90, elaMag90], [75, elaMag75]]) {
+          const contentRatios = [], contentElas = [], contentY = [], inkTiles = [];
+          for (let by = 0; by < bh; by++) {
+            for (let bx = 0; bx < bw; bx++) {
+              let sumEla = 0, sumEdge = 0, minG = 255, maxG = 0;
+              const tileG = [];
+              for (let dy = 0; dy < bs; dy++) {
+                for (let dx = 0; dx < bs; dx++) {
+                  const idx = (by * bs + dy) * w + (bx * bs + dx);
+                  const gv = gray[idx];
+                  tileG.push(gv);
+                  if (gv < minG) minG = gv;
+                  if (gv > maxG) maxG = gv;
+                  if (dy < bs - 1 && dx < bs - 1) {
+                    sumEla += elaMag[idx];
+                    sumEdge += Math.abs(gray[idx + 1] - gv) + Math.abs(gray[idx + w] - gv);
+                  }
+                }
+              }
+              const area = (bs - 1) * (bs - 1);
+              const mEla = sumEla / area, mEdge = sumEdge / area;
+              if (qLabel === 90 && mEdge >= 4.0) {
+                contentElas.push(mEla);
+                contentRatios.push(mEla / Math.sqrt(mEdge + 2.0));
+                contentY.push(by / bh);
+              }
+              if ((maxG - minG) > 40.0) {
+                const sortedT = [...tileG].sort((a, b) => a - b);
+                const bgG = sortedT[Math.floor(sortedT.length / 2)];
+                let fgSum = 0, fgCnt = 0;
+                for (let k = 0; k < tileG.length; k++) {
+                  if (Math.abs(tileG[k] - bgG) > 18.0) {
+                    const dy = Math.floor(k / bs), dx = k % bs;
+                    fgSum += elaMag[(by * bs + dy) * w + (bx * bs + dx)];
+                    fgCnt++;
+                  }
+                }
+                if (fgCnt >= 10) inkTiles.push([by, bx, fgSum / fgCnt]);
+              }
+            }
+          }
+
+          if (qLabel === 90 && contentRatios.length >= 10) {
+            const medR = [...contentRatios].sort((a, b) => a - b)[Math.floor(contentRatios.length / 2)];
+            const madR = [...contentRatios].map(v => Math.abs(v - medR)).sort((a, b) => a - b)[Math.floor(contentRatios.length / 2)];
+            const scaleR = Math.max(1.4826 * madR, 0.25);
+            const medE = [...contentElas].sort((a, b) => a - b)[Math.floor(contentElas.length / 2)];
+            const madE = [...contentElas].map(v => Math.abs(v - medE)).sort((a, b) => a - b)[Math.floor(contentElas.length / 2)];
+            const scaleE = Math.max(1.4826 * madE, 1.0);
+            for (let i = 0; i < contentRatios.length; i++) {
+              if ((contentRatios[i] - medR) / scaleR > 4.2 && (contentElas[i] - medE) / scaleE > 3.5 && (contentElas[i] - medE) > 5.0 && contentElas[i] > 10.5) {
+                anomY90.push(contentY[i]);
+              }
+            }
+          }
+
+          if (inkTiles.length >= 8) {
+            const vals = inkTiles.map(t => t[2]).sort((a, b) => a - b);
+            const medV = vals[Math.floor(vals.length / 2)];
+            const madV = vals.map(v => Math.abs(v - medV)).sort((a, b) => a - b)[Math.floor(vals.length / 2)];
+            const groups = {};
+            inkTiles.forEach(([r, c, v]) => {
+              const key = `${Math.floor(r / 2)}_${Math.floor(c / 12)}`;
+              (groups[key] = groups[key] || []).push([r, v]);
+            });
+            const rgStats = Object.values(groups).filter(arr => arr.length >= 3).map(arr => ({
+              avgY: (arr.reduce((s, x) => s + x[0], 0) / arr.length) / bh,
+              meanV: arr.reduce((s, x) => s + x[1], 0) / arr.length
+            }));
+            if (rgStats.length >= 4) {
+              const rgSorted = rgStats.map(x => x.meanV).sort((a, b) => a - b);
+              const rgMed = rgSorted[Math.floor(rgSorted.length / 2)];
+              const topItem = rgStats.reduce((a, b) => (b.meanV > a.meanV ? b : a));
+              const ratioRg = topItem.meanV / Math.max(rgMed, 0.25);
+              const zRg = (topItem.meanV - medV) / Math.max(1.4826 * madV, 0.8);
+              const diffRg = topItem.meanV - rgMed;
+              if (ratioRg > bestRatio && diffRg > 2.5) {
+                bestRatio = ratioRg; bestZ = zRg; bestDiff = diffRg; bestQLabel = qLabel;
+                bestZone = topItem.avgY < 0.36 ? 'superior' : topItem.avgY < 0.68 ? 'central' : 'inferior';
+                chosenMag = elaMag;
+              }
+            }
+          }
+        }
+
+        if (bestRatio >= 1.95 && bestZ >= 4.0 && bestDiff >= 3.5) {
+          risk += 48;
+          checks.push({ label: `Mapa ELA Multi-Calidad (Q${bestQLabel})`, status: `🚨 ANOMALÍA LOCALIZADA en zona ${bestZone} (${bestRatio.toFixed(1)}x frente al resto)`, ok: false, severity: 'danger' });
+        } else if (anomY90.length >= 2 && anomY90.length <= Math.max(18, bw * bh * 0.15)) {
+          const avgY = anomY90.reduce((a, b) => a + b, 0) / anomY90.length;
+          const zone = avgY < 0.36 ? 'superior' : avgY < 0.68 ? 'central' : 'inferior';
+          risk += anomY90.length >= 4 ? 44 : 28;
+          checks.push({ label: 'Anomalía ELA (16×16)', status: `🚨 Divergencia localizada en zona ${zone} (${anomY90.length} bloques)`, ok: false, severity: 'danger' });
+        } else {
+          checks.push({ label: 'Mapa ELA (Q90 y Q75)', status: '✅ Densidad de compresión uniforme en textos', ok: true, severity: 'safe' });
+        }
+      }
+
+      // Render chosen Cyber ELA Heatmap into #elaCanvas
+      const elaCanvas = document.getElementById('elaCanvas');
+      elaCanvas.width = w; elaCanvas.height = h;
+      const ctxE = elaCanvas.getContext('2d');
+      const heatImg = ctxE.createImageData(w, h);
+      for (let i = 0; i < w * h; i++) {
+        const p = i * 4;
+        const v = Math.min(255, chosenMag[i] * 8.5);
+        heatImg.data[p] = Math.max(0, Math.min(255, (v - 95) * 2.1));
+        heatImg.data[p + 1] = v < 175 ? Math.min(255, v * 1.3) : Math.max(0, 255 - (v - 175) * 2.5);
+        heatImg.data[p + 2] = v < 120 ? Math.min(255, 24 + v * 1.8) : Math.max(0, 240 - (v - 120) * 1.7);
+        heatImg.data[p + 3] = 255;
+      }
+      ctxE.putImageData(heatImg, 0, 0);
+      document.getElementById('elaPreviewBox').style.display = 'block';
+      elaCanvas.style.display = 'block';
+      document.getElementById('elaServerImg').style.display = 'none';
+
+      risk = Math.max(0, Math.min(100, risk));
+      const level = risk >= 60 ? 'danger' : risk >= 28 ? 'warn' : 'safe';
+      return {
+        type: 'receipt',
+        target: file.name || 'Comprobante Bancario',
+        risk_score: risk,
+        verdict_level: level,
+        verdict_title: level === 'danger' ? 'EVIDENCIA FORENSE DE EDICIÓN DETECTADA' : level === 'warn' ? 'ANOMALÍAS TÉCNICAS / POSIBLE RETOQUE' : 'SIN RASTROS TÉCNICOS DE EDICIÓN EN PÍXELES',
+        checks,
+        advice: level === 'danger'
+          ? 'Se detectaron indicios técnicos de manipulación (editor o anomalía ELA). No liberes dinero ni mercancía; valida en tu banco.'
+          : 'No se hallaron rastros de Photoshop/recortes en píxeles. ⚠️ IMPORTANTE: ninguna IA externa accede al saldo privado de tu banco; verifica SIEMPRE el abono real dentro de tu app bancaria antes de aceptar el pago.',
+        sha256_report: sha,
+      };
     }
 
-    function runReceiptScan(isFakeSimulated = true) {
-      if (!checkWebTrialLimit()) return;
+    async function runReceiptScan() {
+      if (!checkRateLimit() || !checkWebTrialLimit()) return;
+      if (!uploadedReceiptFile || !uploadedReceiptBytes) {
+        showToast("⚠️ Sube primero una captura real del comprobante");
+        return;
+      }
       recordWebTrial();
+
       playCyberSound(500, 'square', 0.12, 2, 0.1);
       document.getElementById('radarReceipt').style.display = 'block';
       document.getElementById('verdictReceipt').style.display = 'none';
+      document.getElementById('elaPreviewBox').style.display = 'none';
 
-      setTimeout(() => {
-        document.getElementById('radarReceipt').style.display = 'none';
-        let riskScore = isFakeSimulated ? 92 : 8;
-        let reasons = [];
+      let res = await tryBackendPost('/api/scan-receipt', {
+        image_base64: uploadedReceiptDataUrl,
+        filename: uploadedReceiptFile.name
+      });
 
-        if (isFakeSimulated) {
-          reasons.push({ label: 'Consistencia Tipográfica', status: '🚨 FUENTE ALTERADA EN NÚMEROS', ok: false });
-          reasons.push({ label: 'Compresión JPEG Asimétrica', status: '🚨 MONTO SOBREPUESTO', ok: false });
-          reasons.push({ label: 'Metadatos EXIF', status: '⚠️ CREADO CON EDITOR MÓVIL', ok: false });
-          reasons.push({ label: 'Código de Transacción Hash', status: '🚨 CÓDIGO INEXISTENTE EN SERVIDOR', ok: false });
-        } else {
-          reasons.push({ label: 'Alineación de Texto y Píxeles', status: '✅ UNIFORME', ok: true });
-          reasons.push({ label: 'Gradiente y Sello de Agua', status: '✅ ORIGINAL', ok: true });
-          reasons.push({ label: 'Registro de Metadatos', status: '✅ FIRMA DIGITAL VÁLIDA', ok: true });
-        }
+      if (res && res.ela_heatmap_base64) {
+        document.getElementById('elaPreviewBox').style.display = 'block';
+        document.getElementById('elaCanvas').style.display = 'none';
+        const imgEl = document.getElementById('elaServerImg');
+        imgEl.src = 'data:image/png;base64,' + res.ela_heatmap_base64;
+        imgEl.style.display = 'block';
+      }
 
-        renderVerdict('Receipt', riskScore, reasons, 'Comprobante Bancario');
-      }, 1400);
+      if (!res) {
+        res = await evaluateReceiptLiveBrowser(uploadedReceiptFile, uploadedReceiptBytes, uploadedReceiptDataUrl);
+      }
+
+      document.getElementById('radarReceipt').style.display = 'none';
+      renderStructuredVerdict('Receipt', res);
     }
 
     // ==========================================
-    // 4. ENGINE: CRYPTO WALLET & DRAINER AUDIT
+    // 4. REAL ENGINE: MULTI-CHAIN CRYPTO CONTRACT, LICENSE & WALLET REPUTATION
     // ==========================================
-    async function runCryptoScan() {
-      if (!checkWebTrialLimit()) return;
-      const addr = document.getElementById('inputCrypto').value.trim();
-      if (!addr) {
-        showToast("⚠️ Ingresa una dirección o contrato");
-        return;
+    const EVM_RPC_LIST = [
+      ['1', 'Ethereum', 'ETH', 'https://ethereum-rpc.publicnode.com', 'https://etherscan.io/address/'],
+      ['56', 'BNB Smart Chain', 'BNB', 'https://bsc-rpc.publicnode.com', 'https://bscscan.com/address/'],
+      ['137', 'Polygon', 'POL', 'https://polygon-bor-rpc.publicnode.com', 'https://polygonscan.com/address/'],
+      ['42161', 'Arbitrum One', 'ETH', 'https://arbitrum-one-rpc.publicnode.com', 'https://arbiscan.io/address/'],
+      ['8453', 'Base', 'ETH', 'https://base-rpc.publicnode.com', 'https://basescan.org/address/'],
+      ['10', 'Optimism', 'ETH', 'https://optimism-rpc.publicnode.com', 'https://optimistic.etherscan.io/address/'],
+      ['43114', 'Avalanche C-Chain', 'AVAX', 'https://avalanche-c-chain-rpc.publicnode.com', 'https://snowtrace.io/address/'],
+    ];
+
+    async function rpcCallBrowser(rpcUrl, method, params) {
+      const r = await fetchJsonWithTimeout(rpcUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', method, params, id: 1 })
+      }, 5000);
+      return r.ok ? r.data?.result : null;
+    }
+
+    function detectNetworkBrowser(addr) {
+      if (/^0x[a-fA-F0-9]{40}$/.test(addr)) return 'evm';
+      if (/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(addr)) return 'tron';
+      if (/^(EQ|UQ|kQ|0Q)[A-Za-z0-9_-]{46}$/.test(addr) || /^0:[a-fA-F0-9]{64}$/.test(addr)) return 'ton';
+      if (/^(1|3)[1-9A-HJ-NP-Za-km-z]{25,34}$/.test(addr) || /^bc1[a-z0-9]{25,62}$/i.test(addr)) return 'btc';
+      if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr)) return 'solana';
+      return 'unknown';
+    }
+
+    async function evaluateCryptoLiveBrowser(addr) {
+      const clean = addr.trim();
+      const net = detectNetworkBrowser(clean);
+      const checks = [];
+      let risk = 0;
+      let networkLabel = 'Desconocida', accountType = 'Desconocido', licenseLabel = 'N/A', explorerUrl = '';
+
+      if (net === 'unknown') {
+        return {
+          type: 'crypto', target: clean, network: 'Formato inválido', account_type: 'No reconocido', license_type: 'N/A',
+          risk_score: 45, verdict_level: 'warn', verdict_title: 'FORMATO DE DIRECCIÓN NO RECONOCIDO',
+          checks: [{ label: 'Validación Multi-Red', status: '⚠️ No es EVM, TRON, Solana, BTC ni TON', ok: false, severity: 'warn' }],
+          advice: 'Verifica haber copiado la dirección completa sin espacios.', sha256_report: await sha256HexFromBytes(clean)
+        };
       }
+
+      if (net === 'evm') {
+        const lower = clean.toLowerCase();
+        const chainProbes = await Promise.all(EVM_RPC_LIST.map(async ([cid, cname, sym, rpc, exp]) => {
+          const [code, balHex, nonceHex] = await Promise.all([
+            rpcCallBrowser(rpc, 'eth_getCode', [clean, 'latest']),
+            rpcCallBrowser(rpc, 'eth_getBalance', [clean, 'latest']),
+            rpcCallBrowser(rpc, 'eth_getTransactionCount', [clean, 'latest']),
+          ]);
+          const isContract = typeof code === 'string' && code.length > 2 && code !== '0x';
+          const bal = typeof balHex === 'string' && balHex.startsWith('0x') ? (parseInt(balHex, 16) / 1e18) : 0;
+          const nonce = typeof nonceHex === 'string' && nonceHex.startsWith('0x') ? parseInt(nonceHex, 16) : 0;
+          return { cid, cname, sym, exp: exp + clean, isContract, bal, nonce, active: isContract || bal > 0 || nonce > 0, codeLen: isContract ? Math.floor((code.length - 2) / 2) : 0 };
+        }));
+
+        const contractsOn = chainProbes.filter(c => c.isContract);
+        const activeOn = chainProbes.filter(c => c.active);
+        const isContract = contractsOn.length > 0;
+        let primary = contractsOn[0] || activeOn[0] || chainProbes[0];
+        let preSrcRes = null, preBsRes = null, preTokRes = null;
+
+        if (contractsOn.length > 1) {
+          const cands = [...contractsOn].sort((a, b) => b.codeLen - a.codeLen).slice(0, 3);
+          const probedCands = await Promise.all(cands.map(async cand => {
+            const bHost = cand.cid === '1' ? 'https://eth.blockscout.com' : (cand.cid === '10' ? 'https://optimism.blockscout.com' : null);
+            const [sR, bR, tR] = await Promise.all([
+              fetchJsonWithTimeout(`https://sourcify.dev/server/v2/contract/${cand.cid}/${clean}?fields=compilation,sources`),
+              bHost ? fetchJsonWithTimeout(`${bHost}/api/v2/smart-contracts/${clean}`) : Promise.resolve({ ok: false }),
+              fetchJsonWithTimeout(`https://api.gopluslabs.io/api/v1/token_security/${cand.cid}?contract_addresses=${clean}`)
+            ]);
+            const isVer = !!(sR.ok || (bR.ok && bR.data?.is_verified));
+            const hasTok = !!(tR.ok && tR.data?.result && Object.keys(tR.data.result).length > 0);
+            const scoreC = (isVer ? 10 : 0) + (hasTok ? 5 : 0) + Math.min(4, Math.floor(cand.codeLen / 1000));
+            return { cand, sR, bR, tR, scoreC };
+          }));
+          probedCands.sort((a, b) => b.scoreC - a.scoreC);
+          primary = probedCands[0].cand;
+          preSrcRes = probedCands[0].sR;
+          preBsRes = probedCands[0].bR;
+          preTokRes = probedCands[0].tR;
+        }
+
+        networkLabel = contractsOn.length || activeOn.length ? primary.cname : 'EVM (Sin actividad en 7 redes)';
+        explorerUrl = primary.exp;
+        accountType = isContract ? `Smart Contract (${primary.codeLen} bytes)` : 'Wallet Estándar (EOA)';
+
+        if (isContract) {
+          checks.push({
+            label: 'Red y Cuenta',
+            status: contractsOn.length > 1 ? `Principal: ${primary.cname} (también en ${contractsOn.map(c => c.cname).join(', ')})` : `Smart Contract en ${primary.cname}`,
+            ok: true,
+            severity: 'info'
+          });
+        } else if (activeOn.length > 0) {
+          checks.push({ label: 'Red y Cuenta', status: `Wallet EOA activa en ${activeOn.slice(0, 3).map(c => `${c.cname} (${c.bal.toFixed(4)} ${c.sym}, ${c.nonce} txs)`).join(' | ')}`, ok: true, severity: 'info' });
+        } else {
+          risk = 25;
+          checks.push({ label: 'Actividad 7x EVM', status: '⚠️ Sin bytecode ni saldo en ETH/BSC/Poly/Arb/Base/OP/Avax', ok: true, severity: 'warn' });
+        }
+
+        const bsHost = primary.cid === '1' ? 'https://eth.blockscout.com' : (primary.cid === '10' ? 'https://optimism.blockscout.com' : null);
+        const [gpAddrRes, gpTokRes, srcRes, bsRes, ssTxt] = await Promise.all([
+          fetchJsonWithTimeout(`https://api.gopluslabs.io/api/v1/address_security/${clean}?chain_id=${primary.cid}`),
+          preTokRes ? Promise.resolve(preTokRes) : (isContract ? fetchJsonWithTimeout(`https://api.gopluslabs.io/api/v1/token_security/${primary.cid}?contract_addresses=${clean}`) : Promise.resolve({ ok: false })),
+          preSrcRes ? Promise.resolve(preSrcRes) : (isContract ? fetchJsonWithTimeout(`https://sourcify.dev/server/v2/contract/${primary.cid}/${clean}?fields=compilation,sources`) : Promise.resolve({ ok: false })),
+          preBsRes ? Promise.resolve(preBsRes) : ((isContract && bsHost) ? fetchJsonWithTimeout(`${bsHost}/api/v2/smart-contracts/${clean}`) : Promise.resolve({ ok: false })),
+          fetchTextWithTimeout('https://raw.githubusercontent.com/scamsniffer/scam-database/main/blacklist/address.json', 5500),
+        ]);
+
+        // Reputation & Complaints
+        const complaints = [];
+        if (ssTxt && ssTxt.toLowerCase().includes(lower)) {
+          complaints.push('ScamSniffer Wallet Drainer');
+          risk = Math.max(risk, 97);
+        }
+        const gpR = gpAddrRes.data?.result;
+        if (gpAddrRes.ok && gpR) {
+          const flags = [
+            ['sanctioned', 'Sancionada (OFAC)', 98], ['stealing_attack', 'Robo/Exploit', 96],
+            ['phishing_activities', 'Phishing/Drainer', 95], ['cybercrime', 'Ciberdelito', 92],
+            ['money_laundering', 'Lavado de Activos', 90], ['financial_crime', 'Delito Financiero', 90],
+            ['blackmail_activities', 'Extorsión', 90], ['blacklist_doubt', 'Lista Negra', 85],
+            ['honeypot_related_address', 'Honeypot Relacionada', 88], ['fake_token', 'Token Falso', 85],
+            ['mixer', 'Mezclador', 65],
+          ];
+          for (const [k, msg, sc] of flags) {
+            if (String(gpR[k]) === '1') { complaints.push(msg); risk = Math.max(risk, sc); }
+          }
+          if (parseInt(gpR.number_of_malicious_contracts_created || '0', 10) > 0) {
+            complaints.push(`Creó ${gpR.number_of_malicious_contracts_created} contratos maliciosos`);
+            risk = Math.max(risk, 92);
+          }
+          if (complaints.length > 0) {
+            checks.push({ label: 'Denuncias y Reputación', status: `🚨 ${complaints.join('; ')} (${gpR.data_source || 'GoPlus'})`, ok: false, severity: 'danger' });
+          } else {
+            checks.push({ label: 'Denuncias y Reputación', status: '✅ 0 denuncias en GoPlus + ScamSniffer', ok: true, severity: 'safe' });
+          }
+        }
+
+        // Contract License & Verification
+        if (isContract) {
+          let verified = false, cname = null, spdx = null, proxyInfo = '';
+          if (bsRes.ok && bsRes.data && (bsRes.data.is_verified || bsRes.data.name)) {
+            verified = !!bsRes.data.is_verified;
+            cname = bsRes.data.name;
+            if (bsRes.data.proxy_type) proxyInfo = ` [Proxy ${bsRes.data.proxy_type}]`;
+            if (bsRes.data.license_type) spdx = bsRes.data.license_type === 'none' ? 'Sin Licencia declarada (none)' : bsRes.data.license_type;
+          }
+          if (srcRes.ok && srcRes.data) {
+            verified = true;
+            cname = cname || srcRes.data.compilation?.name;
+            const srcs = srcRes.data.sources || {};
+            const foundSpdx = [];
+            for (const val of Object.values(srcs)) {
+              const txt = typeof val === 'string' ? val : (val?.content || '');
+              const m = txt.match(/SPDX-License-Identifier:\s*([^\r\n*/]+)/);
+              if (m && !foundSpdx.includes(m[1].trim())) foundSpdx.push(m[1].trim());
+            }
+            if (foundSpdx.length > 0) spdx = foundSpdx.slice(0, 3).join(', ');
+          }
+          if (verified) {
+            licenseLabel = spdx || 'Sin identificador SPDX explícito';
+            checks.push({ label: 'Código Fuente Contrato', status: `✅ Verificado (${cname || 'Contrato'})${proxyInfo}`, ok: true, severity: 'safe' });
+            checks.push({ label: 'Tipo de Licencia SPDX', status: licenseLabel, ok: true, severity: 'safe' });
+          } else {
+            licenseLabel = 'No Verificado (Código cerrado)';
+            risk = Math.max(risk, 55);
+            checks.push({ label: 'Contrato y Licencia', status: '⚠️ Bytecode no verificado en Sourcify/Blockscout', ok: false, severity: 'warn' });
+          }
+
+          const tmap = gpTokRes.data?.result || {};
+          const tok = tmap[lower] || Object.values(tmap)[0];
+          if (tok) {
+            const hp = String(tok.is_honeypot) === '1' || String(tok.cannot_sell_all) === '1';
+            const sTax = parseFloat(tok.sell_tax || 0) * 100;
+            const bTax = parseFloat(tok.buy_tax || 0) * 100;
+            if (hp || sTax >= 50) {
+              risk = Math.max(risk, 98);
+              checks.push({ label: 'Honeypot & Impuestos', status: `🚨 TRAMPA HONEYPOT (Venta ${sTax.toFixed(1)}%)`, ok: false, severity: 'danger' });
+            } else {
+              checks.push({ label: 'Honeypot & Impuestos', status: `✅ Compra ${bTax.toFixed(1)}% / Venta ${sTax.toFixed(1)}%`, ok: true, severity: 'safe' });
+            }
+          }
+        }
+      } else if (net === 'tron') {
+        networkLabel = 'TRON (TRC-20)';
+        explorerUrl = `https://tronscan.org/#/address/${clean}`;
+        const [aRes, tRes, cRes] = await Promise.all([
+          fetchJsonWithTimeout(`https://api.gopluslabs.io/api/v1/address_security/${clean}?chain_id=tron`),
+          fetchJsonWithTimeout(`https://api.gopluslabs.io/api/v1/token_security/tron?contract_addresses=${clean}`),
+          fetchJsonWithTimeout('https://api.trongrid.io/wallet/getcontract', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ value: clean, visible: true })
+          })
+        ]);
+        const isC = !!(cRes.ok && (cRes.data?.bytecode || cRes.data?.abi));
+        accountType = isC ? `Smart Contract TRON (${cRes.data?.name || 'TRC-20'})` : 'Wallet TRON';
+        licenseLabel = isC ? 'ABI público en TronGrid' : 'N/A (Wallet)';
+        checks.push({ label: 'Red y Tipo', status: `${networkLabel} — ${accountType}`, ok: true, severity: 'info' });
+        const ar = aRes.data?.result;
+        if (ar && (ar.phishing_activities === '1' || ar.stealing_attack === '1' || ar.sanctioned === '1' || ar.blacklist_doubt === '1')) {
+          risk = Math.max(risk, 95);
+          checks.push({ label: 'Denuncias TRON', status: '🚨 Dirección reportada en GoPlus Security', ok: false, severity: 'danger' });
+        } else if (ar) {
+          checks.push({ label: 'Denuncias TRON', status: '✅ 0 denuncias de phishing/robo en GoPlus', ok: true, severity: 'safe' });
+        }
+        const tok = tRes.data?.result?.[clean];
+        if (tok) {
+          const isTrusted = String(tok.trust_list) === '1' || String(tok.is_in_cex?.listed) === '1' || parseInt(tok.holder_count || '0', 10) >= 500000;
+          const sTax = parseFloat(tok.sell_tax || 0) * 100;
+          if (tok.is_honeypot === '1' || sTax >= 50) {
+            risk = Math.max(risk, 98);
+            checks.push({ label: 'Honeypot TRC-20', status: `🚨 BLOQUEO / IMPUESTO ${sTax.toFixed(1)}%`, ok: false, severity: 'danger' });
+          } else {
+            checks.push({ label: 'Token TRC-20', status: `✅ ${tok.token_name || ''} (${tok.token_symbol || ''}) sin honeypot` + (isTrusted ? ' | Emisor Oficial' : ''), ok: true, severity: 'safe' });
+          }
+          if (tok.owner_change_balance === '1' && !isTrusted) {
+            risk = Math.max(risk, 92);
+            checks.push({ label: 'Privilegios TRC-20', status: '🚨 Dueño puede modificar saldos', ok: false, severity: 'danger' });
+          }
+        }
+      } else if (net === 'solana') {
+        networkLabel = 'Solana Mainnet';
+        explorerUrl = `https://solscan.io/account/${clean}`;
+        const [rpcV, gpSolRes, rcRes] = await Promise.all([
+          rpcCallBrowser('https://solana-rpc.publicnode.com', 'getAccountInfo', [clean, { encoding: 'jsonParsed' }]),
+          fetchJsonWithTimeout(`https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=${clean}`),
+          fetchJsonWithTimeout(`https://api.rugcheck.xyz/v1/tokens/${clean}/report/summary`)
+        ]);
+        const val = rpcV?.value;
+        if (val?.data?.program === 'spl-token') {
+          accountType = 'Token SPL (Mint)';
+          licenseLabel = 'Estándar SPL Token';
+          const info = val.data.parsed?.info || {};
+          checks.push({ label: 'Cuenta Solana', status: `Token SPL | FreezeAuth: ${info.freezeAuthority ? 'Activa' : 'Renunciada'}`, ok: true, severity: 'info' });
+        } else if (val) {
+          accountType = val.executable ? 'Programa Solana' : `Wallet SOL (${((val.lamports || 0) / 1e9).toFixed(4)} SOL)`;
+          checks.push({ label: 'Cuenta Solana', status: `✅ ${accountType}`, ok: true, severity: 'safe' });
+        }
+        const gpTok = gpSolRes.data?.result?.[clean];
+        if (gpTok) {
+          const trustedSol = String(gpTok.trusted_token) === '1' || parseInt(gpTok.holder_count || '0', 10) >= 250000;
+          if (gpTok.metadata?.name) {
+            checks.push({ label: 'Metadata Token SPL', status: `${gpTok.metadata.name} (${gpTok.metadata.symbol})` + (trustedSol ? ' — Confiable' : ''), ok: true, severity: trustedSol ? 'safe' : 'info' });
+          }
+          if (String(gpTok.freezable?.status) === '1' && !trustedSol) {
+            risk = Math.max(risk, 40);
+            checks.push({ label: 'Control Congelación', status: '⚠️ El creador puede congelar fondos (Freezable)', ok: false, severity: 'warn' });
+          }
+        }
+        if (rcRes.ok && rcRes.data && typeof rcRes.data.score === 'number') {
+          const dangers = (rcRes.data.risks || []).filter(r => r.level === 'danger' || r.level === 'error');
+          if (dangers.length > 0) {
+            risk = Math.max(risk, 84);
+            checks.push({ label: 'RugCheck.xyz', status: `🚨 ${dangers.map(d => d.name).slice(0, 3).join(', ')}`, ok: false, severity: 'danger' });
+          } else {
+            checks.push({ label: 'RugCheck.xyz', status: `✅ Limpio (LP Locked: ${(rcRes.data.lpLockedPct || 0).toFixed(0)}%)`, ok: true, severity: 'safe' });
+          }
+        }
+      } else if (net === 'btc') {
+        networkLabel = 'Bitcoin Mainnet'; accountType = 'Wallet BTC (UTXO)';
+        explorerUrl = `https://mempool.space/address/${clean}`;
+        const bRes = await fetchJsonWithTimeout(`https://mempool.space/api/address/${clean}`);
+        if (bRes.ok && bRes.data?.chain_stats) {
+          const cs = bRes.data.chain_stats;
+          const bal = Math.max(0, (cs.funded_txo_sum || 0) - (cs.spent_txo_sum || 0)) / 1e8;
+          checks.push({ label: 'Mempool.space BTC', status: `✅ Saldo: ${bal.toFixed(6)} BTC | ${cs.tx_count.toLocaleString()} txs`, ok: true, severity: 'safe' });
+        }
+      } else if (net === 'ton') {
+        networkLabel = 'TON Blockchain';
+        explorerUrl = `https://tonviewer.com/${clean}`;
+        const tRes = await fetchJsonWithTimeout(`https://tonapi.io/v2/accounts/${encodeURIComponent(clean)}`);
+        if (tRes.ok && tRes.data) {
+          const bal = parseInt(tRes.data.balance || '0', 10) / 1e9;
+          const ifaces = (tRes.data.interfaces || []).join(', ');
+          accountType = (tRes.data.name || 'Cuenta TON') + (ifaces ? ` (${ifaces})` : '');
+          licenseLabel = ifaces || 'TON Account';
+          checks.push({ label: 'TonAPI v2', status: `✅ Saldo: ${bal.toLocaleString(undefined, { maximumFractionDigits: 2 })} TON | ${tRes.data.status}`, ok: true, severity: 'safe' });
+          if (tRes.data.is_scam) {
+            risk = 96;
+            checks.push({ label: 'Reputación TonAPI', status: '🚨 MARCADA SCAM EN TON', ok: false, severity: 'danger' });
+          } else {
+            checks.push({ label: 'Reputación TonAPI', status: '✅ is_scam = false', ok: true, severity: 'safe' });
+          }
+        }
+      }
+
+      risk = Math.max(0, Math.min(100, Math.round(risk)));
+      const level = risk >= 70 ? 'danger' : risk >= 35 ? 'warn' : 'safe';
+      return {
+        type: 'crypto', target: clean, network: networkLabel, account_type: accountType, license_type: licenseLabel,
+        explorer_url: explorerUrl, risk_score: risk, verdict_level: level,
+        verdict_title: level === 'danger' ? 'PELIGRO CRÍTICO: DENUNCIAS / MALICIOSO' : level === 'warn' ? 'PRECAUCIÓN: REVISAR CONTRATO' : 'SIN DENUNCIAS NI TRAMPAS DETECTADAS',
+        checks,
+        advice: level === 'danger' ? 'NO envíes fondos ni firmes aprobaciones con esta dirección.' : 'No se detectaron denuncias en las fuentes consultadas.',
+        sha256_report: await sha256HexFromBytes(clean)
+      };
+    }
+
+    async function runCryptoScan() {
+      if (!checkRateLimit() || !checkWebTrialLimit()) return;
+      const addr = document.getElementById('inputCrypto').value.trim();
+      if (!addr) { showToast("⚠️ Ingresa una dirección o contrato"); return; }
       recordWebTrial();
 
       playCyberSound(550, 'sawtooth', 0.12, 2, 0.1);
       document.getElementById('radarCrypto').style.display = 'block';
       document.getElementById('verdictCrypto').style.display = 'none';
 
-      let riskScore = 0;
-      let reasons = [];
+      let res = await tryBackendPost('/api/scan-crypto', { address: addr });
+      if (!res) res = await evaluateCryptoLiveBrowser(addr);
 
-      // Check GoPlus API live if EVM address
-      if (addr.startsWith('0x') && addr.length === 42) {
-        try {
-          const res = await fetch(`https://api.gopluslabs.io/api/v1/token_security/56?contract_addresses=${addr}`);
-          if (res.ok) {
-            const data = await res.json();
-            const token = data.result?.[addr.toLowerCase()];
-            if (token) {
-              const name = token.token_name || 'Token';
-              const sym = token.token_symbol || 'TOKEN';
-              reasons.push({ label: `Red BNB Chain (${name} - $${sym})`, status: '🔗 DETECTADO', ok: true });
-              
-              const isHoneypot = token.is_honeypot === '1';
-              const sellTax = parseFloat(token.sell_tax || 0) * 100;
-              const buyTax = parseFloat(token.buy_tax || 0) * 100;
-              const isSource = token.is_open_source === '1';
+      document.getElementById('radarCrypto').style.display = 'none';
 
-              if (isHoneypot || sellTax > 50) {
-                riskScore = 99;
-                reasons.push({ label: 'Mecanismo Honeypot', status: '🚨 BLOQUEO DE VENTA ACTIVO', ok: false });
-                reasons.push({ label: `Impuesto de Venta (${sellTax.toFixed(1)}%)`, status: '🚨 TRAMPA DE LIQUIDEZ', ok: false });
-              } else {
-                reasons.push({ label: `Impuesto Venta (${sellTax.toFixed(1)}%) / Compra (${buyTax.toFixed(1)}%)`, status: '✅ NORMAL', ok: true });
-              }
-
-              if (isSource) {
-                reasons.push({ label: 'Código Fuente Verificado', status: '✅ OPEN SOURCE', ok: true });
-              } else {
-                riskScore = Math.max(riskScore, 65);
-                reasons.push({ label: 'Código Fuente', status: '⚠️ NO VERIFICADO', ok: false });
-              }
-            }
-          }
-        } catch (e) {}
+      const strip = document.getElementById('cryptoMetaStrip');
+      if (strip) {
+        strip.style.display = 'block';
+        const expLink = res.explorer_url ? `<br>🧭 <a href="${escHtml(res.explorer_url)}" target="_blank" rel="noopener" style="color:var(--accent-cyber);">Ver en Explorador Oficial ↗</a>` : '';
+        strip.innerHTML =
+          `⛓️ <b>Red:</b> ${escHtml(res.network || '--')}<br>` +
+          `🧬 <b>Tipo:</b> ${escHtml(res.account_type || '--')}<br>` +
+          `📜 <b>Licencia SPDX:</b> ${escHtml(res.license_type || 'N/A')}${expLink}`;
       }
 
-      setTimeout(() => {
-        document.getElementById('radarCrypto').style.display = 'none';
-
-        if (reasons.length === 0) {
-          if (addr.toLowerCase().includes('drain') || addr.toLowerCase().includes('honeypot')) {
-            riskScore = 99;
-            reasons.push({ label: 'Permisos del Smart Contract', status: '🚨 DRAINER DE BILLETERAS', ok: false });
-            reasons.push({ label: 'Impuesto de Venta (Sell Tax)', status: '🚨 99% (HONEYPOT INVENTIBLE)', ok: false });
-            reasons.push({ label: 'Lista Negra Anti-Lavado', status: '🚨 MARCADA COMO MALICIOSA', ok: false });
-          } else if (addr.startsWith('EQ') || addr.startsWith('UQ')) {
-            riskScore = 5;
-            reasons.push({ label: 'Red TON Blockchain', status: '✅ CUENTA LEGÍTIMA', ok: true });
-            reasons.push({ label: 'Permisos de Transferencia', status: '✅ SIN CONTRATO DRAINER', ok: true });
-            reasons.push({ label: 'Historial On-Chain', status: '✅ ACTIVIDAD LIMPIA', ok: true });
-          } else {
-            riskScore = 12;
-            reasons.push({ label: 'Verificación On-Chain', status: '✅ DIRECCIÓN ESTÁNDAR', ok: true });
-            reasons.push({ label: 'Reportes de Phishing', status: '✅ 0 ALERTAS EN RED', ok: true });
-          }
-        }
-
-        renderVerdict('Crypto', riskScore, reasons, addr);
-      }, 1200);
+      renderStructuredVerdict('Crypto', res);
     }
 
-    // Generic Verdict Renderer
+    // Unified Structured Verdict Renderer (safe escaping + real advice & SHA-256)
     let currentLastReport = {};
-    function renderVerdict(moduleKey, score, reasons, subject, extraTitle = '') {
-      const isDangerous = score >= 70;
-      const isWarn = score >= 35 && score < 70;
+    function renderStructuredVerdict(moduleKey, res) {
+      const score = Number(res.risk_score || 0);
+      const level = res.verdict_level || (score >= 70 ? 'danger' : score >= 35 ? 'warn' : 'safe');
+      const isDangerous = level === 'danger';
+      const isWarn = level === 'warn';
 
       if (isDangerous) {
         playCyberSound(250, 'sawtooth', 0.35, 3, 0.15);
@@ -1550,45 +2298,40 @@
       const scorePill = document.getElementById(`scorePill${moduleKey}`);
       const banner = document.getElementById(`banner${moduleKey}`);
       const checklist = document.getElementById(`checklist${moduleKey}`);
-      const advice = document.getElementById(`advice${moduleKey}`);
+      const adviceEl = document.getElementById(`advice${moduleKey}`);
 
       verdictBox.style.display = 'block';
-
       scorePill.innerText = `${score}% RIESGO`;
       scorePill.className = `threat-score-pill ${isDangerous ? 'state-danger' : isWarn ? 'state-warn' : 'state-safe'}`;
 
-      if (isDangerous) {
-        banner.className = 'verdict-banner state-danger';
-        banner.innerHTML = `🚨 PELIGRO CRÍTICO: ALTA PROBABILIDAD DE ESTAFA`;
-        advice.innerHTML = `⚠️ <strong>ACCIÓN INMEDIATA RECOMENDADA:</strong><br>• No ingreses tus datos personales, contraseñas ni números de tarjeta.<br>• No envíes transferencias de dinero ni deposites criptomonedas.<br>• Bloquea y reporta al remitente de inmediato.`;
-      } else if (isWarn) {
-        banner.className = 'verdict-banner state-warn';
-        banner.innerHTML = `⚠️ PRECAUCIÓN: ELEMENTOS SOSPECHOSOS DETECTADOS`;
-        advice.innerHTML = `💡 <strong>RECOMENDACIÓN:</strong> Procede con cautela. Verifica la identidad por otro canal oficial antes de realizar cualquier pago o descarga.`;
-      } else {
-        banner.className = 'verdict-banner state-safe';
-        banner.innerHTML = `✅ VERIFICADO: SIN PATRONES DE FRAUDE`;
-        advice.innerHTML = `🛡️ El análisis no encontró indicadores de suplantación, phishing ni listas negras conocidas. Puedes proceder de manera segura.`;
+      const badge = isDangerous ? '🚨' : isWarn ? '⚠️' : '✅';
+      banner.className = `verdict-banner ${isDangerous ? 'state-danger' : isWarn ? 'state-warn' : 'state-safe'}`;
+      banner.innerText = `${badge} ${res.verdict_title || 'DICTAMEN COMPLETADO'}`;
+
+      const advTxt = res.advice || '';
+      let advHtml = (moduleKey === 'Web' && advTxt.includes('<a href=')) ? advTxt : escHtml(advTxt);
+      if (res.vt_url && !advHtml.includes('virustotal.com')) {
+        advHtml += `<br><br>🔎 <a href="${escHtml(res.vt_url)}" target="_blank" rel="noopener" style="color:var(--accent-cyber); font-weight:800;">Abrir reporte en VirusTotal ↗</a>`;
       }
+      adviceEl.innerHTML = advHtml;
 
       checklist.innerHTML = '';
-      reasons.forEach(r => {
+      (res.checks || []).forEach(r => {
+        const sev = r.severity || (r.ok ? 'safe' : 'danger');
+        const col = sev === 'danger' ? 'var(--accent-danger)' : sev === 'warn' ? 'var(--accent-warn)' : sev === 'safe' ? 'var(--accent-safe)' : 'var(--accent-cyber)';
         const row = document.createElement('div');
         row.className = 'check-item';
-        row.innerHTML = `
-          <span class="check-label">${r.label}</span>
-          <span class="check-status" style="color:${r.ok ? 'var(--accent-safe)' : 'var(--accent-danger)'}">${r.status}</span>
-        `;
+        row.innerHTML = `<span class="check-label">${escHtml(r.label)}</span><span class="check-status" style="color:${col}">${escHtml(r.status)}</span>`;
         checklist.appendChild(row);
       });
 
-      // Save for Copy Report
       currentLastReport[moduleKey] = {
         module: moduleKey,
         score,
-        subject,
-        verdict: isDangerous ? 'PELIGRO CRÍTICO (ESTAFA)' : isWarn ? 'PRECAUCIÓN' : 'SEGURO',
-        reasons,
+        subject: res.target || '--',
+        verdict: res.verdict_title || (isDangerous ? 'PELIGRO CRÍTICO' : isWarn ? 'PRECAUCIÓN' : 'SEGURO'),
+        reasons: res.checks || [],
+        sha256: res.sha256_report || 'N/A',
         timestamp: new Date().toISOString()
       };
     }
@@ -1602,11 +2345,10 @@
                    `📅 Fecha UTC: ${data.timestamp}\n` +
                    `🎯 Elemento Auditado: ${data.subject}\n` +
                    `📊 Nivel de Riesgo: ${data.score}% (${data.verdict})\n\n` +
-                   `🔬 Hallazgos Detectados:\n` +
+                   `🔬 Hallazgos Verificados:\n` +
                    data.reasons.map(r => `• ${r.label}: ${r.status}`).join('\n') + `\n\n` +
-                   `🔐 Identificador de Evidencia SHA-256:\n` +
-                   `f7a8e2b9c0d1e345892bcfe18204910284756291a0b1c2d3e4f5a6b7c8d9e0f1\n` +
-                   `⚠️ Emitido oficialmente por @cybershield_ai_bot`;
+                   `🔐 Evidencia Real SHA-256:\n${data.sha256}\n` +
+                   `🛡️ Generado por @cybershield_defense_bot`;
 
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(() => {
@@ -1644,10 +2386,8 @@
       playCyberSound(900, 'sine', 0.1);
       const invoiceUrl = VIP_INVOICES[tierId] || VIP_INVOICES['sentinel_30'];
       showToast(`⭐ Abriendo pasarela de pago de ${stars} Stars...`);
-      
+
       const tgApp = window.Telegram?.WebApp;
-      
-      // 1. Intentar pasarela nativa openInvoice de Telegram
       if (tgApp && typeof tgApp.openInvoice === 'function') {
         try {
           tgApp.openInvoice(invoiceUrl, function(status) {
@@ -1658,28 +2398,20 @@
               playCyberSound(1000, 'sine', 0.25);
             } else if (status === 'cancelled') {
               showToast('ℹ️ Pago cancelado.');
-            } else if (status === 'failed') {
-              showToast('⚠️ Abriendo pago directo en Telegram...');
-              if (typeof tgApp.openTelegramLink === 'function') {
-                tgApp.openTelegramLink(invoiceUrl);
-              }
+            } else if (status === 'failed' && typeof tgApp.openTelegramLink === 'function') {
+              tgApp.openTelegramLink(invoiceUrl);
             } else {
               showToast(`Estado: ${status}`);
             }
           });
           return;
-        } catch (e) {
-          console.warn('openInvoice falló, usando fallback directo:', e);
-        }
+        } catch (e) {}
       }
 
-      // 2. Respaldo nativo Telegram Desktop / Web (openTelegramLink)
       if (tgApp && typeof tgApp.openTelegramLink === 'function') {
         tgApp.openTelegramLink(invoiceUrl);
         return;
       }
-
-      // 3. Respaldo en navegador externo
       window.open(invoiceUrl, '_blank');
     }
 
@@ -1690,15 +2422,6 @@
         tgApp.openTelegramLink(botUrl);
       } else {
         window.open(botUrl, '_blank');
-      }
-    }
-
-    function payInBotChat() {
-      const tgApp = window.Telegram?.WebApp;
-      if (tgApp && typeof tgApp.openTelegramLink === 'function') {
-        tgApp.openTelegramLink('https://t.me/cybershield_defense_bot?start=vip');
-      } else {
-        window.open('https://t.me/cybershield_defense_bot?start=vip', '_blank');
       }
     }
 
