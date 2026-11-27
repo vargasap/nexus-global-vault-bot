@@ -223,8 +223,65 @@ def _run_selfie_mask(bgr):
     return cv2.resize(m, (w, h), interpolation=cv2.INTER_LINEAR)
 
 
-def _clean_mask(mask, keep_point=None):
-    """Limpia ruido, filtra componente conectado al sujeto principal y suaviza bordes sin halos."""
+def _floodfill_solid_bg_mask(bgr):
+    """
+    Si al menos 3 esquinas muestran un fondo sólido uniforme parecido,
+    aplica flood-fill SOLO desde los bordes exteriores para quitar el fondo
+    conservando el 100% de la ilustración, texto o zonas blancas interiores.
+    """
+    h, w = bgr.shape[:2]
+    if h < 20 or w < 20:
+        return None
+    ps = max(6, min(10, min(h, w) // 16))
+    patches = [
+        ("tl", bgr[:ps, :ps], (0, 0)),
+        ("tr", bgr[:ps, -ps:], (w - 1, 0)),
+        ("bl", bgr[-ps:, :ps], (0, h - 1)),
+        ("br", bgr[-ps:, -ps:], (w - 1, h - 1)),
+    ]
+    uniform = []
+    for name, p, seed in patches:
+        pf = p.astype(np.float32)
+        std_val = float(pf.std(axis=(0, 1)).max())
+        if std_val < 14.0:
+            uniform.append((pf.mean(axis=(0, 1)), seed))
+    if len(uniform) < 3:
+        return None
+
+    med_col = np.median(np.array([c for c, _ in uniform]), axis=0)
+    close_seeds = [seed for col, seed in uniform if float(np.linalg.norm(col - med_col)) < 22.0]
+    if len(close_seeds) < 3:
+        return None
+
+    smooth = cv2.GaussianBlur(bgr, (3, 3), 0)
+    ff_mask = np.zeros((h + 2, w + 2), dtype=np.uint8)
+    flags = 4 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY
+    lo_up = (20, 20, 20)
+
+    # Añadir puntos medios de borde que coincidan con el color de fondo para limpiar zonas aisladas en los bordes
+    edge_candidates = list(close_seeds) + [
+        (w // 2, 0), (w // 2, h - 1), (0, h // 2), (w - 1, h // 2)
+    ]
+    for sx, sy in edge_candidates:
+        if float(np.linalg.norm(smooth[sy, sx].astype(np.float32) - med_col)) < 22.0:
+            if ff_mask[sy + 1, sx + 1] == 0:
+                cv2.floodFill(smooth, ff_mask, (sx, sy), 255, loDiff=lo_up, upDiff=lo_up, flags=flags)
+
+    fg = (ff_mask[1:-1, 1:-1] == 0).astype(np.float32)
+    fg = cv2.GaussianBlur(fg, (3, 3), 0)
+    fg_pct = float((fg > 0.5).mean())
+    if 0.12 <= fg_pct <= 0.94:
+        return fg
+    return None
+
+
+def _clean_mask(mask, keep_point=None, single_component=False):
+    """
+    Limpia ruido de máscara.
+      - single_component=True (personas reales): aísla al sujeto principal.
+      - single_component=False (dibujos, mascotas, objetos): conserva todos los componentes
+        significativos (>= 2% del mayor o >= 0.5% de la imagen) para no mutilar partes.
+    """
     binm = (mask > 0.45).astype(np.uint8)
     k_morph = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
     binm = cv2.morphologyEx(binm, cv2.MORPH_OPEN, k_morph)
@@ -233,20 +290,31 @@ def _clean_mask(mask, keep_point=None):
     num_labels, labels = cv2.connectedComponents(binm)
     if num_labels > 2:
         h, w = binm.shape
-        if keep_point is not None:
-            kx = int(np.clip(keep_point[0], 0, w - 1))
-            ky = int(np.clip(keep_point[1], 0, h - 1))
-            lab = int(labels[ky, kx])
-        else:
-            lab = 0
-        if lab == 0:
-            areas = [int((labels == idx).sum()) for idx in range(1, num_labels)]
-            lab = 1 + int(np.argmax(areas)) if areas else 0
-        if lab > 0:
-            keep = (labels == lab).astype(np.float32)
-            # Incluir islas muy cercanas (p.ej. mano o micrófono del sujeto)
-            dil = cv2.dilate(keep, np.ones((15, 15), np.uint8))
-            mask = mask * dil
+        areas = [int((labels == idx).sum()) for idx in range(1, num_labels)]
+        if single_component:
+            if keep_point is not None:
+                kx = int(np.clip(keep_point[0], 0, w - 1))
+                ky = int(np.clip(keep_point[1], 0, h - 1))
+                lab = int(labels[ky, kx])
+            else:
+                lab = 0
+            if lab == 0 and areas:
+                lab = 1 + int(np.argmax(areas))
+            if lab > 0:
+                keep = (labels == lab).astype(np.float32)
+                dil = cv2.dilate(keep, np.ones((15, 15), np.uint8))
+                mask = mask * dil
+        elif areas:
+            max_area = max(areas)
+            img_thresh = (h * w) * 0.005
+            rel_thresh = max_area * 0.02
+            keep = np.zeros((h, w), dtype=np.float32)
+            for idx, area in enumerate(areas, start=1):
+                if area >= rel_thresh or area >= img_thresh:
+                    keep[labels == idx] = 1.0
+            if keep.max() > 0:
+                dil = cv2.dilate(keep, np.ones((7, 7), np.uint8))
+                mask = mask * dil
 
     soft = np.clip((mask - 0.30) / 0.42, 0.0, 1.0)
     soft = cv2.GaussianBlur(soft, (5, 5), 0)
@@ -256,10 +324,10 @@ def _clean_mask(mask, keep_point=None):
 def remove_background_universal(bgr, face_box=None):
     """
     Recorte universal de fondo estilo Sticker.ly:
-      - Si hay rostro humano, combina selfie_segmenter (ignora puertas/paredes) con u2netp
-        manteniendo únicamente la figura humana principal.
-      - Si es mascota, dibujo u objeto, usa u2netp.onnx directamente.
-    Retorna máscara float32 [0..1] o None si no se logró un recorte válido.
+      - Con rostro humano: combina selfie_segmenter + u2netp en componente único (persona).
+      - Sin rostro (dibujos, mascotas, objetos): primero prueba flood-fill de fondo sólido uniforme
+        para no cortar detalles interiores; si el fondo es complejo usa u2netp conservando partes.
+    Retorna máscara float32 [0..1] o None si conviene mantener tarjeta completa.
     """
     h, w = bgr.shape[:2]
     mask = None
@@ -270,10 +338,9 @@ def remove_background_universal(bgr, face_box=None):
         keep_pt = (0.5 * (bx0 + bx1), min(h - 1.0, by1 + (by1 - by0) * 0.75))
         human_m = _run_selfie_mask(bgr)
         if human_m is not None:
-            hm_clean = _clean_mask(human_m, keep_point=keep_pt)
+            hm_clean = _clean_mask(human_m, keep_point=keep_pt, single_component=True)
             pct = float((hm_clean > 0.5).mean())
             if 0.04 <= pct <= 0.92:
-                # Combinar ligeramente con u2netp dentro de la región humana para bordes de ropa/cabello más firmes
                 u_m = _run_u2netp_mask(bgr)
                 if u_m is not None:
                     roi = cv2.dilate((hm_clean > 0.25).astype(np.float32), np.ones((13, 13), np.uint8))
@@ -284,15 +351,21 @@ def remove_background_universal(bgr, face_box=None):
                 else:
                     mask = hm_clean
 
+    if mask is None and face_box is None:
+        solid_m = _floodfill_solid_bg_mask(bgr)
+        if solid_m is not None:
+            return solid_m
+
     if mask is None:
         u_m = _run_u2netp_mask(bgr)
         if u_m is not None:
-            mask = _clean_mask(u_m, keep_point=keep_pt)
+            mask = _clean_mask(u_m, keep_point=keep_pt, single_component=(face_box is not None))
 
     if mask is None:
         return None
     fg_pct = float((mask > 0.5).mean())
-    if fg_pct < 0.03 or fg_pct > 0.96:
+    min_fg = 0.03 if face_box is not None else 0.14
+    if fg_pct < min_fg or fg_pct > 0.96:
         return None
     return mask
 
@@ -625,9 +698,10 @@ def extract_audio_envelope(audio_path, fps=STICKER_FPS, max_duration=20.0):
         if len(chunk) >= 4:
             energy[i] = float(np.sqrt(np.mean(chunk * chunk)))
 
-    p95 = float(np.percentile(energy, 95)) if np.max(energy) > 0 else 1.0
+    max_rms = float(np.max(energy))
+    p95 = float(np.percentile(energy, 95)) if max_rms > 0.0005 else 1.0
     if p95 < 1e-4:
-        p95 = float(np.max(energy)) + 1e-5
+        p95 = max_rms + 1e-5
     energy = np.clip(energy / p95, 0.0, 1.15)
     energy = np.where(energy < 0.08, 0.0, (energy - 0.08) / 0.92)
     energy = np.clip(energy, 0.0, 1.0)
@@ -790,29 +864,29 @@ def _animate_frame_clean(base_bgra, effect, energy, onset, t_sec, progress, bord
     sx, sy, rot, tx, ty = 1.0, 1.0, 0.0, 0.0, 0.0
     if effect == "beat_pop":
         pop_in = 0.88 + 0.12 * min(1.0, progress / 0.10) if progress < 0.10 else 1.0
-        scale = pop_in * (1.0 + e * 0.065)
+        scale = pop_in * (1.0 + 0.045 * abs(np.sin(t_sec * 4.5)) * loop_env + e * 0.055)
         sx = scale
         sy = scale
-        rot = np.sin(t_sec * 7.5) * (e * 3.8 + on * 2.2)
-        ty = -on * 10.0
+        rot = np.sin(t_sec * 4.5) * (3.2 + e * 3.5) * loop_env
+        ty = -(abs(np.sin(t_sec * 4.5)) * 7.0 * loop_env + on * 9.0)
     elif effect == "shake":
-        amp = (e * 0.65 + on * 0.75)
+        amp = (0.35 + e * 0.65 + on * 0.6) * loop_env
         sx = 1.0 + amp * 0.055
         sy = sx
         tx = np.sin(t_sec * 38.0) * 9.0 * amp
         ty = np.cos(t_sec * 31.0) * 7.0 * amp
         rot = np.sin(t_sec * 24.0) * 3.5 * amp
     elif effect == "bounce":
-        b = abs(np.sin(t_sec * 6.5)) * (0.25 + e * 0.85) * loop_env
+        b = abs(np.sin(t_sec * 5.8)) * (0.45 + e * 0.65) * loop_env
         sx = 1.0 + (0.045 - b * 0.03)
         sy = 1.0 + (-0.03 + b * 0.075)
         ty = -b * 18.0
     elif effect == "zoom":
-        scale = 1.0 + (progress * 0.11 * loop_env) + e * 0.055
+        scale = 1.0 + (0.09 * abs(np.sin(progress * np.pi)) + e * 0.055) * loop_env
         sx, sy = scale, scale
         rot = np.sin(t_sec * 3.5) * e * 2.0
     else:
-        scale = 1.0 + e * 0.06
+        scale = 1.0 + (0.045 * abs(np.sin(t_sec * 4.5)) + e * 0.05) * loop_env
         sx, sy = scale, scale
 
     M = cv2.getRotationMatrix2D((256.0, 256.0), float(rot), float(0.5 * (sx + sy)))
@@ -917,12 +991,30 @@ def _encode_webp_static(frame_bgra, out_webp):
     return os.path.exists(out_webp) and os.path.getsize(out_webp) > 0
 
 
-def _bgra_on_white_bgr(bgra):
+_STUDIO_BG_512 = None
+
+
+def _get_studio_bg_512():
+    """Precalcula fondo degradado oscuro elegante (#1e293b centro -> #0f172a esquinas) para contraste alto en MP4."""
+    global _STUDIO_BG_512
+    if _STUDIO_BG_512 is None:
+        yy, xx = np.mgrid[0:512, 0:512].astype(np.float32)
+        dist = np.sqrt(((xx - 255.5) / 256.0) ** 2 + ((yy - 255.5) / 256.0) ** 2) / np.sqrt(2.0)
+        t = np.clip(dist, 0.0, 1.0)[..., None]
+        # #1e293b = BGR (59, 41, 30), #0f172a = BGR (42, 23, 15)
+        c_center = np.array([59.0, 41.0, 30.0], dtype=np.float32)
+        c_edge = np.array([42.0, 23.0, 15.0], dtype=np.float32)
+        _STUDIO_BG_512 = c_center * (1.0 - t) + c_edge * t
+    return _STUDIO_BG_512
+
+
+def _bgra_on_studio_bg(bgra, frame_style="cutout"):
     a = bgra[..., 3:4].astype(np.float32) / 255.0
-    return np.clip(bgra[..., :3].astype(np.float32) * a + 255.0 * (1.0 - a), 0, 255).astype(np.uint8)
+    bg = 255.0 if frame_style == "meme" else _get_studio_bg_512()
+    return np.clip(bgra[..., :3].astype(np.float32) * a + bg * (1.0 - a), 0, 255).astype(np.uint8)
 
 
-def _encode_mp4_with_audio(frames_bgra, audio_path, out_mp4, fps=STICKER_FPS, max_audio_sec=12.0):
+def _encode_mp4_with_audio(frames_bgra, audio_path, out_mp4, fps=STICKER_FPS, max_audio_sec=12.0, frame_style="cutout"):
     """
     Exporta Sticker + Audio unido en un solo archivo (.mp4 512x512 H.264 + AAC 192k),
     haciendo bucle fluido del movimiento hasta cubrir la duración del audio (hasta max_audio_sec).
@@ -932,7 +1024,7 @@ def _encode_mp4_with_audio(frames_bgra, audio_path, out_mp4, fps=STICKER_FPS, ma
     target_dur = min(max_audio_sec, max(len(frames_bgra) / float(fps), audio_dur))
     total_frames = max(len(frames_bgra), int(round(target_dur * fps)))
 
-    bgr_frames = [_bgra_on_white_bgr(f) for f in frames_bgra]
+    bgr_frames = [_bgra_on_studio_bg(f, frame_style=frame_style) for f in frames_bgra]
     # Bucle de ida o repetición suave de los frames del sticker
     stream_bytes = b"".join(bgr_frames[i % len(bgr_frames)].tobytes() for i in range(total_frames))
 
@@ -1106,7 +1198,7 @@ def build_sticker_bundle(
         result["webp_anim"] = out_webp_anim
     if _encode_webp_static(frames[min(len(frames) - 1, len(frames) // 3)], out_webp_static):
         result["webp_static"] = out_webp_static
-    if _encode_mp4_with_audio(frames, audio_path, out_mp4, fps=STICKER_FPS):
+    if _encode_mp4_with_audio(frames, audio_path, out_mp4, fps=STICKER_FPS, frame_style=frame_style):
         result["mp4"] = out_mp4
 
     result["ok"] = bool(result["webm"] or result["webp_anim"] or result["webp_static"] or result["mp4"])
