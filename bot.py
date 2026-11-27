@@ -31,7 +31,26 @@ DELIVERY_CACHE = {}
 SOUNDS_DIR = os.path.join(BASE_DIR, "sound_library")
 os.makedirs(SOUNDS_DIR, exist_ok=True)
 
+INTERNET_SEARCH_RESULTS = {}
+
+def search_internet_sounds(query, limit=4):
+    url = f"https://www.myinstants.com/api/v1/instants/?name={urllib.parse.quote(query)}&format=json"
+    try:
+        r = requests.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0"})
+        if r.status_code == 200:
+            results = []
+            for item in r.json().get("results", [])[:limit]:
+                name = item.get("name", "Sonido").strip()
+                sound_url = item.get("sound", "").strip()
+                if sound_url:
+                    results.append({"name": name, "url": sound_url})
+            return results
+    except Exception as e:
+        write_log(f"Error search sounds: {e}")
+    return []
+
 SOUNDS_LIB = {
+    "emotional_damage": {"name": "💔 Emotional Damage", "file": "emotional_damage.mp3"},
     "cat_pop": {"name": "🐱 Gato Wow Pop", "file": "cat_pop.wav"},
     "doge_chirp": {"name": "🐕 Doge Hacker 8-Bit", "file": "doge_chirp.wav"},
     "pepe_boing": {"name": "🐸 Pepe Boing", "file": "pepe_boing.wav"},
@@ -977,17 +996,19 @@ class TelegramStarsBot:
         PENDING_STICKER_PHOTOS[user_id] = photo_file_id
         text = (
             "📸 **¡Foto recibida con éxito!**\n\n"
-            "👇 **Selecciona el sonido para sincronizar con tu Sticker:**\n"
-            "Toca cualquier sonido de la lista o abre el catálogo interactivo para escucharlos todos:"
+            "👇 **Selecciona el sonido de Internet para tu Sticker:**\n"
+            "• Toca cualquiera de los sonidos virales de abajo\n"
+            "• O escribe: `buscar <nombre>` (ej: `buscar que es eso`, `buscar risa`, `buscar bruh`)\n"
+            "• O abre el catálogo interactivo para escucharlos todos:"
         )
         keyboard = [
+            [{"text": "💔 Emotional Damage", "callback_data": "snd_emotional_damage"}, {"text": "🗿 Bruh Bass", "callback_data": "snd_bruh_bass"}],
             [{"text": "🐱 Gato Pop", "callback_data": "snd_cat_pop"}, {"text": "🐕 Doge Hacker", "callback_data": "snd_doge_chirp"}],
             [{"text": "🐸 Pepe Boing", "callback_data": "snd_pepe_boing"}, {"text": "😂 Mega Risa", "callback_data": "snd_mega_laugh"}],
-            [{"text": "🗿 Bruh Bass", "callback_data": "snd_bruh_bass"}, {"text": "🔊 Metal Pipe", "callback_data": "snd_metal_pipe"}],
             [{"text": "🍄 Moneda Arcade", "callback_data": "snd_mario_coin"}, {"text": "💀 Game Over", "callback_data": "snd_game_over"}],
             [{"text": "🏆 Victoria Fanfarria", "callback_data": "snd_victory_fanfare"}, {"text": "💥 Explosión Boom", "callback_data": "snd_cinematic_boom"}],
             [{"text": "😱 Dun Dun Dun!", "callback_data": "snd_dramatic_dun"}, {"text": "🎺 Corneta MLG", "callback_data": "snd_airhorn_mlg"}],
-            [{"text": "🎌 Anime Wow", "callback_data": "snd_anime_wow"}, {"text": "🔔 Ding Campana", "callback_data": "snd_ding_chime"}],
+            [{"text": "🔍 Buscar Sonidos en Internet", "callback_data": "btn_search_sound"}],
             [{"text": "🎧 Catálogo Completo de Sonidos (Mini App)", "web_app": {"url": "https://vargasap.github.io/nexus-global-vault-bot/sounds.html"}}],
             [{"text": "🔙 Volver al Menú", "callback_data": "view_menu"}]
         ]
@@ -1019,9 +1040,14 @@ class TelegramStarsBot:
 
         if self.download_telegram_file(file_id, temp_img):
             try:
-                im = Image.open(temp_img).convert("RGBA")
+                im = Image.open(temp_img).convert("RGB")
                 im.thumbnail((512, 512), Image.Resampling.LANCZOS)
-                im.save(temp_out, "PNG")
+                # Formato cuadrado 512x512 con fondo blanco (modelo oficial)
+                canvas = Image.new("RGB", (512, 512), (255, 255, 255))
+                offset_x = (512 - im.width) // 2
+                offset_y = (512 - im.height) // 2
+                canvas.paste(im, (offset_x, offset_y))
+                canvas.save(temp_out, "PNG")
 
                 # Unir imagen y audio en un solo archivo MP4
                 merged_ok = merge_image_and_audio_to_video(temp_out, temp_snd, merged_video)
@@ -1396,6 +1422,46 @@ class TelegramStarsBot:
                             if data.startswith("act_"):
                                 num = data.replace("act_", "")
                                 self.activate_service_by_num(chat_id, lang_code, num, username)
+                            elif data == "btn_search_sound":
+                                set_user_active_mode(chat_id, "search_sound")
+                                self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"]})
+                                self.call_api("sendMessage", {
+                                    "chat_id": chat_id,
+                                    "text": "🔍 **Buscador de Sonidos de Internet**\n\nEscribe el nombre del meme, audio o frase que deseas buscar en internet:\n*(Ejemplo: `que es eso`, `tilin`, `maduro`, `homero`, `risa`, `bob esponja`)*"
+                                })
+                            elif data.startswith("isnd_"):
+                                idx_str = data.replace("isnd_", "")
+                                try:
+                                    s_idx = int(idx_str)
+                                    sound_item = INTERNET_SEARCH_RESULTS.get(user_id, [])[s_idx]
+                                    s_name = sound_item["name"]
+                                    s_url = sound_item["url"]
+                                    
+                                    # Descargar el sonido de internet
+                                    self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"], "text": f"⏳ Descargando: {s_name[:20]}..."})
+                                    dl_snd_path = os.path.join(DOWNLOADS_DIR, f"dl_snd_{user_id}_{int(time.time())}.mp3")
+                                    r_snd = requests.get(s_url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+                                    with open(dl_snd_path, "wb") as sf:
+                                        sf.write(r_snd.content)
+                                        
+                                    photo_id = PENDING_STICKER_PHOTOS.get(user_id)
+                                    if photo_id:
+                                        # Registrar como sonido temporal
+                                        custom_key = f"internet_{int(time.time())}"
+                                        SOUNDS_LIB[custom_key] = {"name": s_name, "file": os.path.basename(dl_snd_path)}
+                                        # Mover o vincular a SOUNDS_DIR
+                                        target_dest = os.path.join(SOUNDS_DIR, os.path.basename(dl_snd_path))
+                                        if os.path.exists(dl_snd_path):
+                                            import shutil
+                                            shutil.copy2(dl_snd_path, target_dest)
+                                        self.service_make_sticker(chat_id, user_id, username, lang_code, photo_id, sound_id=custom_key)
+                                    else:
+                                        self.call_api("sendMessage", {
+                                            "chat_id": chat_id,
+                                            "text": f"✅ **Sonido de Internet seleccionado:** {s_name}\n\n👉 Ahora **envía la foto** que deseas convertir en Sticker:"
+                                        })
+                                except Exception as e:
+                                    self.call_api("sendMessage", {"chat_id": chat_id, "text": f"❌ Error al procesar sonido: {e}"})
                             elif data.startswith("snd_"):
                                 sound_id = data.replace("snd_", "")
                                 photo_id = PENDING_STICKER_PHOTOS.get(user_id)
@@ -1570,6 +1636,30 @@ class TelegramStarsBot:
                                     self.service_summarize(chat_id, user_id, username, lang_code, res_content)
                                 else:
                                     self.call_api("sendMessage", {"chat_id": chat_id, "text": "👉 Envía el texto o enlace del artículo que deseas resumir."})
+                            elif text.startswith("buscar ") or text.startswith("/buscar ") or text.startswith("sonido ") or active_mode == "search_sound":
+                                query = text.replace("/buscar", "").replace("buscar", "").replace("sonido", "").strip()
+                                if query:
+                                    self.call_api("sendMessage", {"chat_id": chat_id, "text": f"🔎 **Buscando sonidos de internet para:** `{query}`..."})
+                                    results = search_internet_sounds(query, limit=5)
+                                    if results:
+                                        INTERNET_SEARCH_RESULTS[user_id] = results
+                                        kb = []
+                                        for idx, res in enumerate(results):
+                                            kb.append([{"text": f"🎵 {res['name'][:30]}", "callback_data": f"isnd_{idx}"}])
+                                        kb.append([{"text": "🔙 Cancelar", "callback_data": "view_menu"}])
+                                        self.call_api("sendMessage", {
+                                            "chat_id": chat_id,
+                                            "text": "👇 **Resultados encontrados en internet.** Toca uno para aplicarlo a tu Sticker:",
+                                            "reply_markup": json.dumps({"inline_keyboard": kb})
+                                        })
+                                    else:
+                                        self.call_api("sendMessage", {
+                                            "chat_id": chat_id,
+                                            "text": "❌ No se encontraron sonidos con ese nombre en internet. Prueba con otra palabra clave (ej: `risa`, `tilin`, `bruh`, `gato`):"
+                                        })
+                                else:
+                                    self.call_api("sendMessage", {"chat_id": chat_id, "text": "👉 Escribe el nombre del sonido que buscas (ej: `buscar que es eso`)."})
+
                             elif text.startswith("/reset") or text.startswith("/reiniciar"):
                                 db = load_users()
                                 str_id = str(user_id)
