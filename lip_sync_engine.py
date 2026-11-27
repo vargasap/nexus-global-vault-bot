@@ -34,9 +34,23 @@ LOWER_LIP_CENTER = 14
 _LANDMARKER = None
 
 
+MODEL_URL = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+
+
+def _ensure_model():
+    if not os.path.exists(MODEL_PATH):
+        try:
+            import urllib.request
+            os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+            urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+        except Exception as e:
+            print(f"[LipSync] No se pudo descargar modelo facial: {e}")
+    return os.path.exists(MODEL_PATH)
+
+
 def _get_landmarker():
     global _LANDMARKER
-    if _LANDMARKER is None and os.path.exists(MODEL_PATH):
+    if _LANDMARKER is None and _ensure_model():
         base_options = mp_python.BaseOptions(model_asset_path=MODEL_PATH)
         options = mp_vision.FaceLandmarkerOptions(
             base_options=base_options,

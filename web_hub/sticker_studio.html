@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nexus Sticker Studio Pro — Creador de Stickers con Sonido</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: #0b0f19;
+    --card: #131a2a;
+    --card-2: #1a2338;
+    --accent: #00e5ff;
+    --accent-2: #8b5cf6;
+    --success: #10b981;
+    --danger: #ef4444;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --border: rgba(255,255,255,0.09);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  body {
+    background: radial-gradient(circle at top, #172038 0%, var(--bg) 60%);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 14px 12px 40px;
+  }
+  .container { max-width: 520px; margin: 0 auto; }
+  header {
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(0,229,255,0.18), rgba(139,92,246,0.22));
+    border: 1px solid rgba(0,229,255,0.35);
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  h1 { font-size: 21px; font-weight: 800; letter-spacing: -0.3px; }
+  .subtitle { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+
+  .stage-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.45);
+  }
+  .canvas-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto 10px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: repeating-conic-gradient(#1f2937 0% 25%, #111827 0% 50%) 50% / 18px 18px;
+    border: 2px solid rgba(0,229,255,0.35);
+    box-shadow: 0 0 24px rgba(0,229,255,0.12);
+  }
+  canvas { width: 100%; height: 100%; display: block; }
+  .rec-pill {
+    position: absolute;
+    top: 10px; right: 10px;
+    background: rgba(239,68,68,0.92);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 9px;
+    border-radius: 999px;
+    display: none;
+    align-items: center;
+    gap: 5px;
+  }
+  .rec-pill.active { display: inline-flex; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: pulse 0.9s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+  .upload-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--card-2);
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.15s, background 0.15s;
+    text-decoration: none;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary {
+    background: linear-gradient(135deg, #00c6ff, #6366f1);
+    border: none;
+    color: #fff;
+    font-weight: 700;
+  }
+  .btn-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    color: #fff;
+    font-weight: 700;
+  }
+  .btn-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    border: none;
+    color: #fff;
+  }
+  .btn-full { width: 100%; }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .tab {
+    padding: 8px 4px;
+    border-radius: 11px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+  }
+  .tab.active {
+    background: linear-gradient(135deg, rgba(0,229,255,0.18), rgba(139,92,246,0.22));
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 13px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .panel.active { display: block; }
+  .panel-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .field { margin-bottom: 10px; }
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 5px;
+  }
+  input[type="text"], select {
+    width: 100%;
+    padding: 9px 11px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-2);
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+  .chip-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 7px;
+  }
+  .chip {
+    padding: 9px 8px;
+    border-radius: 11px;
+    border: 1px solid var(--border);
+    background: var(--card-2);
+    color: var(--text);
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+  .chip.active {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.14);
+    color: #fff;
+  }
+
+  .emoji-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .emoji-btn {
+    width: 38px; height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-2);
+    font-size: 19px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .emoji-btn.active { border-color: var(--accent); background: rgba(0,229,255,0.18); }
+
+  .sound-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 7px;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+  }
+  .sound-item {
+    padding: 9px 8px;
+    border-radius: 11px;
+    border: 1px solid var(--border);
+    background: var(--card-2);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sound-item.active {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.16);
+  }
+
+  .export-box {
+    background: linear-gradient(180deg, rgba(19,26,42,0.95), rgba(15,23,42,0.98));
+    border: 1px solid rgba(0,229,255,0.28);
+    border-radius: 16px;
+    padding: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .status-bar {
+    font-size: 12px;
+    color: var(--accent);
+    text-align: center;
+    min-height: 18px;
+  }
+  .meter-wrap {
+    height: 6px;
+    border-radius: 999px;
+    background: #1e293b;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .meter-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #00e5ff, #8b5cf6, #ec4899);
+    transition: width 0.05s linear;
+  }
+  input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="badge">⚡ Nexus Cloud Studio • Opción 3</div>
+    <h1>🪄 Creador de Stickers con Sonido</h1>
+    <p class="subtitle">100% en la nube • Diseña, anima al ritmo del audio y descarga al instante</p>
+  </header>
+
+  <!-- Lienzo 512x512 -->
+  <div class="stage-card">
+    <div class="canvas-wrap">
+      <canvas id="stickerCanvas" width="512" height="512"></canvas>
+      <div id="recPill" class="rec-pill"><span class="dot"></span> GRABANDO</div>
+    </div>
+    <div class="meter-wrap"><div id="audioMeter" class="meter-fill"></div></div>
+    <div style="height:10px"></div>
+    <div class="upload-row">
+      <label class="btn btn-primary" for="imgInput">📸 Subir Foto / Meme</label>
+      <button class="btn" id="btnPreview">▶️ Probar Animación</button>
+    </div>
+    <input type="file" id="imgInput" accept="image/*">
+  </div>
+
+  <!-- Pestañas del Estudio -->
+  <div class="tabs">
+    <div class="tab active" data-tab="tab-anim">🎭 Gestos</div>
+    <div class="tab" data-tab="tab-sound">🎵 Sonido</div>
+    <div class="tab" data-tab="tab-text">✍️ Texto</div>
+    <div class="tab" data-tab="tab-frame">🖼️ Marco</div>
+  </div>
+
+  <!-- Panel 1: Animación / Gestos -->
+  <div class="panel active" id="tab-anim">
+    <div class="panel-title"><span>Movimiento sincronizado al audio</span><span>512×512</span></div>
+    <div class="chip-grid" id="animGrid">
+      <button class="chip active" data-anim="reactive">🗣️ Reactivo al Audio</button>
+      <button class="chip" data-anim="dance">🕺 Bailoteo Meme</button>
+      <button class="chip" data-anim="vibrate">💥 Vibración Bass</button>
+      <button class="chip" data-anim="zoom">🔍 Zoom Dramático</button>
+      <button class="chip" data-anim="bounce">🎈 Rebote Elástico</button>
+      <button class="chip" data-anim="static">🖼️ Estático (.WEBP)</button>
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label><span>Intensidad del gesto</span><span id="intensityVal">100%</span></label>
+      <input type="range" id="intensityRange" min="30" max="180" value="100">
+    </div>
+  </div>
+
+  <!-- Panel 2: Sonido -->
+  <div class="panel" id="tab-sound">
+    <div class="panel-title"><span>Elige, sube o graba el sonido</span><span id="currentSoundLabel">🐱 Gato Pop</span></div>
+    <div class="sound-grid" id="soundGrid"></div>
+    <div class="upload-row">
+      <label class="btn" for="audioInput">📂 Subir MP3 / WAV</label>
+      <button class="btn" id="btnRecordVoice">🎙️ Grabar mi Voz</button>
+    </div>
+    <input type="file" id="audioInput" accept="audio/*">
+  </div>
+
+  <!-- Panel 3: Texto y Emojis -->
+  <div class="panel" id="tab-text">
+    <div class="panel-title"><span>Texto Meme & Emojis</span></div>
+    <div class="field">
+      <label><span>Texto Superior</span></label>
+      <input type="text" id="topText" placeholder="Ej: CUANDO TE DICEN...">
+    </div>
+    <div class="field">
+      <label><span>Texto Inferior</span></label>
+      <input type="text" id="bottomText" placeholder="Ej: ¡NO PUEDE SER!">
+    </div>
+    <div class="field">
+      <label><span>Tamaño de letra</span><span id="fontSizeVal">46px</span></label>
+      <input type="range" id="fontSize" min="24" max="76" value="46">
+    </div>
+    <div class="field">
+      <label><span>Emoji decorativo (esquina)</span></label>
+      <div class="emoji-row" id="emojiRow">
+        <button class="emoji-btn active" data-emoji="">🚫</button>
+        <button class="emoji-btn" data-emoji="😂">😂</button>
+        <button class="emoji-btn" data-emoji="💀">💀</button>
+        <button class="emoji-btn" data-emoji="🔥">🔥</button>
+        <button class="emoji-btn" data-emoji="👑">👑</button>
+        <button class="emoji-btn" data-emoji="⚡">⚡</button>
+        <button class="emoji-btn" data-emoji="💔">💔</button>
+        <button class="emoji-btn" data-emoji="😎">😎</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel 4: Marco y Ajuste -->
+  <div class="panel" id="tab-frame">
+    <div class="panel-title"><span>Formato del Sticker</span></div>
+    <div class="chip-grid" id="frameGrid">
+      <button class="chip active" data-frame="white">⬜ Marco Blanco Meme</button>
+      <button class="chip" data-frame="transparent">🔲 Fondo Transparente</button>
+      <button class="chip" data-frame="circle">⭕ Circular Sticker</button>
+      <button class="chip" data-frame="neon">🌈 Fondo Neón</button>
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label><span>Zoom de la imagen</span><span id="zoomVal">100%</span></label>
+      <input type="range" id="imgZoom" min="60" max="180" value="100">
+    </div>
+    <div class="field">
+      <label><span>Mover Vertical (Arriba / Abajo)</span><span id="offsetYVal">0</span></label>
+      <input type="range" id="imgOffsetY" min="-150" max="150" value="0">
+    </div>
+  </div>
+
+  <!-- Exportación -->
+  <div class="export-box">
+    <div id="statusBar" class="status-bar">Listo: sube tu foto y elige un sonido 🎵</div>
+    <button class="btn btn-success btn-full" id="btnExportVideo">🎬 Crear y Descargar Sticker con Sonido</button>
+    <div class="upload-row">
+      <button class="btn" id="btnExportWebp">🖼️ Guardar .WEBP</button>
+      <a class="btn" id="btnSendToBot" href="https://t.me/nexus_global_vault_bot?start=promo_stickers" target="_blank">🗣️ Lip-Sync IA en Bot</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { tg.ready(); tg.expand(); }
+
+const canvas = document.getElementById('stickerCanvas');
+const ctx = canvas.getContext('2d');
+const statusBar = document.getElementById('statusBar');
+const audioMeter = document.getElementById('audioMeter');
+const recPill = document.getElementById('recPill');
+
+const state = {
+  img: null,
+  anim: 'reactive',
+  intensity: 1.0,
+  frame: 'white',
+  zoom: 1.0,
+  offsetY: 0,
+  topText: '',
+  bottomText: '',
+  fontSize: 46,
+  emoji: '',
+  soundId: 'cat_pop',
+  customAudioBuffer: null,
+  isPlaying: false,
+  isExporting: false,
+  audioEnergy: 0,
+  startTime: 0,
+};
+
+const BUILTIN_SOUNDS = [
+  { id: 'cat_pop', name: '🐱 Gato Pop', dur: 1.4 },
+  { id: 'bruh_bass', name: '🗿 Bruh Bass', dur: 1.8 },
+  { id: 'mega_laugh', name: '😂 Mega Risa', dur: 2.2 },
+  { id: 'pepe_boing', name: '🐸 Pepe Boing', dur: 1.5 },
+  { id: 'airhorn_mlg', name: '🎺 Corneta MLG', dur: 2.0 },
+  { id: 'dramatic_dun', name: '😱 Dun Dun Dun', dur: 2.4 },
+  { id: 'mario_coin', name: '🍄 Moneda Coin', dur: 1.3 },
+  { id: 'game_over', name: '💀 Game Over', dur: 2.2 },
+  { id: 'victory_fanfare', name: '🏆 Victoria', dur: 2.3 },
+  { id: 'cinematic_boom', name: '💥 Boom Épico', dur: 2.0 },
+  { id: 'anime_wow', name: '🎌 Anime Wow', dur: 1.8 },
+  { id: 'ding_chime', name: '🔔 Ding Meme', dur: 1.4 },
+];
+
+// Build sound buttons
+const soundGrid = document.getElementById('soundGrid');
+BUILTIN_SOUNDS.forEach(s => {
+  const b = document.createElement('button');
+  b.className = 'sound-item' + (s.id === state.soundId ? ' active' : '');
+  b.dataset.id = s.id;
+  b.innerHTML = `<span>${s.name}</span><span>▶</span>`;
+  b.onclick = () => {
+    document.querySelectorAll('.sound-item').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.soundId = s.id;
+    state.customAudioBuffer = null;
+    document.getElementById('currentSoundLabel').textContent = s.name;
+    document.getElementById('btnSendToBot').href = `https://t.me/nexus_global_vault_bot?start=snd_${s.id}`;
+    playPreview();
+  };
+  soundGrid.appendChild(b);
+});
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById(t.dataset.tab).classList.add('active');
+  };
+});
+
+// Animation chips
+document.querySelectorAll('#animGrid .chip').forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll('#animGrid .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    state.anim = c.dataset.anim;
+    drawFrame(0, 0);
+  };
+});
+
+// Frame chips
+document.querySelectorAll('#frameGrid .chip').forEach(c => {
+  c.onclick = () => {
+    document.querySelectorAll('#frameGrid .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+    state.frame = c.dataset.frame;
+    drawFrame(0, 0);
+  };
+});
+
+// Emojis
+document.querySelectorAll('#emojiRow .emoji-btn').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('#emojiRow .emoji-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.emoji = b.dataset.emoji;
+    drawFrame(0, 0);
+  };
+});
+
+// Inputs
+document.getElementById('intensityRange').oninput = e => {
+  state.intensity = e.target.value / 100;
+  document.getElementById('intensityVal').textContent = e.target.value + '%';
+};
+document.getElementById('imgZoom').oninput = e => {
+  state.zoom = e.target.value / 100;
+  document.getElementById('zoomVal').textContent = e.target.value + '%';
+  drawFrame(0, 0);
+};
+document.getElementById('imgOffsetY').oninput = e => {
+  state.offsetY = parseInt(e.target.value, 10);
+  document.getElementById('offsetYVal').textContent = e.target.value;
+  drawFrame(0, 0);
+};
+document.getElementById('topText').oninput = e => { state.topText = e.target.value; drawFrame(0, 0); };
+document.getElementById('bottomText').oninput = e => { state.bottomText = e.target.value; drawFrame(0, 0); };
+document.getElementById('fontSize').oninput = e => {
+  state.fontSize = parseInt(e.target.value, 10);
+  document.getElementById('fontSizeVal').textContent = e.target.value + 'px';
+  drawFrame(0, 0);
+};
+
+// Image Upload
+document.getElementById('imgInput').onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      state.img = img;
+      statusBar.textContent = '✅ Foto cargada. ¡Toca Probar Animación o Crear Sticker!';
+      drawFrame(0, 0);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+// Custom Audio Upload
+let sharedAudioCtx = null;
+function getAudioCtx() {
+  if (!sharedAudioCtx) sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+  return sharedAudioCtx;
+}
+
+document.getElementById('audioInput').onchange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const ctxA = getAudioCtx();
+    const arr = await file.arrayBuffer();
+    state.customAudioBuffer = await ctxA.decodeAudioData(arr);
+    document.querySelectorAll('.sound-item').forEach(x => x.classList.remove('active'));
+    document.getElementById('currentSoundLabel').textContent = '🎵 ' + file.name.slice(0, 18);
+    statusBar.textContent = '✅ Audio personalizado cargado (' + state.customAudioBuffer.duration.toFixed(1) + 's)';
+    playPreview();
+  } catch (err) {
+    statusBar.textContent = '❌ No se pudo decodificar este audio.';
+  }
+};
+
+// Voice Recording
+let micRecorder = null;
+let micChunks = [];
+const btnRecord = document.getElementById('btnRecordVoice');
+btnRecord.onclick = async () => {
+  if (micRecorder && micRecorder.state === 'recording') {
+    micRecorder.stop();
+    btnRecord.textContent = '🎙️ Grabar mi Voz';
+    btnRecord.classList.remove('btn-danger');
+    recPill.classList.remove('active');
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    micChunks = [];
+    micRecorder = new MediaRecorder(stream);
+    micRecorder.ondataavailable = ev => { if (ev.data.size > 0) micChunks.push(ev.data); };
+    micRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(micChunks, { type: 'audio/webm' });
+      const arr = await blob.arrayBuffer();
+      const ctxA = getAudioCtx();
+      state.customAudioBuffer = await ctxA.decodeAudioData(arr);
+      document.getElementById('currentSoundLabel').textContent = '🎙️ Tu Voz (' + state.customAudioBuffer.duration.toFixed(1) + 's)';
+      statusBar.textContent = '✅ Voz grabada con éxito. ¡Listo para animar!';
+      playPreview();
+    };
+    micRecorder.start();
+    btnRecord.textContent = '⏹️ Detener Grabación';
+    btnRecord.classList.add('btn-danger');
+    recPill.classList.add('active');
+    statusBar.textContent = '🎙️ Grabando tu voz... Habla ahora y presiona Detener.';
+  } catch (err) {
+    statusBar.textContent = '❌ Permiso de micrófono denegado.';
+  }
+};
+
+// Synthesize sound into an AudioBuffer so it works both for preview & MediaRecorder export
+function createSynthBuffer(ctxA, soundId) {
+  const sr = ctxA.sampleRate;
+  const meta = BUILTIN_SOUNDS.find(s => s.id === soundId) || BUILTIN_SOUNDS[0];
+  const dur = meta.dur;
+  const len = Math.floor(sr * dur);
+  const buf = ctxA.createBuffer(1, len, sr);
+  const data = buf.getChannelData(0);
+
+  for (let i = 0; i < len; i++) {
+    const t = i / sr;
+    let val = 0;
+    if (soundId === 'cat_pop') {
+      const hit = (t % 0.42);
+      const f = 380 * (1 + 2.8 * Math.exp(-22 * hit));
+      val = Math.sin(2 * Math.PI * f * hit) * Math.exp(-9 * hit) * 0.85;
+    } else if (soundId === 'bruh_bass') {
+      const f = 145 - 55 * (t / dur);
+      val = (Math.sin(2 * Math.PI * f * t) + 0.4 * Math.sin(4 * Math.PI * f * t)) * Math.exp(-1.2 * t) * 0.85;
+    } else if (soundId === 'mega_laugh') {
+      const burst = Math.max(0, Math.sin(2 * Math.PI * 5.2 * t));
+      const f = 320 + 180 * Math.sin(2 * Math.PI * 5.2 * t);
+      val = Math.sin(2 * Math.PI * f * t) * burst * 0.75;
+    } else if (soundId === 'pepe_boing') {
+      const f = 220 + 260 * Math.abs(Math.sin(2 * Math.PI * 3.5 * t)) * Math.exp(-1.5 * t);
+      val = Math.sin(2 * Math.PI * f * t) * Math.exp(-1.4 * t) * 0.8;
+    } else if (soundId === 'airhorn_mlg') {
+      const env = (t < 0.25 || (t > 0.32 && t < 0.57) || t > 0.65) ? 1 : 0.05;
+      val = (Math.sin(2*Math.PI*480*t) + 0.6*Math.sin(2*Math.PI*605*t) + 0.5*Math.sin(2*Math.PI*720*t)) * 0.35 * env * Math.exp(-0.5*t);
+    } else if (soundId === 'dramatic_dun') {
+      const step = t < 0.5 ? 220 : (t < 1.0 ? 207 : 185);
+      const localT = t < 0.5 ? t : (t < 1.0 ? t - 0.5 : t - 1.0);
+      val = (Math.sin(2*Math.PI*step*t) + 0.5*Math.sin(2*Math.PI*(step*0.5)*t)) * Math.exp(-2.2*localT) * 0.75;
+    } else if (soundId === 'mario_coin') {
+      const f = t < 0.14 ? 988 : 1319;
+      val = Math.sin(2 * Math.PI * f * t) * Math.exp(-2.8 * t) * 0.7;
+    } else if (soundId === 'game_over') {
+      const notes = [392, 349, 330, 261];
+      const idx = Math.min(3, Math.floor((t / dur) * 4));
+      val = Math.sin(2 * Math.PI * notes[idx] * t) * 0.65 * Math.exp(-0.6 * t);
+    } else if (soundId === 'victory_fanfare') {
+      const notes = [523, 659, 784, 1046];
+      const idx = Math.min(3, Math.floor((t / dur) * 4));
+      val = (Math.sin(2*Math.PI*notes[idx]*t) + 0.3*Math.sin(4*Math.PI*notes[idx]*t)) * 0.55;
+    } else if (soundId === 'cinematic_boom') {
+      const f = 95 * Math.exp(-2.2 * t) + 32;
+      val = Math.sin(2 * Math.PI * f * t) * Math.exp(-1.5 * t) * 0.95;
+    } else if (soundId === 'anime_wow') {
+      const f = 350 + 480 * Math.sin(Math.PI * (t / dur));
+      val = Math.sin(2 * Math.PI * f * t) * Math.sin(Math.PI * (t / dur)) * 0.75;
+    } else {
+      val = Math.sin(2 * Math.PI * 1046 * t) * Math.exp(-3.5 * t) * 0.75;
+    }
+    data[i] = Math.max(-1, Math.min(1, val));
+  }
+  return buf;
+}
+
+// Draw sticker frame at time tSec and audio energy [0..1]
+function drawFrame(tSec, energy) {
+  ctx.clearRect(0, 0, 512, 512);
+
+  // Background
+  if (state.frame === 'white') {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 512, 512);
+  } else if (state.frame === 'neon') {
+    const grad = ctx.createLinearGradient(0, 0, 512, 512);
+    grad.addColorStop(0, '#0f172a');
+    grad.addColorStop(0.5, '#312e81');
+    grad.addColorStop(1, '#0891b2');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+  }
+
+  // Compute transform by animation mode
+  const k = state.intensity;
+  let sx = 1, sy = 1, rot = 0, tx = 0, ty = 0;
+
+  if (state.anim === 'reactive') {
+    // True audio-reactive gesture: squash/stretch + nod + lean driven ONLY by real audio energy
+    sx = 1 + energy * 0.08 * k;
+    sy = 1 - energy * 0.03 * k + Math.max(0, energy - 0.3) * 0.12 * k;
+    rot = Math.sin(tSec * 7.5) * energy * 0.09 * k;
+    ty = -energy * 16 * k;
+  } else if (state.anim === 'dance') {
+    const pulse = Math.abs(Math.sin(tSec * 6.0));
+    sx = 1 + (pulse * 0.07 + energy * 0.05) * k;
+    sy = sx;
+    rot = Math.sin(tSec * 6.0) * 0.065 * k;
+  } else if (state.anim === 'vibrate') {
+    const amp = (0.35 + energy * 0.9) * k;
+    sx = 1 + 0.05 * amp;
+    sy = sx;
+    tx = Math.sin(tSec * 48) * 10 * amp;
+    ty = Math.cos(tSec * 42) * 8 * amp;
+  } else if (state.anim === 'zoom') {
+    const z = 1 + (Math.abs(Math.sin(tSec * 4.5)) * 0.14 + energy * 0.06) * k;
+    sx = z; sy = z;
+  } else if (state.anim === 'bounce') {
+    const b = Math.abs(Math.sin(tSec * 7.0)) * (0.4 + energy * 0.8) * k;
+    ty = -b * 28;
+    sx = 1 + (1 - b) * 0.06;
+    sy = 1 + b * 0.08;
+  }
+
+  ctx.save();
+  if (state.frame === 'circle') {
+    ctx.beginPath();
+    ctx.arc(256, 256, 236, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+  }
+
+  ctx.translate(256 + tx, 256 + ty);
+  ctx.rotate(rot);
+  ctx.scale(sx, sy);
+
+  if (state.img) {
+    const scaleBase = Math.min(512 / state.img.width, 512 / state.img.height) * state.zoom;
+    const dw = state.img.width * scaleBase;
+    const dh = state.img.height * scaleBase;
+    ctx.drawImage(state.img, -dw / 2, -dh / 2 + state.offsetY, dw, dh);
+  } else {
+    // Placeholder mascot
+    ctx.fillStyle = state.frame === 'white' ? '#f1f5f9' : 'rgba(255,255,255,0.08)';
+    ctx.beginPath();
+    ctx.roundRect(-165, -165, 330, 330, 32);
+    ctx.fill();
+    ctx.font = '115px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('😎', 0, -18);
+    ctx.font = '700 22px sans-serif';
+    ctx.fillStyle = state.frame === 'white' ? '#334155' : '#e2e8f0';
+    ctx.fillText('Sube tu foto arriba', 0, 95);
+  }
+  ctx.restore();
+
+  // Circle white sticker border
+  if (state.frame === 'circle') {
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.arc(256, 256, 236, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Meme Text
+  const drawMemeText = (txt, y) => {
+    if (!txt.trim()) return;
+    ctx.save();
+    ctx.font = `900 ${state.fontSize}px Impact, "Arial Black", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = Math.max(5, state.fontSize * 0.16);
+    ctx.strokeStyle = '#000000';
+    ctx.fillStyle = '#ffffff';
+    ctx.lineJoin = 'round';
+    const upper = txt.toUpperCase();
+    ctx.strokeText(upper, 256, y, 470);
+    ctx.fillText(upper, 256, y, 470);
+    ctx.restore();
+  };
+  drawMemeText(state.topText, 52);
+  drawMemeText(state.bottomText, 462);
+
+  // Emoji badge
+  if (state.emoji) {
+    ctx.save();
+    const es = 1 + energy * 0.25;
+    ctx.translate(432, 82);
+    ctx.scale(es, es);
+    ctx.font = '68px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(state.emoji, 0, 0);
+    ctx.restore();
+  }
+}
+
+// Playback & Audio Analysis Loop
+let rafId = null;
+let activeSource = null;
+
+function stopPlayback() {
+  state.isPlaying = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  if (activeSource) {
+    try { activeSource.stop(); } catch (e) {}
+    activeSource = null;
+  }
+  audioMeter.style.width = '0%';
+}
+
+function playPreview(recordStreamCallback = null) {
+  stopPlayback();
+  const ctxA = getAudioCtx();
+  const buffer = state.customAudioBuffer || createSynthBuffer(ctxA, state.soundId);
+
+  const src = ctxA.createBufferSource();
+  src.buffer = buffer;
+  const analyser = ctxA.createAnalyser();
+  analyser.fftSize = 256;
+  const freqData = new Uint8Array(analyser.frequencyBinCount);
+
+  src.connect(analyser);
+  analyser.connect(ctxA.destination);
+
+  let mediaDest = null;
+  if (recordStreamCallback) {
+    mediaDest = ctxA.createMediaStreamDestination();
+    analyser.connect(mediaDest);
+  }
+
+  activeSource = src;
+  state.isPlaying = true;
+  const t0 = performance.now();
+
+  if (recordStreamCallback) {
+    recordStreamCallback(mediaDest.stream, buffer.duration);
+  }
+
+  src.onended = () => {
+    state.isPlaying = false;
+    if (rafId) cancelAnimationFrame(rafId);
+    audioMeter.style.width = '0%';
+    drawFrame(0, 0);
+  };
+
+  src.start();
+
+  const loop = () => {
+    if (!state.isPlaying) return;
+    analyser.getByteTimeDomainData(freqData);
+    let sum = 0;
+    for (let i = 0; i < freqData.length; i++) {
+      const v = (freqData[i] - 128) / 128;
+      sum += v * v;
+    }
+    const rms = Math.sqrt(sum / freqData.length);
+    const energy = Math.min(1, rms * 3.4);
+    audioMeter.style.width = Math.round(energy * 100) + '%';
+    const tSec = (performance.now() - t0) / 1000;
+    drawFrame(tSec, energy);
+    rafId = requestAnimationFrame(loop);
+  };
+  loop();
+}
+
+document.getElementById('btnPreview').onclick = () => playPreview();
+
+// Export Animated Video Sticker (.webm / .mp4) directly in browser!
+document.getElementById('btnExportVideo').onclick = () => {
+  if (state.isExporting) return;
+  if (!window.MediaRecorder) {
+    statusBar.textContent = '⚠️ Tu navegador no soporta exportación directa de video. Usa el botón de Bot.';
+    return;
+  }
+  state.isExporting = true;
+  recPill.classList.add('active');
+  statusBar.textContent = '🎬 Renderizando tu Sticker con Sonido...';
+
+  playPreview((audioStream, duration) => {
+    const canvasStream = canvas.captureStream(30);
+    const combined = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...audioStream.getAudioTracks()
+    ]);
+
+    const mimeCandidates = [
+      'video/mp4;codecs=avc1,mp4a.40.2',
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm'
+    ];
+    let chosenMime = '';
+    for (const m of mimeCandidates) {
+      if (MediaRecorder.isTypeSupported(m)) { chosenMime = m; break; }
+    }
+
+    const chunks = [];
+    const recorder = new MediaRecorder(combined, chosenMime ? { mimeType: chosenMime } : undefined);
+    recorder.ondataavailable = ev => { if (ev.data.size > 0) chunks.push(ev.data); };
+    recorder.onstop = () => {
+      state.isExporting = false;
+      recPill.classList.remove('active');
+      const ext = chosenMime.includes('mp4') ? 'mp4' : 'webm';
+      const blob = new Blob(chunks, { type: chosenMime || 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Nexus_Sticker_${state.soundId}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      statusBar.textContent = `✅ ¡Sticker descargado (${(blob.size/1024).toFixed(0)} KB)! Listo para compartir.`;
+    };
+
+    recorder.start();
+    setTimeout(() => {
+      if (recorder.state === 'recording') recorder.stop();
+    }, Math.max(1200, Math.round(duration * 1000) + 120));
+  });
+};
+
+// Export static WEBP sticker
+document.getElementById('btnExportWebp').onclick = () => {
+  drawFrame(0, 0);
+  canvas.toBlob(blob => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Nexus_Sticker_512x512.webp';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    statusBar.textContent = '✅ Sticker .WEBP 512×512 descargado.';
+  }, 'image/webp', 0.95);
+};
+
+// Initial render
+drawFrame(0, 0);
+</script>
+</body>
+</html>

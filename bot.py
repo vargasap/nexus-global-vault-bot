@@ -247,17 +247,19 @@ SERVICE_EXPLANATIONS = {
         ]
     },
     "3": {
-        "title": "🪄 **PANEL EXPLICATIVO: STICKERS CON SONIDO**",
-        "desc": "Convierte cualquier foto en Sticker oficial de Telegram acompañado de su nota de audio/sonido sincronizada, o elige de los más populares.",
+        "title": "🪄 **ESTUDIO DE STICKERS CON SONIDO & GESTOS IA**",
+        "desc": "Crea stickers animados 512x512 con sonido, texto meme, tu propia voz o sincronización labial IA (Lip-Sync) 100% en la nube.",
         "steps": (
-            "🚀 **¿Cómo deseas usarlo?:**\n"
-            "• **Opción A (Personalizado):** Envía cualquier foto o meme en este chat para crear tu sticker con sonido propio.\n"
-            "• **Opción B (Populares de la Comunidad):** Toca cualquiera de los stickers virales de abajo para recibirlo al instante con su audio meme:"
+            "🚀 **¿Cómo deseas crear tu Sticker?:**\n"
+            "• **🎨 Programa Creador (Studio Pro):** Abre nuestro programa interactivo en la nube para diseñar con textos, emojis, marcos, tu propia voz y descargar al instante.\n"
+            "• **🗣️ Lip-Sync IA Facial (En este chat):** Envía cualquier foto o video aquí y el personaje moverá la boca y gestos al ritmo del sonido que elijas.\n"
+            "• **🔥 Populares:** Toca un sticker viral de abajo para recibirlo ahora:"
         ),
         "buttons": [
+            [{"text": "🎨 Abrir Programa Creador de Stickers (Studio Pro)", "web_app": {"url": "https://vargasap.github.io/nexus-global-vault-bot/sticker_studio.html"}}],
+            [{"text": "📸 Enviar Foto/Video (Lip-Sync IA)", "callback_data": "guide_upload_photo"}, {"text": "🎧 Sonidos (App)", "web_app": {"url": "https://vargasap.github.io/nexus-global-vault-bot/sounds.html"}}],
             [{"text": "🐱 Gato Wow + Pop", "callback_data": "pop_stk_cat"}, {"text": "🐶 Doge Hacker + Audio", "callback_data": "pop_stk_dog"}],
             [{"text": "🐸 Pepe Meme + Boing", "callback_data": "pop_stk_pepe"}, {"text": "😂 Mega LOL + Risas", "callback_data": "pop_stk_laugh"}],
-            [{"text": "📸 Adjuntar mi propia foto", "callback_data": "guide_upload_photo"}],
             [{"text": "🔙 Volver al Menú", "callback_data": "view_menu"}, {"text": "💳 Ver Paquetes", "callback_data": "view_plans"}]
         ]
     },
