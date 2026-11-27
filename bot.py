@@ -70,6 +70,7 @@ SOUNDS_LIB = {
 PENDING_STICKER_PHOTOS = {}
 PENDING_SOUND_PREF = {}
 LAST_STICKER_DATA = {}
+PENDING_STICKER_META = {}
 
 def register_delivery_file(filepath, filename):
     file_key = uuid.uuid4().hex[:8]
@@ -104,111 +105,29 @@ def get_audio_duration(audio_file):
         pass
     return 4.0
 
-def merge_image_and_audio_to_video(media_path, audio_path, output_mp4, anim_mode="lipsync"):
-    try:
-        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
-    except Exception:
-        ffmpeg_exe = "ffmpeg"
-    
-    is_video = str(media_path).lower().endswith((".mp4", ".mov", ".avi", ".mkv", ".webm", ".gif"))
-    
-    if not is_video and anim_mode == "lipsync":
-        try:
-            from lip_sync_engine import generate_lipsync_sticker
-            ok, _face = generate_lipsync_sticker(media_path, audio_path, output_mp4)
-            if ok:
-                return True
-        except Exception as e:
-            print(f"[LipSync fallback] {e}")
-        anim_mode = "dance"
-    
-    if is_video:
-        dur = get_audio_duration(audio_path)
-        vf = "scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white"
-        cmd = [
-            ffmpeg_exe, "-y",
-            "-stream_loop", "-1", "-i", media_path,
-            "-i", audio_path,
-            "-t", str(dur),
-            "-vf", vf,
-            "-map", "0:v:0", "-map", "1:a:0",
-            "-c:v", "libx264", "-preset", "ultrafast",
-            "-c:a", "aac", "-b:a", "192k",
-            "-pix_fmt", "yuv420p",
-            output_mp4
-        ]
-    else:
-        styles = {
-            "dance": (
-                "scale=512:512:force_original_aspect_ratio=decrease,"
-                "pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white,"
-                "rotate='0.045*sin(n/5)':c=white:ow=512:oh=512,"
-                "crop=w='trunc((512-40*abs(sin(n/5)))/2)*2':h='trunc((512-40*abs(sin(n/5)))/2)*2':x='(512-out_w)/2':y='(512-out_h)/2',"
-                "scale=512:512"
-            ),
-            "vibrate": (
-                "scale=512:512:force_original_aspect_ratio=decrease,"
-                "pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white,"
-                "crop=w='trunc((512-30*abs(sin(n*1.2)))/2)*2':h='trunc((512-30*abs(sin(n*1.2)))/2)*2':x='(512-out_w)/2+8*sin(n*2.5)':y='(512-out_h)/2+6*cos(n*2.5)',"
-                "scale=512:512"
-            ),
-            "zoom": (
-                "scale=512:512:force_original_aspect_ratio=decrease,"
-                "pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white,"
-                "crop=w='trunc((512-60*abs(sin(n/7)))/2)*2':h='trunc((512-60*abs(sin(n/7)))/2)*2':x='(512-out_w)/2':y='(512-out_h)/2',"
-                "scale=512:512"
-            ),
-            "static": (
-                "scale=512:512:force_original_aspect_ratio=decrease,"
-                "pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white"
-            )
-        }
-        vf = styles.get(anim_mode, styles["dance"])
-        cmd = [
-            ffmpeg_exe, "-y",
-            "-framerate", "25",
-            "-loop", "1", "-i", media_path,
-            "-i", audio_path,
-            "-vf", vf,
-            "-c:v", "libx264", "-preset", "ultrafast",
-            "-c:a", "aac", "-b:a", "192k",
-            "-pix_fmt", "yuv420p",
-            "-shortest",
-            output_mp4
-        ]
-    
-    try:
-        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=25)
-        return res.returncode == 0 and os.path.exists(output_mp4)
-    except Exception:
-        return False
+def merge_image_and_audio_to_video(media_path, audio_path, output_mp4, anim_mode="beat_pop"):
+    from sticker_engine import build_sticker_bundle
+    eff = {"lipsync": "beat_pop", "dance": "beat_pop", "vibrate": "shake"}.get(anim_mode, anim_mode)
+    out_dir = os.path.dirname(os.path.abspath(output_mp4))
+    base_name = os.path.splitext(os.path.basename(output_mp4))[0] + "_m"
+    bundle = build_sticker_bundle(media_path, audio_path, out_dir, base_name, effect=eff, frame_style="cutout")
+    if bundle.get("mp4") and os.path.exists(bundle["mp4"]):
+        shutil.move(bundle["mp4"], output_mp4)
+        for k in ("webm", "webp_anim", "webp_static"):
+            p = bundle.get(k)
+            if p and os.path.exists(p):
+                try: os.remove(p)
+                except: pass
+        return True
+    return False
 
 def convert_mp4_to_telegram_sticker_webm(mp4_path, webm_path):
-    """Convierte el MP4 animado en un Sticker de Video nativo de Telegram (.webm VP9, 512x512, <=2.9s, <=256KB)."""
-    try:
-        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
-    except Exception:
-        ffmpeg_exe = "ffmpeg"
-    for bitrate, crf in [("320k", "34"), ("180k", "40")]:
-        cmd = [
-            ffmpeg_exe, "-y", "-i", mp4_path,
-            "-t", "2.9",
-            "-vf", "scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white,fps=30",
-            "-c:v", "libvpx-vp9",
-            "-b:v", bitrate,
-            "-crf", crf,
-            "-deadline", "realtime",
-            "-cpu-used", "8",
-            "-an",
-            webm_path
-        ]
-        try:
-            res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
-            if res.returncode == 0 and os.path.exists(webm_path) and os.path.getsize(webm_path) <= 256 * 1024:
-                return True
-        except Exception:
-            pass
-    return os.path.exists(webm_path) and os.path.getsize(webm_path) > 0
+    """Convierte el MP4 animado en un Sticker de Video nativo de Telegram (.webm VP9 yuva420p, 512x512, <=2.9s, <=255KB)."""
+    from sticker_engine import _read_video_frames_bgra, _encode_webm_alpha
+    frames = _read_video_frames_bgra(mp4_path, frame_style="full", outline=True)
+    if not frames:
+        return False
+    return _encode_webm_alpha(frames, webm_path)
 
 def create_meme_pop_sound(out_path):
     sample_rate = 44100
@@ -274,17 +193,18 @@ SERVICE_EXPLANATIONS = {
         ]
     },
     "3": {
-        "title": "🪄 **ESTUDIO DE STICKERS CON SONIDO & GESTOS IA**",
-        "desc": "Crea stickers animados 512x512 con sonido, texto meme, tu propia voz o sincronización labial IA (Lip-Sync) 100% en la nube.",
+        "title": "🪄 **ESTUDIO DE STICKERS PRO (WHATSAPP + TELEGRAM + AUDIO)**",
+        "desc": "Recorte automático de fondo con borde blanco estilo Sticker.ly, texto meme, tu propia voz o audio viral, y exportación triple (.WEBP WhatsApp, .WEBM Telegram y .MP4 con Audio).",
         "steps": (
-            "🚀 **¿Cómo deseas crear tu Sticker?:**\n"
-            "• **🎨 Programa Creador (Studio Pro):** Abre nuestro programa interactivo en la nube para diseñar con textos, emojis, marcos, tu propia voz y descargar al instante.\n"
-            "• **🗣️ Lip-Sync IA Facial (En este chat):** Envía cualquier foto o video aquí y el personaje moverá la boca y gestos al ritmo del sonido que elijas.\n"
-            "• **🔥 Populares:** Toca un sticker viral de abajo para recibirlo ahora:"
+            "🚀 **¿Cómo crear tu Sticker?:**\n"
+            "• **1️⃣ Envía una Foto, Video o GIF** aquí (opcional: pon texto en el comentario, ej: `NO PUEDE SER` o `ARRIBA | ABAJO`).\n"
+            "• **2️⃣ Elige el sonido** viral, busca uno de internet, o **envía tu propia nota de voz / MP3**.\n"
+            "• **3️⃣ Personaliza** el recorte sin fondo, marco, texto y efecto (*Ritmo Viral*, *Habla IA Neural* o *Sticker Fijo*).\n"
+            "• **🎨 Studio Web Pro:** También puedes diseñarlo paso a paso en el navegador:"
         ),
         "buttons": [
-            [{"text": "🎨 Abrir Programa Creador de Stickers (Studio Pro)", "url": "https://vargasap.github.io/nexus-global-vault-bot/sticker_studio.html?v=5"}],
-            [{"text": "📸 Enviar Foto/Video (Lip-Sync IA)", "callback_data": "guide_upload_photo"}, {"text": "🎧 Sonidos (App)", "url": "https://vargasap.github.io/nexus-global-vault-bot/sounds.html?v=5"}],
+            [{"text": "📸 Crear Aquí (Enviar Foto/Video)", "callback_data": "guide_upload_photo"}],
+            [{"text": "🎨 Abrir Studio Web Pro (Navegador)", "url": "https://vargasap.github.io/nexus-global-vault-bot/sticker_studio.html?v=6"}, {"text": "🎧 Sonidos (Web)", "url": "https://vargasap.github.io/nexus-global-vault-bot/sounds.html?v=6"}],
             [{"text": "🐱 Gato Wow + Pop", "callback_data": "pop_stk_cat"}, {"text": "🐶 Doge Hacker + Audio", "callback_data": "pop_stk_dog"}],
             [{"text": "🐸 Pepe Meme + Boing", "callback_data": "pop_stk_pepe"}, {"text": "😂 Mega LOL + Risas", "callback_data": "pop_stk_laugh"}],
             [{"text": "🔙 Volver al Menú", "callback_data": "view_menu"}, {"text": "💳 Ver Paquetes", "callback_data": "view_plans"}]
@@ -704,7 +624,8 @@ class TelegramStarsBot:
                     f"{self.base_url}/sendDocument",
                     data={
                         "chat_id": chat_id,
-                        "caption": f"📥 **Descarga Directa:** `{file_info['filename']}`\n⚡ Guardado en tu dispositivo con máxima calidad."
+                        "caption": f"📥 **Descarga Directa:** `{file_info['filename']}`\n⚡ Guardado en tu dispositivo con máxima calidad.",
+                        "disable_content_type_detection": True
                     },
                     files={"document": (file_info["filename"], df)},
                     timeout=90
@@ -838,34 +759,60 @@ class TelegramStarsBot:
 
         if os.path.exists(stk_file) and os.path.exists(snd_file):
             consume_service(user_id, "sticker")
-            merged_video = os.path.join(DOWNLOADS_DIR, f"stk_merged_{meme_key}_{user_id}_{int(time.time())}.mp4")
-            merged_ok = merge_image_and_audio_to_video(stk_file, snd_file, merged_video, anim_mode="dance")
-            target_f = merged_video if merged_ok else stk_file
-            nice_name = f"Sticker_{meme_key.capitalize()}_Sonido.mp4" if merged_ok else f"Sticker_{meme_key}.webp"
-            
-            file_key = register_delivery_file(target_f, nice_name)
-            markup = self.get_delivery_markup(user_id, download_key=file_key, download_label="📥 Descargar Sticker con Sonido")
+            from sticker_engine import build_sticker_bundle
+            bundle = build_sticker_bundle(
+                stk_file, snd_file, DOWNLOADS_DIR, f"stk_pop_{meme_key}_{user_id}_{int(time.time())}",
+                effect="beat_pop", frame_style="cutout"
+            )
+            webm_p = bundle.get("webm")
+            mp4_p = bundle.get("mp4")
+            wa_p = bundle.get("webp_anim") or bundle.get("webp_static") or stk_file
 
-            if merged_ok:
-                with open(merged_video, "rb") as vf:
-                    requests.post(
-                        f"{self.base_url}/sendVideo",
-                        data={
-                            "chat_id": chat_id,
-                            "caption": f"🪄 **¡Sticker Viral #{meme_key.upper()} con Sonido Unificado!** ⚡\n\n🔊 *Imagen y audio sincronizados en un solo archivo.*",
-                            "reply_markup": markup
-                        },
-                        files={"video": vf}
-                    )
+            wa_key = register_delivery_file(wa_p, f"WhatsApp_{meme_key.capitalize()}.webp")
+            mp4_key = register_delivery_file(mp4_p, f"Sticker_{meme_key.capitalize()}_Audio.mp4") if mp4_p else None
+            webm_key = register_delivery_file(webm_p, f"Telegram_{meme_key.capitalize()}.webm") if webm_p else None
+
+            ref_link = f"https://t.me/nexus_global_vault_bot?start=ref_{user_id}"
+            share_text = urllib.parse.quote("🔥 ¡Crea Stickers estilo WhatsApp/Telegram con sonido y recorte IA gratis aquí! ⚡")
+            share_url = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={share_text}"
+            dl_row = [{"text": "💚 WhatsApp (.WEBP)", "callback_data": f"dl_{wa_key}"}]
+            if webm_key:
+                dl_row.append({"text": "📥 Telegram (.WEBM)", "callback_data": f"dl_{webm_key}"})
+            rows = [dl_row]
+            if mp4_key:
+                rows.append([{"text": "🔊 Sticker + Audio (.MP4)", "callback_data": f"dl_{mp4_key}"}])
+            rows.append([{"text": "🚀 Compartir Bot (+1 Gratis)", "url": share_url}])
+            rows.append([{"text": "🛠️ Menú", "callback_data": "view_menu"}, {"text": "💳 Paquetes", "callback_data": "view_plans"}])
+            markup = json.dumps({"inline_keyboard": rows})
+
+            if webm_p and os.path.exists(webm_p):
+                with open(webm_p, "rb") as sf:
+                    requests.post(f"{self.base_url}/sendSticker", data={"chat_id": chat_id}, files={"sticker": ("sticker.webm", sf, "video/webm")}, timeout=30)
             else:
                 with open(stk_file, "rb") as sf:
-                    requests.post(f"{self.base_url}/sendSticker", data={"chat_id": chat_id}, files={"sticker": sf})
-                with open(snd_file, "rb") as vf:
-                    requests.post(
-                        f"{self.base_url}/sendVoice",
-                        data={"chat_id": chat_id, "caption": f"🔊 **¡Sonido del Sticker Viral #{meme_key.upper()}!**", "reply_markup": markup},
-                        files={"voice": vf}
-                    )
+                    requests.post(f"{self.base_url}/sendSticker", data={"chat_id": chat_id}, files={"sticker": sf}, timeout=30)
+
+            voice_ogg = os.path.join(DOWNLOADS_DIR, f"pop_v_{user_id}_{int(time.time())}.ogg")
+            sent_v = False
+            try:
+                subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", snd_file, "-t", "12", "-ac", "1", "-c:a", "libopus", "-b:a", "64k", voice_ogg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+                if os.path.exists(voice_ogg):
+                    with open(voice_ogg, "rb") as vf:
+                        vr = requests.post(
+                            f"{self.base_url}/sendVoice",
+                            data={"chat_id": chat_id, "caption": f"🪄 **¡Sticker #{meme_key.upper()} listo!**\n\n💚 Descarga para WhatsApp, Telegram o unido con audio en `.MP4`:", "reply_markup": markup},
+                            files={"voice": ("audio.ogg", vf, "audio/ogg")},
+                            timeout=30
+                        )
+                        sent_v = vr.ok
+            except Exception:
+                pass
+            finally:
+                if os.path.exists(voice_ogg):
+                    try: os.remove(voice_ogg)
+                    except: pass
+            if not sent_v:
+                self.call_api("sendMessage", {"chat_id": chat_id, "text": f"🪄 **¡Sticker #{meme_key.upper()} listo!**", "reply_markup": markup})
 
     def activate_service_by_num(self, chat_id, lang_code, num_str, username=""):
         s = SERVICES_INFO.get(num_str)
@@ -1104,12 +1051,12 @@ class TelegramStarsBot:
     def prompt_sound_selection(self, chat_id, user_id, username, lang_code, photo_file_id):
         PENDING_STICKER_PHOTOS[user_id] = photo_file_id
         text = (
-            "📸 **¡Imagen o Video recibido con éxito!**\n\n"
-            "👇 **Selecciona el sonido de Internet para tu Sticker Animado:**\n"
-            "• *La imagen se moverá automáticamente al ritmo del sonido (mini video animado).*\n"
-            "• Toca cualquiera de los sonidos virales de abajo\n"
-            "• O escribe: `buscar <nombre>` (ej: `buscar que es eso`, `buscar risa`, `buscar bruh`)\n"
-            "• O abre el catálogo interactivo para escucharlos todos:"
+            "📸 **¡Imagen / Video recibido con éxito!**\n\n"
+            "👇 **Ahora elige o envía el sonido para unirlo al Sticker:**\n"
+            "• Toca cualquier sonido viral de abajo\n"
+            "• 🎙️ **Envía tu propia nota de voz o MP3** directo aquí\n"
+            "• 🔍 O escribe: `buscar <nombre>` (ej: `buscar risa`, `buscar bruh`, `buscar maduro`)\n"
+            "• ✨ *Después podrás cambiar el recorte sin fondo, poner texto meme y exportar para WhatsApp, Telegram o MP4 con Audio.*"
         )
         keyboard = [
             [{"text": "💔 Emotional Damage", "callback_data": "snd_emotional_damage"}, {"text": "🗿 Bruh Bass", "callback_data": "snd_bruh_bass"}],
@@ -1119,7 +1066,7 @@ class TelegramStarsBot:
             [{"text": "🏆 Victoria Fanfarria", "callback_data": "snd_victory_fanfare"}, {"text": "💥 Explosión Boom", "callback_data": "snd_cinematic_boom"}],
             [{"text": "😱 Dun Dun Dun!", "callback_data": "snd_dramatic_dun"}, {"text": "🎺 Corneta MLG", "callback_data": "snd_airhorn_mlg"}],
             [{"text": "🔍 Buscar Sonidos en Internet", "callback_data": "btn_search_sound"}],
-            [{"text": "🎧 Catálogo Completo de Sonidos (Mini App)", "web_app": {"url": "https://vargasap.github.io/nexus-global-vault-bot/sounds.html"}}],
+            [{"text": "🎧 Catálogo Completo de Sonidos (Web)", "url": "https://vargasap.github.io/nexus-global-vault-bot/sounds.html?v=6"}],
             [{"text": "🔙 Volver al Menú", "callback_data": "view_menu"}]
         ]
         self.call_api("sendMessage", {
@@ -1128,35 +1075,69 @@ class TelegramStarsBot:
             "reply_markup": json.dumps({"inline_keyboard": keyboard})
         })
 
-    def service_make_sticker(self, chat_id, user_id, username, lang_code, file_id, sound_id="cat_pop", anim_mode="lipsync", is_video=False, is_edit=False):
+    def service_make_sticker(self, chat_id, user_id, username, lang_code, file_id, sound_id="cat_pop", anim_mode="beat_pop", frame_style=None, top_text=None, bottom_text=None, is_video=False, is_edit=False):
         if not is_edit:
             can_use, reason, _ = check_can_use_service(user_id, "sticker", username)
             if not can_use:
                 self.send_plans_menu(chat_id, lang_code, header_text="⚠️ **Ya utilizaste tu prueba gratis para 3️⃣ Crear Sticker con Sonido.**\n👇 Elige un paquete para continuar:")
                 return
 
+        from sticker_engine import build_sticker_bundle
+
+        # Mapear modos heredados a estilos limpios del motor v3
+        eff_map = {"lipsync": "beat_pop", "dance": "beat_pop", "vibrate": "shake"}
+        effect = eff_map.get(anim_mode, anim_mode or "beat_pop")
+
+        prev_data = LAST_STICKER_DATA.get(user_id, {})
+        pending_meta = PENDING_STICKER_META.get(user_id, {})
+        if frame_style is None:
+            frame_style = prev_data.get("frame_style", "cutout") if is_edit else "cutout"
+        if top_text is None and bottom_text is None:
+            if is_edit and user_id in LAST_STICKER_DATA:
+                top_text = prev_data.get("top_text", "")
+                bottom_text = prev_data.get("bottom_text", "")
+            else:
+                top_text = pending_meta.get("top_text", "")
+                bottom_text = pending_meta.get("bottom_text", "")
+        if not is_video:
+            is_video = bool(pending_meta.get("is_video")) if not is_edit else bool(prev_data.get("is_video"))
+
         sound_info = SOUNDS_LIB.get(sound_id, {"name": "Pop Meme", "file": "cat_pop.wav"})
         snd_name = sound_info["name"]
-        
-        mode_names = {
-            "lipsync": "🗣️ Habla y Gestos IA (Lip-Sync)",
-            "dance": "🕺 Ritmo & Bailoteo Meme",
-            "vibrate": "💥 Vibración Bass Boost",
-            "zoom": "🔍 Zoom Dramático Beat",
-            "static": "🖼️ Estático con Marco"
+
+        eff_labels = {
+            "beat_pop": "🎵 Ritmo Viral (Limpio)",
+            "ai_talk": "🗣️ Habla IA Neural (Nube)",
+            "shake": "💥 Impacto Meme",
+            "bounce": "🎈 Rebote Elástico",
+            "zoom": "🔍 Zoom Dramático",
+            "static": "🖼️ Sticker Fijo HD",
         }
-        mode_label = mode_names.get(anim_mode, "🗣️ Habla y Gestos IA")
-        
-        self.call_api("sendMessage", {"chat_id": chat_id, "text": f"🪄 **Creando Sticker Animado con sonido: {snd_name}...**\n🎭 *Efecto:* {mode_label}"})
-        
+        frame_labels = {
+            "cutout": "✂️ Sin Fondo + Borde Blanco",
+            "full": "🖼️ Foto Completa Redondeada",
+            "circle": "⭕ Circular Sticker",
+            "meme": "📸 Tarjeta Meme Blanca",
+        }
+        eff_label = eff_labels.get(effect, "🎵 Ritmo Viral")
+        frame_label = frame_labels.get(frame_style, "✂️ Sin Fondo + Borde Blanco")
+
+        wait_extra = " *(puede tardar ~15-30s por IA en la nube)*" if effect == "ai_talk" else ""
+        self.call_api("sendMessage", {
+            "chat_id": chat_id,
+            "text": f"🪄 **Creando tu Sticker estilo WhatsApp/Telegram...**{wait_extra}\n🎵 *Sonido:* **{snd_name}**\n🖼️ *Estilo:* {frame_label} • {eff_label}"
+        })
+
         timestamp_now = int(time.time())
         temp_input_base = os.path.join(DOWNLOADS_DIR, f"stk_in_{user_id}_{timestamp_now}")
         temp_snd = os.path.join(SOUNDS_DIR, sound_info["file"])
-        merged_video = os.path.join(DOWNLOADS_DIR, f"stk_custom_{user_id}_{sound_id}_{anim_mode}_{timestamp_now}.mp4")
-
         if not os.path.exists(temp_snd):
-            temp_snd = os.path.join(DOWNLOADS_DIR, f"stk_snd_{user_id}_{timestamp_now}.wav")
-            create_meme_pop_sound(temp_snd)
+            dl_alt = os.path.join(DOWNLOADS_DIR, sound_info["file"])
+            if os.path.exists(dl_alt):
+                temp_snd = dl_alt
+            else:
+                temp_snd = os.path.join(DOWNLOADS_DIR, f"stk_snd_{user_id}_{timestamp_now}.wav")
+                create_meme_pop_sound(temp_snd)
 
         res_file = self.call_api("getFile", {"file_id": file_id})
         if not res_file.get("ok"):
@@ -1180,114 +1161,134 @@ class TelegramStarsBot:
         is_vid_actual = is_video or any(ext.endswith(x) for x in [".mp4", ".mov", ".avi", ".webm", ".gif"])
 
         try:
-            native_webm = os.path.join(DOWNLOADS_DIR, f"stk_native_{user_id}_{sound_id}_{anim_mode}_{timestamp_now}.webm")
-            webm_ok = False
-            famous_done = False
-            # Foto + Lip-Sync -> Sticker estilo famoso (recorte, borde blanco, transparente, gestos por audio)
-            if not is_vid_actual and anim_mode == "lipsync":
-                try:
-                    from lip_sync_engine import generate_famous_sticker
-                    finfo = generate_famous_sticker(temp_input, temp_snd, native_webm, merged_video)
-                    webm_ok = bool(finfo.get("ok"))
-                    merged_ok = bool(finfo.get("mp4_ok"))
-                    famous_done = webm_ok
-                    write_log(f"🪄 Sticker famoso: cara={finfo.get('face')} recorte={finfo.get('cutout')} ok={webm_ok}")
-                except Exception as e:
-                    write_log(f"⚠️ Sticker famoso falló, usando modo clásico: {e}")
-            if not famous_done:
-                merged_ok = merge_image_and_audio_to_video(temp_input, temp_snd, merged_video, anim_mode=anim_mode)
+            bundle = build_sticker_bundle(
+                temp_input,
+                temp_snd,
+                DOWNLOADS_DIR,
+                f"stk_{user_id}_{sound_id}_{timestamp_now}",
+                effect=effect,
+                frame_style=frame_style,
+                top_text=top_text or "",
+                bottom_text=bottom_text or "",
+                outline=True,
+            )
+
+            if not bundle.get("ok"):
+                self.call_api("sendMessage", {"chat_id": chat_id, "text": f"❌ No se pudo generar el sticker: {bundle.get('error') or 'formato no soportado'}"})
+                return
+
             if not is_edit:
                 consume_service(user_id, "sticker")
+                PENDING_STICKER_META.pop(user_id, None)
+
+            webm_path = bundle.get("webm")
+            webp_anim = bundle.get("webp_anim")
+            webp_static = bundle.get("webp_static")
+            mp4_path = bundle.get("mp4")
+
+            # Para WhatsApp: estático si eligió Sticker Fijo, si no animado con transparencia (o estático de respaldo)
+            wa_path = webp_static if (effect == "static" and webp_static) else (webp_anim or webp_static)
+            tg_sticker_path = webp_static if (effect == "static" and webp_static) else webm_path
+
+            wa_key = register_delivery_file(wa_path, f"WhatsApp_Sticker_{sound_id}.webp") if wa_path else None
+            webm_key = register_delivery_file(webm_path, f"Telegram_Sticker_{sound_id}.webm") if webm_path else None
+            mp4_key = register_delivery_file(mp4_path, f"Sticker_Audio_{sound_id}.mp4") if mp4_path else None
 
             LAST_STICKER_DATA[user_id] = {
                 "file_id": file_id,
                 "sound_id": sound_id,
-                "anim_mode": anim_mode,
-                "is_video": is_vid_actual
+                "anim_mode": bundle.get("effect", effect),
+                "frame_style": frame_style,
+                "top_text": top_text or "",
+                "bottom_text": bottom_text or "",
+                "is_video": is_vid_actual,
+                "mp4_path": mp4_path,
+                "mp4_key": mp4_key,
             }
-
-            target_f = merged_video if merged_ok else temp_input
-            nice_name = f"Sticker_{sound_id}_{anim_mode}.mp4" if merged_ok else f"Sticker_{sound_id}{ext}"
-            file_key = register_delivery_file(target_f, nice_name)
-
-            # Sticker Animado nativo de Telegram (.webm VP9 512x512)
-            webm_key = None
-            if not famous_done and merged_ok:
-                webm_ok = convert_mp4_to_telegram_sticker_webm(merged_video, native_webm)
-            if webm_ok:
-                webm_key = register_delivery_file(native_webm, f"Sticker_Animado_{sound_id}.webm")
-            merged_ok = merged_ok or webm_ok
+            PENDING_STICKER_PHOTOS[user_id] = file_id
 
             ref_link = f"https://t.me/nexus_global_vault_bot?start=ref_{user_id}"
-            share_text = urllib.parse.quote("🔥 ¡Crea Stickers Animados con gestos y sonidos virales gratis aquí! ⚡")
+            share_text = urllib.parse.quote("🔥 ¡Crea Stickers estilo WhatsApp/Telegram con recorte IA, texto y tu propio audio aquí! ⚡")
             share_url = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={share_text}"
-            dl_row = []
-            if webm_key:
-                dl_row.append({"text": "📥 Descargar Sticker", "callback_data": f"dl_{webm_key}"})
-                if merged_ok and os.path.exists(merged_video):
-                    dl_row.append({"text": "🔊 Con Audio (.MP4)", "callback_data": f"dl_{file_key}"})
-            else:
-                dl_row.append({"text": "📥 Descargar Sticker", "callback_data": f"dl_{file_key}"})
-            markup = json.dumps({
-                "inline_keyboard": [
-                    dl_row,
-                    [{"text": "🎭 Cambiar Gestos", "callback_data": "choose_anim"}, {"text": "🔄 Cambiar Sonido", "callback_data": "reselect_sound"}],
-                    [{"text": "🚀 Compartir Bot (+1 Uso Gratis)", "url": share_url}],
-                    [{"text": "🛠️ Menú (8 Herramientas)", "callback_data": "view_menu"}, {"text": "💳 Paquetes ($0.99)", "callback_data": "view_plans"}]
-                ]
-            })
 
-            if webm_ok:
-                # 1) Enviar el STICKER ANIMADO OFICIAL DE TELEGRAM (.webm VP9 512x512 — NO video MP4)
-                with open(native_webm, "rb") as sf:
+            dl_row = []
+            if wa_key:
+                dl_row.append({"text": "💚 WhatsApp (.WEBP)", "callback_data": f"dl_{wa_key}"})
+            if webm_key:
+                dl_row.append({"text": "📥 Telegram (.WEBM)", "callback_data": f"dl_{webm_key}"})
+
+            kb_rows = []
+            if dl_row:
+                kb_rows.append(dl_row)
+            if mp4_key:
+                kb_rows.append([
+                    {"text": "🔊 Bajar con Audio (.MP4)", "callback_data": f"dl_{mp4_key}"},
+                    {"text": "▶️ Ver con Audio", "callback_data": "send_mp4_preview"},
+                ])
+            kb_rows.append([{"text": "✂️ Recorte / Marco", "callback_data": "choose_frame"}, {"text": "🎭 Efecto / Habla IA", "callback_data": "choose_anim"}])
+            kb_rows.append([{"text": "✍️ Poner Texto", "callback_data": "sticker_edit_text"}, {"text": "🔄 Cambiar Sonido", "callback_data": "reselect_sound"}])
+            kb_rows.append([{"text": "🎨 Studio Web Pro", "url": "https://vargasap.github.io/nexus-global-vault-bot/sticker_studio.html?v=6"}, {"text": "🚀 Compartir (+1 Gratis)", "url": share_url}])
+            kb_rows.append([{"text": "🛠️ Menú (8 Herramientas)", "callback_data": "view_menu"}, {"text": "💳 Paquetes ($0.99)", "callback_data": "view_plans"}])
+            markup = json.dumps({"inline_keyboard": kb_rows})
+
+            # 1) Enviar STICKER REAL DE TELEGRAM (transparente, sin fondo)
+            if tg_sticker_path and os.path.exists(tg_sticker_path):
+                is_static_stk = tg_sticker_path.endswith(".webp")
+                fname_stk = "sticker.webp" if is_static_stk else "sticker.webm"
+                mime_stk = "image/webp" if is_static_stk else "video/webm"
+                with open(tg_sticker_path, "rb") as sf:
                     stk_res = requests.post(
                         f"{self.base_url}/sendSticker",
                         data={"chat_id": chat_id},
-                        files={"sticker": ("sticker.webm", sf, "video/webm")},
-                        timeout=30
+                        files={"sticker": (fname_stk, sf, mime_stk)},
+                        timeout=30,
                     )
                     if not stk_res.ok:
                         write_log(f"⚠️ sendSticker error: {stk_res.text[:200]}")
 
-                # 2) Audio de los gestos como nota de voz (OGG/Opus, formato que Telegram acepta) + botones
-                caption = (f"🪄 **¡Tu Sticker Animado está listo arriba!** ⚡\n\n"
-                           f"👆 *Toca el sticker para guardarlo en tus Stickers de Telegram.*\n"
-                           f"🎵 *Audio de los gestos:* **{snd_name}**\n🎭 *Estilo:* **{mode_label}**")
-                voice_ogg = os.path.join(DOWNLOADS_DIR, f"stk_voice_{user_id}_{timestamp_now}.ogg")
-                sent = False
-                try:
-                    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", temp_snd, "-t", "15", "-ac", "1",
-                                    "-c:a", "libopus", "-b:a", "64k", voice_ogg],
-                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
-                    if os.path.exists(voice_ogg):
-                        with open(voice_ogg, "rb") as af:
-                            vr = requests.post(f"{self.base_url}/sendVoice",
-                                               data={"chat_id": chat_id, "caption": caption, "reply_markup": markup},
-                                               files={"voice": ("audio.ogg", af, "audio/ogg")}, timeout=30)
-                            sent = vr.ok
-                            if not vr.ok:
-                                write_log(f"⚠️ sendVoice error: {vr.text[:200]}")
-                except Exception as e:
-                    write_log(f"⚠️ voz sticker: {e}")
-                finally:
-                    if os.path.exists(voice_ogg):
-                        try: os.remove(voice_ogg)
-                        except: pass
-                if not sent:
-                    self.call_api("sendMessage", {"chat_id": chat_id, "text": caption, "reply_markup": markup})
-            elif merged_ok:
-                with open(merged_video, "rb") as vf:
-                    requests.post(
-                        f"{self.base_url}/sendVideo",
-                        data={
-                            "chat_id": chat_id,
-                            "caption": f"🪄 **¡Tu Sticker Animado está listo!** ⚡\n🎵 *Sonido:* **{snd_name}**",
-                            "reply_markup": markup
-                        },
-                        files={"video": vf}
-                    )
-            else:
-                self.call_api("sendMessage", {"chat_id": chat_id, "text": "❌ No se pudo sintetizar el sticker animado."})
+            ai_note = ""
+            if effect == "ai_talk" and not bundle.get("used_ai_talk"):
+                ai_note = "\nℹ️ *Nota:* El servidor neural IA estaba en cola o sin rostro frontal; aplicamos animación nítida al ritmo del audio."
+            elif bundle.get("used_ai_talk"):
+                ai_note = "\n🗣️ **¡Habla IA Neural aplicada en la nube!**"
+
+            txt_info = f" | ✍️ `{top_text} {bottom_text}`".strip() if (top_text or bottom_text) else ""
+            caption = (
+                f"🪄 **¡Tu Sticker está listo arriba!** ⚡\n\n"
+                f"👆 *Toca el sticker de arriba para guardarlo directo en tus Stickers de Telegram.*\n"
+                f"🎵 *Audio:* **{snd_name}**\n"
+                f"🖼️ *Marco:* **{frame_label}** | 🎭 **{eff_labels.get(bundle.get('effect', effect), eff_label)}**{txt_info}{ai_note}\n\n"
+                f"👇 Descárgalo para **WhatsApp (.WEBP)**, **Telegram (.WEBM)** o **Unido con Audio (.MP4)**:"
+            )
+
+            # 2) Enviar Audio como Nota de Voz OGG/Opus + Panel completo de edición/descarga
+            voice_ogg = os.path.join(DOWNLOADS_DIR, f"stk_voice_{user_id}_{timestamp_now}.ogg")
+            sent = False
+            try:
+                subprocess.run(
+                    [imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", temp_snd, "-t", "15", "-ac", "1", "-c:a", "libopus", "-b:a", "64k", voice_ogg],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20,
+                )
+                if os.path.exists(voice_ogg):
+                    with open(voice_ogg, "rb") as af:
+                        vr = requests.post(
+                            f"{self.base_url}/sendVoice",
+                            data={"chat_id": chat_id, "caption": caption, "reply_markup": markup},
+                            files={"voice": ("audio.ogg", af, "audio/ogg")},
+                            timeout=30,
+                        )
+                        sent = vr.ok
+                        if not vr.ok:
+                            write_log(f"⚠️ sendVoice error: {vr.text[:200]}")
+            except Exception as e:
+                write_log(f"⚠️ voz sticker: {e}")
+            finally:
+                if os.path.exists(voice_ogg):
+                    try: os.remove(voice_ogg)
+                    except: pass
+
+            if not sent:
+                self.call_api("sendMessage", {"chat_id": chat_id, "text": caption, "reply_markup": markup})
         except Exception as e:
             self.call_api("sendMessage", {"chat_id": chat_id, "text": f"❌ Error procesando sticker: {e}"})
         finally:
@@ -1655,21 +1656,34 @@ class TelegramStarsBot:
                                     with open(dl_snd_path, "wb") as sf:
                                         sf.write(r_snd.content)
                                         
-                                    photo_id = PENDING_STICKER_PHOTOS.get(user_id)
+                                    photo_id = PENDING_STICKER_PHOTOS.get(user_id) or LAST_STICKER_DATA.get(user_id, {}).get("file_id")
                                     if photo_id:
-                                        # Registrar como sonido temporal
                                         custom_key = f"internet_{int(time.time())}"
                                         SOUNDS_LIB[custom_key] = {"name": s_name, "file": os.path.basename(dl_snd_path)}
-                                        # Mover o vincular a SOUNDS_DIR
                                         target_dest = os.path.join(SOUNDS_DIR, os.path.basename(dl_snd_path))
                                         if os.path.exists(dl_snd_path):
-                                            import shutil
                                             shutil.copy2(dl_snd_path, target_dest)
-                                        self.service_make_sticker(chat_id, user_id, username, lang_code, photo_id, sound_id=custom_key)
+                                        set_user_active_mode(chat_id, "sticker")
+                                        last_d = LAST_STICKER_DATA.get(user_id, {})
+                                        self.service_make_sticker(
+                                            chat_id, user_id, username, lang_code, photo_id,
+                                            sound_id=custom_key,
+                                            anim_mode=last_d.get("anim_mode", "beat_pop"),
+                                            frame_style=last_d.get("frame_style") if user_id in LAST_STICKER_DATA else None,
+                                            is_video=last_d.get("is_video", False),
+                                            is_edit=(user_id in LAST_STICKER_DATA),
+                                        )
                                     else:
+                                        custom_key = f"internet_{int(time.time())}"
+                                        SOUNDS_LIB[custom_key] = {"name": s_name, "file": os.path.basename(dl_snd_path)}
+                                        target_dest = os.path.join(SOUNDS_DIR, os.path.basename(dl_snd_path))
+                                        if os.path.exists(dl_snd_path):
+                                            shutil.copy2(dl_snd_path, target_dest)
+                                        PENDING_SOUND_PREF[user_id] = custom_key
+                                        set_user_active_mode(chat_id, "sticker")
                                         self.call_api("sendMessage", {
                                             "chat_id": chat_id,
-                                            "text": f"✅ **Sonido de Internet seleccionado:** {s_name}\n\n👉 Ahora **envía la foto** que deseas convertir en Sticker:"
+                                            "text": f"✅ **Sonido de Internet seleccionado:** {s_name}\n\n👉 Ahora **envía tu foto, video o GIF** para convertirlo en Sticker con este sonido:"
                                         })
                                 except Exception as e:
                                     self.call_api("sendMessage", {"chat_id": chat_id, "text": f"❌ Error al procesar sonido: {e}"})
@@ -1677,36 +1691,95 @@ class TelegramStarsBot:
                                 sound_id = data.replace("snd_", "")
                                 photo_id = PENDING_STICKER_PHOTOS.get(user_id) or LAST_STICKER_DATA.get(user_id, {}).get("file_id")
                                 if photo_id:
-                                    last_anim = LAST_STICKER_DATA.get(user_id, {}).get("anim_mode", "lipsync")
-                                    last_is_vid = LAST_STICKER_DATA.get(user_id, {}).get("is_video", False)
-                                    self.service_make_sticker(chat_id, user_id, username, lang_code, photo_id, sound_id=sound_id, anim_mode=last_anim, is_video=last_is_vid, is_edit=(user_id in LAST_STICKER_DATA))
+                                    last_d = LAST_STICKER_DATA.get(user_id, {})
+                                    last_anim = last_d.get("anim_mode", "beat_pop")
+                                    last_is_vid = last_d.get("is_video", False)
+                                    self.service_make_sticker(
+                                        chat_id, user_id, username, lang_code, photo_id,
+                                        sound_id=sound_id, anim_mode=last_anim,
+                                        frame_style=last_d.get("frame_style") if user_id in LAST_STICKER_DATA else None,
+                                        is_video=last_is_vid, is_edit=(user_id in LAST_STICKER_DATA)
+                                    )
                                 else:
                                     PENDING_SOUND_PREF[user_id] = sound_id
+                                    set_user_active_mode(chat_id, "sticker")
                                     snd_name = SOUNDS_LIB.get(sound_id, {}).get("name", sound_id)
                                     self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"], "text": f"✅ Sonido seleccionado: {snd_name}"})
                                     self.call_api("sendMessage", {
                                         "chat_id": chat_id,
                                         "text": f"🎵 **Sonido seleccionado:** {snd_name}\n\n👉 **Envía ahora la foto, video o meme** que deseas convertir en tu Sticker con este sonido:"
                                     })
-                            elif data == "choose_anim":
+                            elif data == "choose_frame":
                                 keyboard = [
-                                    [{"text": "🗣️ Habla y Gestos IA (Lip-Sync)", "callback_data": "anim_lipsync"}],
-                                    [{"text": "🕺 Ritmo & Bailoteo Meme", "callback_data": "anim_dance"}, {"text": "💥 Vibración Bass Boost", "callback_data": "anim_vibrate"}],
-                                    [{"text": "🔍 Zoom Dramático Beat", "callback_data": "anim_zoom"}, {"text": "🖼️ Estático con Marco", "callback_data": "anim_static"}],
+                                    [{"text": "✂️ Sin Fondo + Borde Blanco", "callback_data": "frame_cutout"}, {"text": "🖼️ Foto Completa", "callback_data": "frame_full"}],
+                                    [{"text": "⭕ Circular Sticker", "callback_data": "frame_circle"}, {"text": "📸 Tarjeta Meme Blanca", "callback_data": "frame_meme"}],
                                     [{"text": "🔙 Volver al Menú", "callback_data": "view_menu"}]
                                 ]
                                 self.call_api("sendMessage", {
                                     "chat_id": chat_id,
-                                    "text": "🎭 **Elige el estilo de movimiento para tu Sticker:**\n\n👇 ¿Cómo quieres que se mueva la imagen con el sonido?:",
+                                    "text": "✂️ **Elige el Recorte o Marco para tu Sticker:**\n\n👇 Cambia el estilo sin gastar pruebas extra:",
+                                    "reply_markup": json.dumps({"inline_keyboard": keyboard})
+                                })
+                            elif data.startswith("frame_"):
+                                f_style = data.replace("frame_", "")
+                                last = LAST_STICKER_DATA.get(user_id)
+                                if last:
+                                    self.service_make_sticker(
+                                        chat_id, user_id, username, lang_code, last["file_id"],
+                                        sound_id=last.get("sound_id", "cat_pop"),
+                                        anim_mode=last.get("anim_mode", "beat_pop"),
+                                        frame_style=f_style,
+                                        is_video=last.get("is_video", False), is_edit=True
+                                    )
+                                else:
+                                    self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"], "text": "📸 Envía una foto primero.", "show_alert": True})
+                            elif data == "choose_anim":
+                                keyboard = [
+                                    [{"text": "🎵 Ritmo Viral (Limpio)", "callback_data": "anim_beat_pop"}, {"text": "🗣️ Habla IA Real (Nube)", "callback_data": "anim_ai_talk"}],
+                                    [{"text": "💥 Impacto Meme", "callback_data": "anim_shake"}, {"text": "🎈 Rebote Elástico", "callback_data": "anim_bounce"}],
+                                    [{"text": "🔍 Zoom Dramático", "callback_data": "anim_zoom"}, {"text": "🖼️ Sticker Fijo HD", "callback_data": "anim_static"}],
+                                    [{"text": "🔙 Volver al Menú", "callback_data": "view_menu"}]
+                                ]
+                                self.call_api("sendMessage", {
+                                    "chat_id": chat_id,
+                                    "text": "🎭 **Elige el efecto o movimiento del Sticker:**\n\n• **🎵 Ritmo Viral:** Latido limpio al ritmo del sonido.\n• **🗣️ Habla IA Real:** Sincronización labial neural en la nube (para rostros humanos).\n👇 Toca uno:",
                                     "reply_markup": json.dumps({"inline_keyboard": keyboard})
                                 })
                             elif data.startswith("anim_"):
                                 anim_mode = data.replace("anim_", "")
                                 last = LAST_STICKER_DATA.get(user_id)
                                 if last:
-                                    self.service_make_sticker(chat_id, user_id, username, lang_code, last["file_id"], sound_id=last.get("sound_id", "cat_pop"), anim_mode=anim_mode, is_video=last.get("is_video", False), is_edit=True)
+                                    self.service_make_sticker(
+                                        chat_id, user_id, username, lang_code, last["file_id"],
+                                        sound_id=last.get("sound_id", "cat_pop"),
+                                        anim_mode=anim_mode,
+                                        frame_style=last.get("frame_style", "cutout"),
+                                        is_video=last.get("is_video", False), is_edit=True
+                                    )
                                 else:
-                                    self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"], "text": "📸 Envía primero una foto o meme para aplicar la animación.", "show_alert": True})
+                                    self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"], "text": "📸 Envía primero una foto o meme para aplicar el efecto.", "show_alert": True})
+                            elif data == "sticker_edit_text":
+                                if user_id in LAST_STICKER_DATA or user_id in PENDING_STICKER_PHOTOS:
+                                    set_user_active_mode(chat_id, "sticker_text")
+                                    self.call_api("sendMessage", {
+                                        "chat_id": chat_id,
+                                        "text": "✍️ **Escribe el texto para tu Sticker:**\n\n• Frase normal: `NO PUEDE SER`\n• Dos líneas (Arriba y Abajo): `CUANDO TE DICEN | QUE NO HAY PLATA`\n• Para quitar texto escribe: `borrar`"
+                                    })
+                                else:
+                                    self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"], "text": "📸 Envía una foto primero.", "show_alert": True})
+                            elif data == "send_mp4_preview":
+                                last = LAST_STICKER_DATA.get(user_id, {})
+                                mp4_p = last.get("mp4_path")
+                                mp4_k = last.get("mp4_key")
+                                if mp4_p and os.path.exists(mp4_p):
+                                    m_kb = json.dumps({"inline_keyboard": [[{"text": "📥 Descargar MP4 con Audio", "callback_data": f"dl_{mp4_k}"}]]}) if mp4_k else None
+                                    d_args = {"chat_id": chat_id, "caption": "🔊 **Sticker + Audio Unido (.MP4 512×512)** ⚡", "supports_streaming": True, "width": 512, "height": 512}
+                                    if m_kb:
+                                        d_args["reply_markup"] = m_kb
+                                    with open(mp4_p, "rb") as vf:
+                                        requests.post(f"{self.base_url}/sendVideo", data=d_args, files={"video": vf}, timeout=45)
+                                else:
+                                    self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"], "text": "Crea primero un sticker para ver el MP4.", "show_alert": True})
                             elif data == "reselect_sound":
                                 photo_id = PENDING_STICKER_PHOTOS.get(user_id) or LAST_STICKER_DATA.get(user_id, {}).get("file_id")
                                 if photo_id:
@@ -1723,7 +1796,7 @@ class TelegramStarsBot:
                                 set_user_active_mode(chat_id, "sticker")
                                 self.call_api("sendMessage", {
                                     "chat_id": chat_id,
-                                    "text": "📸 **¡Genial! Envía cualquier foto, video o meme aquí en el chat** y la transformaremos al instante en Sticker con Movimiento y nota de sonido meme sincronizada."
+                                    "text": "📸 **¡Genial! Envía cualquier foto, video, GIF o sticker aquí**\n\n• Opcional: escribe texto en el pie de foto (ej. `NO PUEDE SER` o `ARRIBA | ABAJO`).\n• Luego eliges el sonido o grabas tu propia nota de voz y obtienes el sticker listo para **WhatsApp (.WEBP)**, **Telegram (.WEBM)** y **Unido con Audio (.MP4)**."
                                 })
                             elif data.startswith("tr_mode_"):
                                 mode = data.replace("tr_mode_", "")
@@ -1827,10 +1900,14 @@ class TelegramStarsBot:
                             v_item = msg.get("video") or msg.get("animation") or msg.get("video_note")
                             if v_item:
                                 vid_file_id = v_item["file_id"]
-                                if "/sticker" in caption.lower() or active_mode == "sticker":
+                                if "/sticker" in caption.lower() or active_mode in ("sticker", "sticker_text"):
+                                    from sticker_engine import parse_caption_text
+                                    top_t, bot_t = parse_caption_text(caption)
+                                    PENDING_STICKER_META[user_id] = {"top_text": top_t, "bottom_text": bot_t, "is_video": True}
+                                    set_user_active_mode(chat_id, "sticker")
                                     pre_snd = PENDING_SOUND_PREF.pop(user_id, None)
                                     if pre_snd:
-                                        self.service_make_sticker(chat_id, user_id, username, lang_code, vid_file_id, sound_id=pre_snd, is_video=True)
+                                        self.service_make_sticker(chat_id, user_id, username, lang_code, vid_file_id, sound_id=pre_snd, top_text=top_t, bottom_text=bot_t, is_video=True)
                                     else:
                                         self.prompt_sound_selection(chat_id, user_id, username, lang_code, vid_file_id)
                                     continue
@@ -1843,21 +1920,46 @@ class TelegramStarsBot:
                                 fname = doc.get("file_name", "").lower()
                                 is_vid = mime.startswith("video/") or fname.endswith((".mp4", ".mov", ".gif", ".webm"))
                                 is_img = mime.startswith("image/") or fname.endswith((".jpg", ".jpeg", ".png", ".webp"))
-                                if active_mode == "sticker" and (is_vid or is_img):
+                                if active_mode in ("sticker", "sticker_text") and (is_vid or is_img):
+                                    from sticker_engine import parse_caption_text
+                                    top_t, bot_t = parse_caption_text(caption)
+                                    PENDING_STICKER_META[user_id] = {"top_text": top_t, "bottom_text": bot_t, "is_video": is_vid}
+                                    set_user_active_mode(chat_id, "sticker")
                                     pre_snd = PENDING_SOUND_PREF.pop(user_id, None)
                                     if pre_snd:
-                                        self.service_make_sticker(chat_id, user_id, username, lang_code, doc_id, sound_id=pre_snd, is_video=is_vid)
+                                        self.service_make_sticker(chat_id, user_id, username, lang_code, doc_id, sound_id=pre_snd, top_text=top_t, bottom_text=bot_t, is_video=is_vid)
                                     else:
                                         self.prompt_sound_selection(chat_id, user_id, username, lang_code, doc_id)
                                     continue
 
+                            # Stickers enviados al bot en Modo Sticker para convertirlos/ponerles sonido y texto
+                            if "sticker" in msg and active_mode in ("sticker", "sticker_text"):
+                                stk_obj = msg["sticker"]
+                                if stk_obj.get("is_animated"):
+                                    self.call_api("sendMessage", {"chat_id": chat_id, "text": "ℹ️ Los stickers vectoriales `.TGS` no se pueden editar; envía una **foto, GIF, video o sticker de imagen/video**."})
+                                else:
+                                    s_fid = stk_obj["file_id"]
+                                    s_vid = bool(stk_obj.get("is_video"))
+                                    PENDING_STICKER_META[user_id] = {"top_text": "", "bottom_text": "", "is_video": s_vid}
+                                    set_user_active_mode(chat_id, "sticker")
+                                    pre_snd = PENDING_SOUND_PREF.pop(user_id, None)
+                                    if pre_snd:
+                                        self.service_make_sticker(chat_id, user_id, username, lang_code, s_fid, sound_id=pre_snd, is_video=s_vid)
+                                    else:
+                                        self.prompt_sound_selection(chat_id, user_id, username, lang_code, s_fid)
+                                continue
+
                             # Photo messages
                             if "photo" in msg:
                                 largest_photo = msg["photo"][-1]["file_id"]
-                                if "/sticker" in caption.lower() or active_mode == "sticker":
+                                if "/sticker" in caption.lower() or active_mode in ("sticker", "sticker_text"):
+                                    from sticker_engine import parse_caption_text
+                                    top_t, bot_t = parse_caption_text(caption)
+                                    PENDING_STICKER_META[user_id] = {"top_text": top_t, "bottom_text": bot_t, "is_video": False}
+                                    set_user_active_mode(chat_id, "sticker")
                                     pre_snd = PENDING_SOUND_PREF.pop(user_id, None)
                                     if pre_snd:
-                                        self.service_make_sticker(chat_id, user_id, username, lang_code, largest_photo, sound_id=pre_snd)
+                                        self.service_make_sticker(chat_id, user_id, username, lang_code, largest_photo, sound_id=pre_snd, top_text=top_t, bottom_text=bot_t)
                                     else:
                                         self.prompt_sound_selection(chat_id, user_id, username, lang_code, largest_photo)
                                 elif "/pdf" in caption.lower() or active_mode == "pdf":
@@ -1866,19 +1968,69 @@ class TelegramStarsBot:
                                     self.service_enhance_photo(chat_id, user_id, username, lang_code, largest_photo)
                                 continue
 
-                            # Voice notes & Audios
-                            if "voice" in msg:
-                                dur = msg["voice"].get("duration", 0)
-                                self.service_voice_note(chat_id, user_id, username, lang_code, msg["voice"]["file_id"], dur)
-                                continue
-
-                            if "audio" in msg:
-                                dur = msg["audio"].get("duration", 0)
-                                self.service_voice_note(chat_id, user_id, username, lang_code, msg["audio"]["file_id"], dur)
+                            # Voice notes & Audios (si está en Modo Sticker, se unen al sticker del usuario — foto antes o después)
+                            if "voice" in msg or "audio" in msg:
+                                media_obj = msg.get("voice") or msg.get("audio")
+                                media_fid = media_obj["file_id"]
+                                dur = media_obj.get("duration", 0)
+                                target_pic = PENDING_STICKER_PHOTOS.get(user_id) or LAST_STICKER_DATA.get(user_id, {}).get("file_id")
+                                if active_mode in ("sticker", "sticker_text", "search_sound"):
+                                    ts_a = int(time.time())
+                                    ext_a = ".ogg" if "voice" in msg else ".mp3"
+                                    snd_fname = f"user_snd_{user_id}_{ts_a}{ext_a}"
+                                    snd_dest = os.path.join(SOUNDS_DIR, snd_fname)
+                                    if self.download_telegram_file(media_fid, snd_dest):
+                                        custom_k = f"user_{user_id}_{ts_a}"
+                                        lbl = media_obj.get("title") or ("Tu Nota de Voz" if "voice" in msg else "Tu Audio MP3")
+                                        SOUNDS_LIB[custom_k] = {"name": f"🎙️ {lbl[:26]}", "file": snd_fname}
+                                        set_user_active_mode(chat_id, "sticker")
+                                        if target_pic:
+                                            last_d = LAST_STICKER_DATA.get(user_id, {})
+                                            self.service_make_sticker(
+                                                chat_id, user_id, username, lang_code, target_pic,
+                                                sound_id=custom_k,
+                                                anim_mode=last_d.get("anim_mode", "beat_pop"),
+                                                frame_style=last_d.get("frame_style") if user_id in LAST_STICKER_DATA else None,
+                                                is_video=last_d.get("is_video", False),
+                                                is_edit=(user_id in LAST_STICKER_DATA),
+                                            )
+                                        else:
+                                            PENDING_SOUND_PREF[user_id] = custom_k
+                                            self.call_api("sendMessage", {
+                                                "chat_id": chat_id,
+                                                "text": f"🎙️ **Audio guardado:** {SOUNDS_LIB[custom_k]['name']}\n\n👉 **Envía ahora la foto, video o GIF** y lo uniré con este audio creando tu sticker."
+                                            })
+                                        continue
+                                    self.call_api("sendMessage", {"chat_id": chat_id, "text": "❌ No pude descargar ese audio para el sticker."})
+                                    continue
+                                self.service_voice_note(chat_id, user_id, username, lang_code, media_fid, dur)
                                 continue
 
                             # Text routing & URL extraction
                             extracted_url = extract_url(text)
+
+                            if active_mode == "sticker_text" and text and not text.startswith("/"):
+                                from sticker_engine import parse_caption_text
+                                top_t, bot_t = parse_caption_text(text)
+                                set_user_active_mode(chat_id, "sticker")
+                                last_d = LAST_STICKER_DATA.get(user_id)
+                                if last_d:
+                                    self.service_make_sticker(
+                                        chat_id, user_id, username, lang_code, last_d["file_id"],
+                                        sound_id=last_d.get("sound_id", "cat_pop"),
+                                        anim_mode=last_d.get("anim_mode", "beat_pop"),
+                                        frame_style=last_d.get("frame_style", "cutout"),
+                                        top_text=top_t,
+                                        bottom_text=bot_t,
+                                        is_video=last_d.get("is_video", False),
+                                        is_edit=True,
+                                    )
+                                elif user_id in PENDING_STICKER_PHOTOS:
+                                    PENDING_STICKER_META.setdefault(user_id, {})
+                                    PENDING_STICKER_META[user_id]["top_text"] = top_t
+                                    PENDING_STICKER_META[user_id]["bottom_text"] = bot_t
+                                    self.prompt_sound_selection(chat_id, user_id, username, lang_code, PENDING_STICKER_PHOTOS[user_id])
+                                continue
 
                             if text.startswith("/mp3") or active_mode == "mp3":
                                 url_target = extracted_url or text.replace("/mp3", "").strip()

@@ -336,7 +336,13 @@
 
   <!-- Panel 2: Sonido -->
   <div class="panel" id="tab-sound">
-    <div class="panel-title"><span>Elige, sube o graba el sonido</span><span id="currentSoundLabel">🐱 Gato Pop</span></div>
+    <div class="panel-title"><span>Elige, busca, sube o graba el sonido</span><span id="currentSoundLabel">🐱 Gato Pop</span></div>
+    <div style="display:flex; gap:6px; margin-bottom:9px;">
+      <input type="text" id="internetSearchInput" placeholder="Buscar sonido meme (ej: bruh, risa, tilin)...">
+      <button class="btn btn-primary" id="btnSearchInternet" type="button" style="white-space:nowrap;">🔍 Buscar</button>
+    </div>
+    <div id="internetSearchStatus" style="font-size:11px; color:var(--muted); margin-bottom:6px; display:none;"></div>
+    <div id="internetSoundList" class="sound-grid" style="display:none; max-height:130px; border-bottom:1px solid var(--border); padding-bottom:8px;"></div>
     <div class="sound-grid" id="soundGrid"></div>
     <div class="upload-row">
       <label class="btn" for="audioInput">📂 Subir MP3 / WAV</label>
@@ -347,7 +353,7 @@
 
   <!-- Panel 3: Texto y Emojis -->
   <div class="panel" id="tab-text">
-    <div class="panel-title"><span>Texto Meme & Emojis</span></div>
+    <div class="panel-title"><span>Texto Meme, Color & Emojis</span></div>
     <div class="field">
       <label><span>Texto Superior</span></label>
       <input type="text" id="topText" placeholder="Ej: CUANDO TE DICEN...">
@@ -359,6 +365,16 @@
     <div class="field">
       <label><span>Tamaño de letra</span><span id="fontSizeVal">46px</span></label>
       <input type="range" id="fontSize" min="24" max="76" value="46">
+    </div>
+    <div class="field">
+      <label><span>Color del texto</span></label>
+      <div class="emoji-row" id="colorRow">
+        <button class="emoji-btn active" data-color="#ffffff" type="button" style="background:#ffffff;color:#000;font-size:12px;font-weight:800;">A</button>
+        <button class="emoji-btn" data-color="#facc15" type="button" style="background:#facc15;color:#000;font-size:12px;font-weight:800;">A</button>
+        <button class="emoji-btn" data-color="#00e5ff" type="button" style="background:#00e5ff;color:#000;font-size:12px;font-weight:800;">A</button>
+        <button class="emoji-btn" data-color="#ff3b5c" type="button" style="background:#ff3b5c;color:#fff;font-size:12px;font-weight:800;">A</button>
+        <button class="emoji-btn" data-color="#4ade80" type="button" style="background:#4ade80;color:#000;font-size:12px;font-weight:800;">A</button>
+      </div>
     </div>
     <div class="field">
       <label><span>Emoji decorativo (esquina)</span></label>
@@ -377,14 +393,22 @@
 
   <!-- Panel 4: Marco y Ajuste -->
   <div class="panel" id="tab-frame">
-    <div class="panel-title"><span>Formato del Sticker</span></div>
+    <div class="panel-title"><span>Recorte, Borde Blanco & Marco</span></div>
     <div class="chip-grid" id="frameGrid">
-      <button class="chip active" data-frame="white">⬜ Marco Blanco Meme</button>
-      <button class="chip" data-frame="transparent">🔲 Fondo Transparente</button>
+      <button class="chip active" data-frame="rounded">✂️ Recorte + Borde</button>
       <button class="chip" data-frame="circle">⭕ Circular Sticker</button>
-      <button class="chip" data-frame="neon">🌈 Fondo Neón</button>
+      <button class="chip" data-frame="white">⬜ Meme Blanco</button>
+      <button class="chip" data-frame="transparent">🔲 Solo Transparente</button>
     </div>
     <div class="field" style="margin-top:12px;">
+      <label><span>Grosor Borde Blanco Sticker</span><span id="borderVal">10px</span></label>
+      <input type="range" id="borderWidth" min="0" max="18" value="10">
+    </div>
+    <div class="field">
+      <label><span>Quitar fondo sólido (tolerancia)</span><span id="bgTolVal">0</span></label>
+      <input type="range" id="bgTolerance" min="0" max="85" value="0">
+    </div>
+    <div class="field">
       <label><span>Zoom de la imagen</span><span id="zoomVal">100%</span></label>
       <input type="range" id="imgZoom" min="60" max="180" value="100">
     </div>
@@ -397,10 +421,10 @@
   <!-- Exportación -->
   <div class="export-box">
     <div id="statusBar" class="status-bar">Listo: sube tu foto y elige un sonido 🎵</div>
-    <button class="btn btn-success btn-full" id="btnExportVideo">🎬 Crear y Descargar Sticker con Sonido</button>
+    <button class="btn btn-success btn-full" id="btnExportVideo">🔊 Crear y Descargar Sticker + Audio Unido (.MP4/.WEBM)</button>
     <div class="upload-row">
-      <button class="btn" id="btnExportWebp">🖼️ Guardar .WEBP</button>
-      <a class="btn" id="btnSendToBot" href="https://t.me/nexus_global_vault_bot?start=promo_stickers" target="_blank">🗣️ Lip-Sync IA en Bot</a>
+      <button class="btn" id="btnExportWebp">💚 Descargar Sticker WhatsApp (.WEBP 512×512)</button>
+      <a class="btn" id="btnSendToBot" href="https://t.me/nexus_global_vault_bot?start=promo_stickers" target="_blank">🗣️ Abrir Bot (Recorte IA + Habla IA + Pack Telegram/WhatsApp)</a>
     </div>
 
     <!-- Panel de Descarga Lista (funciona en Telegram WebApp, Móvil y PC) -->
@@ -431,13 +455,17 @@ const recPill = document.getElementById('recPill');
 
 const state = {
   img: null,
+  processedImgCanvas: null,
   anim: 'reactive',
   intensity: 1.0,
-  frame: 'white',
+  frame: 'rounded',
+  borderWidth: 10,
+  bgTolerance: 0,
   zoom: 1.0,
   offsetY: 0,
   topText: '',
   bottomText: '',
+  textColor: '#ffffff',
   fontSize: 46,
   emoji: '',
   soundId: 'cat_pop',
@@ -512,6 +540,105 @@ document.querySelectorAll('#frameGrid .chip').forEach(c => {
   };
 });
 
+// Text color picker
+document.querySelectorAll('#colorRow .emoji-btn').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('#colorRow .emoji-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    state.textColor = b.dataset.color;
+    drawFrame(0, 0);
+  };
+});
+
+// Border & Color-Key background removal
+function rebuildProcessedImage() {
+  if (!state.img) { state.processedImgCanvas = null; return; }
+  if (state.bgTolerance <= 0) { state.processedImgCanvas = state.img; return; }
+  const off = document.createElement('canvas');
+  const w = Math.min(state.img.width, 512);
+  const h = Math.round(state.img.height * (w / state.img.width));
+  off.width = w; off.height = h;
+  const octx = off.getContext('2d');
+  octx.drawImage(state.img, 0, 0, w, h);
+  const imgData = octx.getImageData(0, 0, w, h);
+  const d = imgData.data;
+  // Color de esquina superior izquierda como fondo a quitar
+  const br = d[0], bg = d[1], bb = d[2];
+  const tol = state.bgTolerance * 2.5;
+  for (let i = 0; i < d.length; i += 4) {
+    const dist = Math.hypot(d[i] - br, d[i + 1] - bg, d[i + 2] - bb);
+    if (dist < tol) d[i + 3] = 0;
+    else if (dist < tol + 25) d[i + 3] = Math.round(((dist - tol) / 25) * 255);
+  }
+  octx.putImageData(imgData, 0, 0);
+  state.processedImgCanvas = off;
+}
+
+document.getElementById('borderWidth').oninput = e => {
+  state.borderWidth = parseInt(e.target.value, 10);
+  document.getElementById('borderVal').textContent = e.target.value + 'px';
+  drawFrame(0, 0);
+};
+document.getElementById('bgTolerance').oninput = e => {
+  state.bgTolerance = parseInt(e.target.value, 10);
+  document.getElementById('bgTolVal').textContent = e.target.value;
+  rebuildProcessedImage();
+  drawFrame(0, 0);
+};
+
+// Live MyInstants internet search with clean CORS fallback
+document.getElementById('btnSearchInternet').onclick = async () => {
+  const q = document.getElementById('internetSearchInput').value.trim();
+  if (!q) return;
+  const st = document.getElementById('internetSearchStatus');
+  const listEl = document.getElementById('internetSoundList');
+  st.style.display = 'block';
+  st.textContent = '🔎 Buscando en Internet...';
+  try {
+    const apiUrl = 'https://www.myinstants.com/api/v1/instants/?name=' + encodeURIComponent(q) + '&format=json';
+    const res = await fetch('https://corsproxy.io/?' + encodeURIComponent(apiUrl));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const items = (data && data.results ? data.results : []).filter(x => x.sound).slice(0, 6);
+    if (!items.length) {
+      st.textContent = '❌ No se encontraron resultados. Prueba otra palabra o usa "buscar ' + q + '" en el Bot.';
+      listEl.style.display = 'none';
+      return;
+    }
+    listEl.innerHTML = '';
+    listEl.style.display = 'grid';
+    st.textContent = `✅ Toca uno de los ${items.length} sonidos encontrados:`;
+    items.forEach(item => {
+      const b = document.createElement('button');
+      b.className = 'sound-item';
+      b.type = 'button';
+      b.innerHTML = `<span>🎵 ${(item.name || q).slice(0, 18)}</span><span>▶</span>`;
+      b.onclick = async () => {
+        try {
+          st.textContent = '⏳ Cargando audio...';
+          const aRes = await fetch('https://corsproxy.io/?' + encodeURIComponent(item.sound));
+          if (!aRes.ok) throw new Error('Audio CORS');
+          const arr = await aRes.arrayBuffer();
+          const ctxA = getAudioCtx();
+          state.customAudioBuffer = await ctxA.decodeAudioData(arr);
+          state.soundId = 'net_' + (item.name || q).replace(/\W+/g, '_').slice(0, 12);
+          document.querySelectorAll('.sound-item').forEach(x => x.classList.remove('active'));
+          b.classList.add('active');
+          document.getElementById('currentSoundLabel').textContent = '🌐 ' + (item.name || q).slice(0, 18);
+          st.textContent = '✅ Audio cargado y listo.';
+          playPreview();
+        } catch (err) {
+          st.textContent = '⚠️ El sitio bloqueó el audio en web (CORS). En el Bot sí descarga sin límites: escribe "buscar ' + q + '".';
+        }
+      };
+      listEl.appendChild(b);
+    });
+  } catch (err) {
+    st.textContent = '⚠️ Buscador web limitado por CORS del navegador. Puedes subir cualquier MP3 o usar "buscar ' + q + '" directo en @nexus_global_vault_bot.';
+    listEl.style.display = 'none';
+  }
+};
+
 // Emojis
 document.querySelectorAll('#emojiRow .emoji-btn').forEach(b => {
   b.onclick = () => {
@@ -554,6 +681,7 @@ document.getElementById('imgInput').onchange = e => {
     const img = new Image();
     img.onload = () => {
       state.img = img;
+      rebuildProcessedImage();
       statusBar.textContent = '✅ Foto cargada. ¡Toca Probar Animación o Crear Sticker!';
       drawFrame(0, 0);
     };
@@ -730,9 +858,20 @@ function drawFrame(tSec, energy) {
   }
 
   ctx.save();
+  const activeImg = state.processedImgCanvas || state.img;
+  const bw = state.borderWidth || 0;
+
   if (state.frame === 'circle') {
     ctx.beginPath();
-    ctx.arc(256, 256, 236, 0, Math.PI * 2);
+    ctx.arc(256, 256, 230, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+  } else if (state.frame === 'rounded' && state.bgTolerance === 0 && activeImg) {
+    const sb = Math.min(440 / activeImg.width, 440 / activeImg.height) * state.zoom;
+    const cw = Math.min(460, activeImg.width * sb);
+    const ch = Math.min(460, activeImg.height * sb);
+    ctx.beginPath();
+    ctx.roundRect(256 - cw / 2, 256 - ch / 2, cw, ch, 34);
     ctx.closePath();
     ctx.clip();
   }
@@ -741,11 +880,33 @@ function drawFrame(tSec, energy) {
   ctx.rotate(rot);
   ctx.scale(sx, sy);
 
-  if (state.img) {
-    const scaleBase = Math.min(512 / state.img.width, 512 / state.img.height) * state.zoom;
-    const dw = state.img.width * scaleBase;
-    const dh = state.img.height * scaleBase;
-    ctx.drawImage(state.img, -dw / 2, -dh / 2 + state.offsetY, dw, dh);
+  if (activeImg) {
+    const targetBox = (state.frame === 'white') ? 490 : 444;
+    const scaleBase = Math.min(targetBox / activeImg.width, targetBox / activeImg.height) * state.zoom;
+    const dw = activeImg.width * scaleBase;
+    const dh = activeImg.height * scaleBase;
+
+    // Borde blanco die-cut estilo Sticker.ly cuando se recortó fondo sólido
+    if (bw > 0 && state.bgTolerance > 0 && state.frame !== 'white') {
+      const steps = 12;
+      const offC = document.createElement('canvas');
+      offC.width = Math.max(4, Math.round(dw));
+      offC.height = Math.max(4, Math.round(dh));
+      const octx = offC.getContext('2d');
+      octx.drawImage(activeImg, 0, 0, offC.width, offC.height);
+      octx.globalCompositeOperation = 'source-in';
+      octx.fillStyle = '#ffffff';
+      octx.fillRect(0, 0, offC.width, offC.height);
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,0.35)';
+      ctx.shadowBlur = 8;
+      for (let a = 0; a < steps; a++) {
+        const ang = (a / steps) * Math.PI * 2;
+        ctx.drawImage(offC, -dw / 2 + Math.cos(ang) * bw, -dh / 2 + state.offsetY + Math.sin(ang) * bw, dw, dh);
+      }
+      ctx.restore();
+    }
+    ctx.drawImage(activeImg, -dw / 2, -dh / 2 + state.offsetY, dw, dh);
   } else {
     // Placeholder mascot
     ctx.fillStyle = state.frame === 'white' ? '#f1f5f9' : 'rgba(255,255,255,0.08)';
@@ -762,13 +923,30 @@ function drawFrame(tSec, energy) {
   }
   ctx.restore();
 
-  // Circle white sticker border
-  if (state.frame === 'circle') {
+  // Circle or Rounded Die-Cut white sticker border
+  if (bw > 0 && state.frame === 'circle') {
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.35)';
+    ctx.shadowBlur = 8;
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 14;
+    ctx.lineWidth = bw;
     ctx.beginPath();
-    ctx.arc(256, 256, 236, 0, Math.PI * 2);
+    ctx.arc(256, 256, 230, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.restore();
+  } else if (bw > 0 && state.frame === 'rounded' && state.bgTolerance === 0 && activeImg) {
+    const sb = Math.min(440 / activeImg.width, 440 / activeImg.height) * state.zoom;
+    const cw = Math.min(460, activeImg.width * sb);
+    const ch = Math.min(460, activeImg.height * sb);
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.35)';
+    ctx.shadowBlur = 8;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = bw;
+    ctx.beginPath();
+    ctx.roundRect(256 - cw / 2, 256 - ch / 2, cw, ch, 34);
+    ctx.stroke();
+    ctx.restore();
   }
 
   // Meme Text
@@ -780,7 +958,7 @@ function drawFrame(tSec, energy) {
     ctx.textBaseline = 'middle';
     ctx.lineWidth = Math.max(5, state.fontSize * 0.16);
     ctx.strokeStyle = '#000000';
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = state.textColor || '#ffffff';
     ctx.lineJoin = 'round';
     const upper = txt.toUpperCase();
     ctx.strokeText(upper, 256, y, 470);
