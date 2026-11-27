@@ -22,6 +22,55 @@ import requests
 import yt_dlp
 import qrcode
 from PIL import Image, ImageEnhance
+import subprocess
+import uuid
+import imageio_ffmpeg
+
+DELIVERY_CACHE = {}
+
+def register_delivery_file(filepath, filename):
+    file_key = uuid.uuid4().hex[:8]
+    DELIVERY_CACHE[file_key] = {
+        "path": filepath,
+        "filename": filename,
+        "created_at": time.time()
+    }
+    now = time.time()
+    if len(DELIVERY_CACHE) > 100:
+        for k in list(DELIVERY_CACHE.keys()):
+            if now - DELIVERY_CACHE[k]["created_at"] > 7200:
+                p = DELIVERY_CACHE[k]["path"]
+                if os.path.exists(p) and "popular_stickers" not in p:
+                    try: os.remove(p)
+                    except: pass
+                DELIVERY_CACHE.pop(k, None)
+    return file_key
+
+def merge_image_and_audio_to_video(image_path, audio_path, output_mp4):
+    try:
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        ffmpeg_exe = "ffmpeg"
+    
+    cmd = [
+        ffmpeg_exe, "-y",
+        "-loop", "1",
+        "-i", image_path,
+        "-i", audio_path,
+        "-c:v", "libx264",
+        "-tune", "stillimage",
+        "-c:a", "aac",
+        "-b:a", "192k",
+        "-pix_fmt", "yuv420p",
+        "-vf", "scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2",
+        "-shortest",
+        output_mp4
+    ]
+    try:
+        res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
+        return res.returncode == 0 and os.path.exists(output_mp4)
+    except Exception:
+        return False
 
 def create_meme_pop_sound(out_path):
     sample_rate = 44100
@@ -479,16 +528,42 @@ class TelegramStarsBot:
             "reply_markup": reply_markup
         })
 
-    def get_delivery_markup(self, user_id):
+    def get_delivery_markup(self, user_id, download_key=None, download_label="📥 Descargar"):
         ref_link = f"https://t.me/nexus_global_vault_bot?start=ref_{user_id}"
         share_text = urllib.parse.quote("🔥 ¡Descarga videos de TikTok sin marca, MP3, Stickers con Sonido y 8 herramientas con 1 prueba GRATIS aquí! ⚡")
         share_url = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={share_text}"
-        return json.dumps({
-            "inline_keyboard": [
-                [{"text": "🚀 Compartir Bot (+1 Uso Gratis)", "url": share_url}],
-                [{"text": "🛠️ Menú (8 Herramientas)", "callback_data": "view_menu"}, {"text": "💳 Paquetes ($0.99)", "callback_data": "view_plans"}]
-            ]
-        })
+        
+        keyboard = []
+        if download_key:
+            keyboard.append([{"text": download_label, "callback_data": f"dl_{download_key}"}])
+        keyboard.append([{"text": "🚀 Compartir Bot (+1 Uso Gratis)", "url": share_url}])
+        keyboard.append([{"text": "🛠️ Menú (8 Herramientas)", "callback_data": "view_menu"}, {"text": "💳 Paquetes ($0.99)", "callback_data": "view_plans"}])
+        
+        return json.dumps({"inline_keyboard": keyboard})
+
+    def handle_download_callback(self, cb_id, chat_id, user_id, file_key):
+        file_info = DELIVERY_CACHE.get(file_key)
+        if file_info and os.path.exists(file_info["path"]):
+            self.call_api("answerCallbackQuery", {
+                "callback_query_id": cb_id,
+                "text": f"📥 Descargando {file_info['filename']}..."
+            })
+            with open(file_info["path"], "rb") as df:
+                requests.post(
+                    f"{self.base_url}/sendDocument",
+                    data={
+                        "chat_id": chat_id,
+                        "caption": f"📥 **Descarga Directa:** `{file_info['filename']}`\n⚡ Guardado en tu dispositivo con máxima calidad."
+                    },
+                    files={"document": (file_info["filename"], df)},
+                    timeout=90
+                )
+        else:
+            self.call_api("answerCallbackQuery", {
+                "callback_query_id": cb_id,
+                "text": "ℹ️ El archivo ya fue entregado arriba en este chat o ha expirado.",
+                "show_alert": True
+            })
 
     def send_referral_info(self, chat_id, lang_code):
         ref_link = f"https://t.me/nexus_global_vault_bot?start=ref_{chat_id}"
@@ -612,22 +687,34 @@ class TelegramStarsBot:
 
         if os.path.exists(stk_file) and os.path.exists(snd_file):
             consume_service(user_id, "sticker")
-            with open(stk_file, "rb") as sf:
-                requests.post(f"{self.base_url}/sendSticker", data={"chat_id": chat_id}, files={"sticker": sf})
-            with open(snd_file, "rb") as vf:
-                requests.post(
-                    f"{self.base_url}/sendVoice",
-                    data={
-                        "chat_id": chat_id,
-                        "caption": f"🔊 **¡Sonido del Sticker Viral #{meme_key.upper()}!**\n💡 *Reenvía el sticker y este audio juntos a tus chats.* ⚡",
-                        "reply_markup": self.get_delivery_markup(user_id)
-                    },
-                    files={"voice": vf}
-                )
-            self.call_api("sendMessage", {
-                "chat_id": chat_id,
-                "text": "✅ **¡Sticker Viral con Sonido entregado con éxito!** Toca el sticker para guardarlo."
-            })
+            merged_video = os.path.join(DOWNLOADS_DIR, f"stk_merged_{meme_key}_{user_id}_{int(time.time())}.mp4")
+            merged_ok = merge_image_and_audio_to_video(stk_file, snd_file, merged_video)
+            target_f = merged_video if merged_ok else stk_file
+            nice_name = f"Sticker_{meme_key.capitalize()}_Sonido.mp4" if merged_ok else f"Sticker_{meme_key}.webp"
+            
+            file_key = register_delivery_file(target_f, nice_name)
+            markup = self.get_delivery_markup(user_id, download_key=file_key, download_label="📥 Descargar Sticker con Sonido")
+
+            if merged_ok:
+                with open(merged_video, "rb") as vf:
+                    requests.post(
+                        f"{self.base_url}/sendVideo",
+                        data={
+                            "chat_id": chat_id,
+                            "caption": f"🪄 **¡Sticker Viral #{meme_key.upper()} con Sonido Unificado!** ⚡\n\n🔊 *Imagen y audio sincronizados en un solo archivo.*",
+                            "reply_markup": markup
+                        },
+                        files={"video": vf}
+                    )
+            else:
+                with open(stk_file, "rb") as sf:
+                    requests.post(f"{self.base_url}/sendSticker", data={"chat_id": chat_id}, files={"sticker": sf})
+                with open(snd_file, "rb") as vf:
+                    requests.post(
+                        f"{self.base_url}/sendVoice",
+                        data={"chat_id": chat_id, "caption": f"🔊 **¡Sonido del Sticker Viral #{meme_key.upper()}!**", "reply_markup": markup},
+                        files={"voice": vf}
+                    )
 
     def activate_service_by_num(self, chat_id, lang_code, num_str, username=""):
         s = SERVICES_INFO.get(num_str)
@@ -797,17 +884,15 @@ class TelegramStarsBot:
                 if consume_res == "free_consumed":
                     caption += "\n\n🎁 *Has usado tu prueba gratis de este servicio. Tienes 9 servicios más con prueba gratis en el menú.*"
 
+                file_key = register_delivery_file(target_file, f"Video_HD_{int(time.time())}.mp4")
+                markup = self.get_delivery_markup(user_id, download_key=file_key, download_label="📥 Descargar Video HD")
                 with open(target_file, "rb") as vf:
                     resp = requests.post(
                         f"{self.base_url}/sendVideo",
-                        data={"chat_id": chat_id, "caption": caption, "reply_markup": self.get_delivery_markup(user_id)},
+                        data={"chat_id": chat_id, "caption": caption, "reply_markup": markup},
                         files={"video": vf},
                         timeout=90
                     )
-                try:
-                    os.remove(target_file)
-                except Exception:
-                    pass
 
                 if resp.status_code == 200:
                     write_log(f"✅ Video entregado a @{username}")
@@ -850,17 +935,15 @@ class TelegramStarsBot:
             if target_file and os.path.exists(target_file):
                 consume_service(user_id, "mp3")
                 caption = "🎵 **Audio MP3 extraído con éxito con @nexus_global_vault_bot** ⚡"
+                file_key = register_delivery_file(target_file, f"Audio_MP3_{int(time.time())}.mp3")
+                markup = self.get_delivery_markup(user_id, download_key=file_key, download_label="📥 Descargar Audio MP3")
                 with open(target_file, "rb") as af:
                     requests.post(
                         f"{self.base_url}/sendAudio",
-                        data={"chat_id": chat_id, "caption": caption, "reply_markup": self.get_delivery_markup(user_id)},
+                        data={"chat_id": chat_id, "caption": caption, "reply_markup": markup},
                         files={"audio": af},
                         timeout=90
                     )
-                try:
-                    os.remove(target_file)
-                except Exception:
-                    pass
                 write_log(f"✅ Audio MP3 entregado a @{username}")
             else:
                 self.call_api("sendMessage", {"chat_id": chat_id, "text": "❌ Error al extraer el audio."})
@@ -889,28 +972,39 @@ class TelegramStarsBot:
 
                 consume_service(user_id, "sticker")
                 
-                # 1. Enviar Sticker oficial
-                with open(temp_out, "rb") as sf:
-                    requests.post(f"{self.base_url}/sendSticker", data={"chat_id": chat_id}, files={"sticker": sf})
+                merged_video = os.path.join(DOWNLOADS_DIR, f"stk_custom_{user_id}_{int(time.time())}.mp4")
+                merged_ok = merge_image_and_audio_to_video(temp_out, temp_snd, merged_video)
+                target_f = merged_video if merged_ok else temp_out
+                nice_name = "Mi_Sticker_Con_Sonido.mp4" if merged_ok else "Mi_Sticker.webp"
+                
+                file_key = register_delivery_file(target_f, nice_name)
+                markup = self.get_delivery_markup(user_id, download_key=file_key, download_label="📥 Descargar Sticker con Sonido")
 
-                # 2. Enviar Sonido sincronizado del sticker
-                if os.path.exists(temp_snd):
-                    with open(temp_snd, "rb") as vf:
+                if merged_ok:
+                    with open(merged_video, "rb") as vf:
                         requests.post(
-                            f"{self.base_url}/sendVoice",
+                            f"{self.base_url}/sendVideo",
                             data={
                                 "chat_id": chat_id,
-                                "caption": "🔊 **¡Sonido del Sticker!**\n💡 *Reenvía el sticker y este audio juntos para usarlos con sonido en tus chats.* ⚡",
-                                "reply_markup": self.get_delivery_markup(user_id)
+                                "caption": "🪄 **¡Tu Sticker con Sonido Unificado está listo!** ⚡\n\n🔊 *La imagen y el audio están unidos en un solo archivo con reproducción sincronizada.*",
+                                "reply_markup": markup
                             },
-                            files={"voice": vf}
+                            files={"video": vf}
                         )
-
-                self.call_api("sendMessage", {
-                    "chat_id": chat_id,
-                    "text": "✅ **¡Sticker con Sonido creado con éxito!**\n\n📌 Toca el sticker para guardarlo en tu colección y reenvía el audio para usarlo con sonido.",
-                    "reply_markup": json.loads(self.get_delivery_markup(user_id))
-                })
+                else:
+                    with open(temp_out, "rb") as sf:
+                        requests.post(f"{self.base_url}/sendSticker", data={"chat_id": chat_id}, files={"sticker": sf})
+                    if os.path.exists(temp_snd):
+                        with open(temp_snd, "rb") as vf:
+                            requests.post(
+                                f"{self.base_url}/sendVoice",
+                                data={
+                                    "chat_id": chat_id,
+                                    "caption": "🔊 **¡Sonido del Sticker!**\n💡 *Reenvía el sticker y este audio juntos.* ⚡",
+                                    "reply_markup": markup
+                                },
+                                files={"voice": vf}
+                            )
             except Exception as e:
                 self.call_api("sendMessage", {"chat_id": chat_id, "text": f"❌ Error procesando sticker: {e}"})
             finally:
@@ -938,10 +1032,12 @@ class TelegramStarsBot:
                 enh.save(temp_out, "JPEG", quality=98)
 
                 consume_service(user_id, "enhance")
+                file_key = register_delivery_file(temp_out, f"Foto_UltraHD_{int(time.time())}.jpg")
+                markup = self.get_delivery_markup(user_id, download_key=file_key, download_label="📥 Descargar Foto en Ultra-HD")
                 with open(temp_out, "rb") as pf:
                     requests.post(
                         f"{self.base_url}/sendDocument",
-                        data={"chat_id": chat_id, "caption": "📸 **Foto mejorada en Ultra-HD con @nexus_global_vault_bot** ⚡", "reply_markup": self.get_delivery_markup(user_id)},
+                        data={"chat_id": chat_id, "caption": "📸 **Foto mejorada en Ultra-HD con @nexus_global_vault_bot** ⚡", "reply_markup": markup},
                         files={"document": pf}
                     )
             except Exception as e:
@@ -966,10 +1062,12 @@ class TelegramStarsBot:
                 im.save(temp_pdf, "PDF", resolution=100.0)
 
                 consume_service(user_id, "pdf")
+                file_key = register_delivery_file(temp_pdf, f"Documento_{user_id}.pdf")
+                markup = self.get_delivery_markup(user_id, download_key=file_key, download_label="📥 Descargar Documento PDF")
                 with open(temp_pdf, "rb") as df:
                     requests.post(
                         f"{self.base_url}/sendDocument",
-                        data={"chat_id": chat_id, "caption": "📄 **Documento PDF oficial generado con éxito con @nexus_global_vault_bot** ⚡", "reply_markup": self.get_delivery_markup(user_id)},
+                        data={"chat_id": chat_id, "caption": "📄 **Documento PDF oficial generado con éxito con @nexus_global_vault_bot** ⚡", "reply_markup": markup},
                         files={"document": df}
                     )
             except Exception as e:
@@ -993,10 +1091,12 @@ class TelegramStarsBot:
             img.save(temp_qr)
 
             consume_service(user_id, "qr")
+            file_key = register_delivery_file(temp_qr, f"Codigo_QR_{int(time.time())}.png")
+            markup = self.get_delivery_markup(user_id, download_key=file_key, download_label="📥 Descargar Código QR (PNG)")
             with open(temp_qr, "rb") as qf:
                 requests.post(
                     f"{self.base_url}/sendPhoto",
-                    data={"chat_id": chat_id, "caption": f"📱 **Código QR generado para:** `{content[:60]}`\n⚡ @nexus_global_vault_bot", "reply_markup": self.get_delivery_markup(user_id)},
+                    data={"chat_id": chat_id, "caption": f"📱 **Código QR generado para:** `{content[:60]}`\n⚡ @nexus_global_vault_bot", "reply_markup": markup},
                     files={"photo": qf}
                 )
         except Exception as e:
@@ -1243,6 +1343,9 @@ class TelegramStarsBot:
                             if data.startswith("act_"):
                                 num = data.replace("act_", "")
                                 self.activate_service_by_num(chat_id, lang_code, num, username)
+                            elif data.startswith("dl_"):
+                                file_key = data.replace("dl_", "")
+                                self.handle_download_callback(cb["id"], chat_id, user_id, file_key)
                             elif data.startswith("pop_stk_"):
                                 meme_key = data.replace("pop_stk_", "")
                                 self.send_popular_sticker(chat_id, user_id, username, lang_code, meme_key)
@@ -1390,6 +1493,56 @@ class TelegramStarsBot:
                                     self.service_summarize(chat_id, user_id, username, lang_code, res_content)
                                 else:
                                     self.call_api("sendMessage", {"chat_id": chat_id, "text": "👉 Envía el texto o enlace del artículo que deseas resumir."})
+                            elif text.startswith("/reset") or text.startswith("/reiniciar"):
+                                db = load_users()
+                                str_id = str(user_id)
+                                parts = text.split()
+                                target_svc = parts[1].lower() if len(parts) > 1 else None
+                                
+                                if str_id in db:
+                                    if target_svc:
+                                        db[str_id].setdefault("free_used_by_service", {})
+                                        db[str_id]["free_used_by_service"].pop(target_svc, None)
+                                        save_users(db)
+                                        msg = f"👑 **MODO CREADOR: SERVICIO REINICIADO**\n\n✅ Se ha restablecido la prueba gratuita del servicio: `{target_svc}`.\n\n👉 ¡Ya puedes usarlo de nuevo gratis!"
+                                    else:
+                                        db[str_id]["free_used_by_service"] = {}
+                                        save_users(db)
+                                        msg = (
+                                            "👑 **MODO CREADOR: TODOS LOS SERVICIOS REINICIADOS**\n\n"
+                                            "✅ Se han restaurado todas las pruebas gratuitas individuales para los **8 servicios oficiales**.\n\n"
+                                            "👉 Envía /menu para probar cualquier servicio de nuevo desde cero."
+                                        )
+                                    self.call_api("sendMessage", {"chat_id": chat_id, "text": msg})
+                                else:
+                                    self.call_api("sendMessage", {"chat_id": chat_id, "text": "✅ Contador en cero listo para usar."})
+
+                            elif text.startswith("/vip_infinito") or text.startswith("/creador") or text.startswith("/admin"):
+                                db = load_users()
+                                str_id = str(user_id)
+                                if str_id in db:
+                                    db[str_id]["is_vip"] = True
+                                    db[str_id]["vip_until"] = "9999-12-31"
+                                    save_users(db)
+                                    self.call_api("sendMessage", {
+                                        "chat_id": chat_id,
+                                        "text": (
+                                            "👑 **MODO CREADOR: VIP ILIMITADO ACTIVADO** ⭐\n\n"
+                                            "🔓 Tu cuenta ahora tiene **acceso infinito e ilimitado** a todos los servicios de @nexus_global_vault_bot.\n\n"
+                                            "🚀 Puedes descargar videos, stickers con sonido, audios MP3 y fotos sin ningún tipo de límite ni cobro."
+                                        )
+                                    })
+
+                            elif text.startswith("/reset_todos"):
+                                db = load_users()
+                                for u in db.values():
+                                    u["free_used_by_service"] = {}
+                                save_users(db)
+                                self.call_api("sendMessage", {
+                                    "chat_id": chat_id,
+                                    "text": "👑 **MODO CREADOR: BASE DE DATOS GLOBAL REINICIADA**\n\n✅ Todos los usuarios tienen sus pruebas gratis restauradas."
+                                })
+
                             elif text.startswith("/start"):
                                 parts = text.split()
                                 start_arg = parts[1] if len(parts) > 1 else ""

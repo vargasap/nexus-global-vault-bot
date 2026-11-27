@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Nexus Soundboard — Biblioteca de Sonidos para Stickers</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090c15;
+      --card-bg: #121829;
+      --card-border: #1f2942;
+      --primary: #00e5ff;
+      --accent: #ff007f;
+      --gold: #ffbe0b;
+      --green: #00f59b;
+      --text: #f0f4fc;
+      --text-muted: #8b99b5;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+      padding-bottom: 90px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background: rgba(0, 229, 255, 0.12);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #fff, #9ac5ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    p.subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .search-box {
+      margin: 16px 0;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 14px;
+      background: #151c30;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-box input:focus {
+      border-color: var(--primary);
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+    .tab {
+      padding: 8px 16px;
+      background: #141a2e;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+    .tab.active {
+      background: var(--primary);
+      color: #000;
+      border-color: var(--primary);
+    }
+    .sound-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media(min-width: 600px) {
+      .sound-grid { grid-template-columns: 1fr 1fr; }
+    }
+    .sound-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .sound-card:active {
+      transform: scale(0.98);
+      border-color: var(--primary);
+    }
+    .sound-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .sound-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .sound-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .btn-play {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #1d253f;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-play.playing {
+      background: var(--primary);
+      color: #000;
+      animation: pulse 1s infinite alternate;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.08); box-shadow: 0 0 15px var(--primary); }
+    }
+    .btn-choose {
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #00e5ff, #0088ff);
+      color: #000;
+      border: none;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .notice-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(18, 24, 41, 0.95);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--card-border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+    .notice-text {
+      font-size: 12px;
+      color: #c0d0f0;
+    }
+    .btn-back-bot {
+      padding: 8px 16px;
+      background: var(--gold);
+      color: #000;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 12px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="badge">Nexus Sticker Studio</div>
+    <h1>Biblioteca de Sonidos</h1>
+    <p class="subtitle">Escucha, elige y fusiona tu sonido favorito en tu Sticker</p>
+  </header>
+
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre (meme, gamer, risa, anime, boom)..." oninput="filterSounds()">
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="setCategory('all', this)">🔥 Todos</div>
+    <div class="tab" onclick="setCategory('meme', this)">🐱 Memes</div>
+    <div class="tab" onclick="setCategory('gamer', this)">🎮 Gamer</div>
+    <div class="tab" onclick="setCategory('fx', this)">💥 Efectos FX</div>
+    <div class="tab" onclick="setCategory('anime', this)">🎌 Anime</div>
+  </div>
+
+  <div class="sound-grid" id="soundGrid"></div>
+
+  <div class="notice-bar">
+    <div class="notice-text">
+      💡 <b>¿Tienes tu foto lista?</b><br>Toca <b>Elegir</b> para generar tu Sticker.
+    </div>
+    <a href="https://t.me/nexus_global_vault_bot" class="btn-back-bot">🤖 Ir al Bot</a>
+  </div>
+
+  <script>
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+
+    const sounds = [
+      { id: "cat_pop", name: "Gato Wow Pop", cat: "meme", icon: "🐱", desc: "El clásico pop viral", freq: 700, type: "pop" },
+      { id: "doge_chirp", name: "Doge Hacker", cat: "meme", icon: "🐕", desc: "Chirp digital 8-bit", freq: 800, type: "chirp" },
+      { id: "pepe_boing", name: "Pepe Boing", cat: "meme", icon: "🐸", desc: "Resorte de comedia", freq: 400, type: "boing" },
+      { id: "mega_laugh", name: "Mega Risa LOL", cat: "meme", icon: "😂", desc: "Risa de carcajadas contagiosa", freq: 420, type: "laugh" },
+      { id: "bruh_bass", name: "Bruh Sound Bass", cat: "meme", icon: "🗿", desc: "Grave dramático Bruh", freq: 110, type: "bass" },
+      { id: "metal_pipe", name: "Metal Pipe", cat: "meme", icon: "🔊", desc: "Caída de tubo metálico", freq: 1120, type: "metal" },
+      { id: "mario_coin", name: "Moneda Arcade", cat: "gamer", icon: "🍄", desc: "Chime brillante de monedas", freq: 1318, type: "coin" },
+      { id: "game_over", name: "Game Over 8-Bit", cat: "gamer", icon: "💀", desc: "Derrota retro clásica", freq: 350, type: "gameover" },
+      { id: "victory_fanfare", name: "Fanfarria Victoria", cat: "gamer", icon: "🏆", desc: "Música de nivel completado", freq: 1046, type: "fanfare" },
+      { id: "headshot_laser", name: "Headshot Laser", cat: "gamer", icon: "🎯", desc: "Disparo láser de francotirador", freq: 2400, type: "laser" },
+      { id: "cinematic_boom", name: "Explosión Impacto", cat: "fx", icon: "💥", desc: "Boom cinematográfico con bajo", freq: 65, type: "boom" },
+      { id: "dramatic_dun", name: "Dun Dun Duuun!", cat: "fx", icon: "😱", desc: "Misterio y suspenso máximo", freq: 110, type: "dramatic" },
+      { id: "ding_chime", name: "Ding Campana", cat: "fx", icon: "🔔", desc: "Respuesta correcta y notificación", freq: 1760, type: "chime" },
+      { id: "airhorn_mlg", name: "Corneta MLG", cat: "fx", icon: "🎺", desc: "Airhorn para momentos épicos", freq: 466, type: "horn" },
+      { id: "anime_wow", name: "Anime Wow Voice", cat: "anime", icon: "🎌", desc: "Wow tierno y divertido", freq: 500, type: "wow" }
+    ];
+
+    let currentCategory = 'all';
+    let audioCtx = null;
+    let activeOsc = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+
+    function playSynthesizedSound(s, btn) {
+      const ctx = getAudioContext();
+      if (ctx.state === 'suspended') { ctx.resume(); }
+
+      document.querySelectorAll('.btn-play').forEach(b => b.classList.remove('playing'));
+      btn.classList.add('playing');
+
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      if (s.type === 'pop') {
+        osc.frequency.setValueAtTime(s.freq, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+        gain.gain.setValueAtTime(0.8, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      } else if (s.type === 'coin') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(987, now);
+        osc.frequency.setValueAtTime(1318, now + 0.08);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+      } else if (s.type === 'boing') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.linearRampToValueAtTime(450, now + 0.2);
+        osc.frequency.linearRampToValueAtTime(220, now + 0.45);
+        gain.gain.setValueAtTime(0.7, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      } else if (s.type === 'boom') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(90, now);
+        osc.frequency.exponentialRampToValueAtTime(25, now + 0.8);
+        gain.gain.setValueAtTime(0.9, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.9);
+      } else {
+        osc.frequency.setValueAtTime(s.freq, now);
+        gain.gain.setValueAtTime(0.6, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+      }
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.6);
+
+      setTimeout(() => { btn.classList.remove('playing'); }, 600);
+    }
+
+    function chooseSound(soundId, soundName) {
+      if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+        window.Telegram.WebApp.sendData(JSON.stringify({
+          action: "choose_sound",
+          sound_id: soundId,
+          sound_name: soundName
+        }));
+        window.Telegram.WebApp.close();
+      } else {
+        // Redirigir al bot con el comando de selección
+        window.location.href = `https://t.me/nexus_global_vault_bot?start=snd_${soundId}`;
+      }
+    }
+
+    function renderSounds() {
+      const grid = document.getElementById('soundGrid');
+      grid.innerHTML = '';
+      const search = document.getElementById('searchInput').value.toLowerCase();
+
+      const filtered = sounds.filter(s => {
+        const matchCat = (currentCategory === 'all' || s.cat === currentCategory);
+        const matchSearch = s.name.toLowerCase().includes(search) || s.desc.toLowerCase().includes(search);
+        return matchCat && matchSearch;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div style="text-align:center; padding: 40px; color: #8b99b5;">No se encontraron sonidos con ese nombre.</div>';
+        return;
+      }
+
+      filtered.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'sound-card';
+        card.innerHTML = `
+          <div class="btn-play" onclick="playSynthesizedSound(sounds.find(x=>x.id==='${s.id}'), this)">▶</div>
+          <div class="sound-info">
+            <div class="sound-title">${s.icon} ${s.name}</div>
+            <div class="sound-meta">${s.desc}</div>
+          </div>
+          <button class="btn-choose" onclick="chooseSound('${s.id}', '${s.name}')">✅ Elegir</button>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function setCategory(cat, el) {
+      currentCategory = cat;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      renderSounds();
+    }
+
+    function filterSounds() {
+      renderSounds();
+    }
+
+    renderSounds();
+  </script>
+</body>
+</html>
