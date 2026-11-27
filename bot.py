@@ -183,6 +183,33 @@ def merge_image_and_audio_to_video(media_path, audio_path, output_mp4, anim_mode
     except Exception:
         return False
 
+def convert_mp4_to_telegram_sticker_webm(mp4_path, webm_path):
+    """Convierte el MP4 animado en un Sticker de Video nativo de Telegram (.webm VP9, 512x512, <=2.9s, <=256KB)."""
+    try:
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:
+        ffmpeg_exe = "ffmpeg"
+    for bitrate, crf in [("320k", "34"), ("180k", "40")]:
+        cmd = [
+            ffmpeg_exe, "-y", "-i", mp4_path,
+            "-t", "2.9",
+            "-vf", "scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=white,fps=30",
+            "-c:v", "libvpx-vp9",
+            "-b:v", bitrate,
+            "-crf", crf,
+            "-deadline", "realtime",
+            "-cpu-used", "8",
+            "-an",
+            webm_path
+        ]
+        try:
+            res = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
+            if res.returncode == 0 and os.path.exists(webm_path) and os.path.getsize(webm_path) <= 256 * 1024:
+                return True
+        except Exception:
+            pass
+    return os.path.exists(webm_path) and os.path.getsize(webm_path) > 0
+
 def create_meme_pop_sound(out_path):
     sample_rate = 44100
     duration = 0.45
@@ -1168,12 +1195,24 @@ class TelegramStarsBot:
             nice_name = f"Sticker_{sound_id}_{anim_mode}.mp4" if merged_ok else f"Sticker_{sound_id}{ext}"
             file_key = register_delivery_file(target_f, nice_name)
 
+            # Generar también Sticker Animado nativo de Telegram (.webm VP9 512x512)
+            native_webm = os.path.join(DOWNLOADS_DIR, f"stk_native_{user_id}_{sound_id}_{anim_mode}_{timestamp_now}.webm")
+            webm_ok = False
+            webm_key = None
+            if merged_ok:
+                webm_ok = convert_mp4_to_telegram_sticker_webm(merged_video, native_webm)
+                if webm_ok:
+                    webm_key = register_delivery_file(native_webm, f"Sticker_Animado_{sound_id}.webm")
+
             ref_link = f"https://t.me/nexus_global_vault_bot?start=ref_{user_id}"
             share_text = urllib.parse.quote("🔥 ¡Crea Stickers con Sonidos animados virales y usa 8 herramientas con prueba gratis aquí! ⚡")
             share_url = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={share_text}"
+            dl_row = [{"text": "📥 Descargar con Audio (.MP4)", "callback_data": f"dl_{file_key}"}]
+            if webm_key:
+                dl_row.append({"text": "🪄 Sticker (.WEBM)", "callback_data": f"dl_{webm_key}"})
             markup = json.dumps({
                 "inline_keyboard": [
-                    [{"text": "📥 Descargar Sticker", "callback_data": f"dl_{file_key}"}],
+                    dl_row,
                     [{"text": "🎭 Cambiar Animación", "callback_data": "choose_anim"}, {"text": "🔄 Cambiar Sonido", "callback_data": "reselect_sound"}],
                     [{"text": "🚀 Compartir Bot (+1 Uso Gratis)", "url": share_url}],
                     [{"text": "🛠️ Menú (8 Herramientas)", "callback_data": "view_menu"}, {"text": "💳 Paquetes ($0.99)", "callback_data": "view_plans"}]
@@ -1181,12 +1220,26 @@ class TelegramStarsBot:
             })
 
             if merged_ok:
+                # 1) Enviar el STICKER ANIMADO OFICIAL DE TELEGRAM (se puede guardar directo en tus Stickers)
+                if webm_ok:
+                    try:
+                        with open(native_webm, "rb") as sf:
+                            requests.post(
+                                f"{self.base_url}/sendSticker",
+                                data={"chat_id": chat_id},
+                                files={"sticker": ("sticker.webm", sf, "video/webm")},
+                                timeout=30
+                            )
+                    except Exception:
+                        pass
+
+                # 2) Enviar el STICKER ANIMADO CON AUDIO UNIFICADO (.MP4) + Botones de Descarga
                 with open(merged_video, "rb") as vf:
                     requests.post(
                         f"{self.base_url}/sendVideo",
                         data={
                             "chat_id": chat_id,
-                            "caption": f"🪄 **¡Tu Sticker con Sonido Animado está listo!** ⚡\n\n🎵 *Sonido:* **{snd_name}**\n🎭 *Animación:* **{mode_label}**\n🔊 *Mini video animado sincronizado con audio.*",
+                            "caption": f"🪄 **¡Tu Sticker Animado con Sonido está listo!** ⚡\n\n⬆️ *Arriba tienes tu Sticker Oficial Animado (tócalo para guardarlo en tus Stickers de Telegram).*\n🎵 *Sonido:* **{snd_name}**\n🎭 *Animación:* **{mode_label}**",
                             "supports_streaming": True,
                             "width": 512,
                             "height": 512,
