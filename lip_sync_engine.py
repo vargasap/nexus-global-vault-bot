@@ -333,23 +333,25 @@ def render_talking_frame(base_bgr, pts, mouth_open, vowel_wide, emphasis, blink,
 
     # 4. Draw realistic dark mouth cavity inside opened lips so it looks truly speaking
     if mouth_open > 0.14:
-        upper_poly = pts[UPPER_LIP_INNER].copy()
-        lower_poly = pts[LOWER_LIP_INNER].copy()
-        # Move inner lip polygons to match the warp
-        upper_poly[:, 1] -= upper_lift * 0.85
-        lower_poly[:, 1] += jaw_drop * 0.92
-        mouth_poly = np.vstack([upper_poly, lower_poly]).astype(np.int32)
-
+        # Boca abierta natural: elipse redondeada entre los labios (no un bloque negro)
+        mc_x = float(0.5 * (upper_c[0] + lower_c[0]))
+        top_y = float(upper_c[1]) - upper_lift * 0.6
+        bot_y = float(lower_c[1]) + jaw_drop * 0.62
+        cy_m = 0.5 * (top_y + bot_y)
+        ax = max(2, int(round(mouth_w * (0.30 + 0.10 * float(vowel_wide)))))
+        ay = max(1, int(round((bot_y - top_y) * 0.5)))
         mask = np.zeros((512, 512), dtype=np.float32)
-        cv2.fillPoly(mask, [mouth_poly], 1.0)
-        ksize = max(3, int(round(mouth_w * 0.12)) | 1)
+        cv2.ellipse(mask, (int(round(mc_x)), int(round(cy_m))), (ax, ay), 0, 0, 360, 1.0, -1)
+        ksize = max(3, int(round(mouth_w * 0.18)) | 1)
         mask = cv2.GaussianBlur(mask, (ksize, ksize), 0)
         # Scale opacity with mouth openness
-        alpha = np.clip(mask * min(0.88, float(mouth_open) * 1.15), 0.0, 0.88)[..., None]
+        alpha = np.clip(mask * min(0.78, float(mouth_open) * 1.0), 0.0, 0.78)[..., None]
 
         # Deep warm dark interior color (natural oral cavity tone, not harsh pure black)
         cavity_color = np.array([22, 18, 36], dtype=np.float32)
-        warped = (warped.astype(np.float32) * (1.0 - alpha) + cavity_color * alpha).astype(np.uint8)
+        rgb = warped[..., :3].astype(np.float32)
+        warped = warped.copy()
+        warped[..., :3] = (rgb * (1.0 - alpha) + cavity_color * alpha).astype(np.uint8)
 
     # 5. Expressive audio-driven head gesture (nod + lean/tilt synced to emphasis)
     nod_y = float(emphasis) * 8.5 - float(mouth_open) * 3.0
@@ -359,7 +361,8 @@ def render_talking_frame(base_bgr, pts, mouth_open, vowel_wide, emphasis, blink,
     face_center = (float(pts[NOSE_TIP_IDX][0]), float(pts[NOSE_TIP_IDX][1]))
     M = cv2.getRotationMatrix2D(face_center, tilt_deg, zoom)
     M[1, 2] += nod_y
-    out = cv2.warpAffine(warped, M, (512, 512), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(255, 255, 255))
+    border = (255, 255, 255) if base_bgr.shape[2] == 3 else (0, 0, 0, 0)
+    out = cv2.warpAffine(warped, M, (512, 512), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=border)
     return out
 
 
@@ -470,3 +473,319 @@ def generate_lipsync_sticker(image_path, audio_path, output_mp4, fps=25):
         except Exception:
             pass
         return False, face_detected
+
+
+# =====================================================================
+#  STICKER ESTILO FAMOSO (v2): recorte del personaje + borde blanco +
+#  fondo transparente + gestos por audio + bucle perfecto <= 3 s
+# =====================================================================
+SEG_MODEL_PATH = os.path.join(BASE_DIR, "models", "selfie_segmenter.tflite")
+SEG_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite"
+SR_MODEL_PATH = os.path.join(BASE_DIR, "models", "FSRCNN_x4.pb")
+SR_MODEL_URL = "https://github.com/Saafke/FSRCNN_Tensorflow/raw/master/models/FSRCNN_x4.pb"
+_SEGMENTER = None
+_SR_NET = None
+STICKER_FPS = 30
+STICKER_MAX_FRAMES = 87  # 2.9 s (Telegram exige <= 3 s)
+
+
+def _download_if_missing(path, url):
+    if not os.path.exists(path):
+        try:
+            import urllib.request
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            urllib.request.urlretrieve(url, path)
+        except Exception as e:
+            print(f"[Sticker] No se pudo descargar {url}: {e}")
+    return os.path.exists(path)
+
+
+def _get_segmenter():
+    global _SEGMENTER
+    if _SEGMENTER is None and _download_if_missing(SEG_MODEL_PATH, SEG_MODEL_URL):
+        opts = mp_vision.ImageSegmenterOptions(
+            base_options=mp_python.BaseOptions(model_asset_path=SEG_MODEL_PATH),
+            output_confidence_masks=True,
+            output_category_mask=False,
+        )
+        _SEGMENTER = mp_vision.ImageSegmenter.create_from_options(opts)
+    return _SEGMENTER
+
+
+def _super_resolve(bgr):
+    """Ampliación x4 de alta calidad (Lanczos + realce). Ligero y compatible con la nube."""
+    h, w = bgr.shape[:2]
+    up = cv2.resize(bgr, (w * 4, h * 4), interpolation=cv2.INTER_LANCZOS4)
+    up = cv2.bilateralFilter(up, 7, 40, 7)
+    return up
+
+
+def _super_resolve_unused(bgr):
+    """(Reservado) FSRCNN x4 — incompatible con OpenCV 5 DNN."""
+    global _SR_NET
+    try:
+        if _SR_NET is None and _download_if_missing(SR_MODEL_PATH, SR_MODEL_URL):
+            _SR_NET = cv2.dnn.readNetFromTensorflow(SR_MODEL_PATH)
+        if _SR_NET is not None:
+            ycc = cv2.cvtColor(bgr, cv2.COLOR_BGR2YCrCb)
+            y = ycc[..., 0].astype(np.float32) / 255.0
+            blob = y[None, None, :, :]
+            _SR_NET.setInput(blob)
+            out = _SR_NET.forward()[0, 0]
+            h, w = out.shape
+            up = cv2.resize(ycc, (w, h), interpolation=cv2.INTER_CUBIC)
+            up[..., 0] = np.clip(out * 255.0, 0, 255).astype(np.uint8)
+            return cv2.cvtColor(up, cv2.COLOR_YCrCb2BGR)
+    except Exception as e:
+        print(f"[Sticker] SR fallback: {e}")
+    h, w = bgr.shape[:2]
+    return cv2.resize(bgr, (w * 4, h * 4), interpolation=cv2.INTER_CUBIC)
+
+
+def _load_bgra(path):
+    img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+    if img is None:
+        return None
+    if img.ndim == 2:
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGRA)
+    elif img.shape[2] == 3:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2BGRA)
+    return img
+
+
+def _on_white(bgra):
+    a = bgra[..., 3:4].astype(np.float32) / 255.0
+    return (bgra[..., :3].astype(np.float32) * a + 255.0 * (1 - a)).astype(np.uint8)
+
+
+def _letterbox_512(bgr):
+    h, w = bgr.shape[:2]
+    s = min(512.0 / w, 512.0 / h)
+    nw, nh = max(1, int(round(w * s))), max(1, int(round(h * s)))
+    canvas = np.full((512, 512, 3), 255, np.uint8)
+    ox, oy = (512 - nw) // 2, (512 - nh) // 2
+    canvas[oy:oy + nh, ox:ox + nw] = cv2.resize(bgr, (nw, nh), interpolation=cv2.INTER_AREA if s < 1 else cv2.INTER_CUBIC)
+    return canvas, s, ox, oy
+
+
+def _crop_with_pad(bgra, x0, y0, x1, y1):
+    h, w = bgra.shape[:2]
+    pl, pt_, pr, pb = max(0, -x0), max(0, -y0), max(0, x1 - w), max(0, y1 - h)
+    if pl or pt_ or pr or pb:
+        bgra = cv2.copyMakeBorder(bgra, pt_, pb, pl, pr, cv2.BORDER_CONSTANT, value=(0, 0, 0, 0))
+        x0 += pl; x1 += pl; y0 += pt_; y1 += pt_
+    return bgra[y0:y1, x0:x1].copy()
+
+
+def _segment_subject(bgr512, keep_point=None):
+    """Máscara 0..1 del personaje (recorte tipo sticker). Mantiene solo la figura que contiene keep_point."""
+    seg = _get_segmenter()
+    if seg is None:
+        return None
+    rgb = cv2.cvtColor(bgr512, cv2.COLOR_BGR2RGB)
+    res = seg.segment(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb))
+    if not res.confidence_masks:
+        return None
+    m = res.confidence_masks[-1].numpy_view().astype(np.float32)
+    if m.ndim == 3:
+        m = m[..., 0]
+    m = cv2.resize(m, (512, 512), interpolation=cv2.INTER_LINEAR)
+    binm = (m > 0.5).astype(np.uint8)
+    n, labels = cv2.connectedComponents(binm)
+    if n > 2 and keep_point is not None:
+        kx, ky = int(np.clip(keep_point[0], 0, 511)), int(np.clip(keep_point[1], 0, 511))
+        lab = labels[ky, kx]
+        if lab == 0:
+            # etiqueta más grande cercana
+            areas = [(labels == i).sum() for i in range(1, n)]
+            lab = 1 + int(np.argmax(areas))
+        keep = (labels == lab).astype(np.float32)
+        keep = cv2.dilate(keep, np.ones((9, 9), np.uint8))
+        m = m * keep
+    # Bordes suaves y limpios
+    m = np.clip((m - 0.35) / 0.3, 0, 1)
+    m = cv2.GaussianBlur(m, (5, 5), 0)
+    if m.mean() < 0.04:
+        return None
+    return m
+
+
+def _add_sticker_outline(bgra, thickness=10):
+    """Borde blanco grueso alrededor del recorte, como los stickers famosos de WhatsApp/Telegram."""
+    a = bgra[..., 3]
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * thickness + 1, 2 * thickness + 1))
+    dil = cv2.dilate(a, k)
+    dil = cv2.GaussianBlur(dil, (3, 3), 0)
+    af = a.astype(np.float32)[..., None] / 255.0
+    rgb = bgra[..., :3].astype(np.float32) * af + 255.0 * (1 - af)
+    # Sombra suave debajo del borde
+    shadow = cv2.GaussianBlur(dil, (0, 0), 6).astype(np.float32) / 255.0 * 0.35
+    shadow = np.roll(shadow, 4, axis=0)
+    out_a = np.maximum(dil.astype(np.float32) / 255.0, shadow)
+    shadow_only = np.clip(shadow - dil.astype(np.float32) / 255.0, 0, 1)[..., None]
+    rgb = rgb * (1 - shadow_only) + 0.0 * shadow_only
+    out = np.zeros_like(bgra)
+    out[..., :3] = np.clip(rgb, 0, 255).astype(np.uint8)
+    out[..., 3] = np.clip(out_a * 255.0, 0, 255).astype(np.uint8)
+    return out
+
+
+def _encode_webm_alpha(frames_bgra, out_webm, fps=STICKER_FPS):
+    ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+    raw = b"".join(f.tobytes() for f in frames_bgra)
+    for br, crf in [("450k", "30"), ("300k", "36"), ("180k", "44"), ("110k", "50")]:
+        cmd = [ffmpeg_exe, "-y", "-f", "rawvideo", "-pix_fmt", "bgra", "-s", "512x512", "-r", str(fps),
+               "-i", "pipe:0", "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", br, "-crf", crf,
+               "-deadline", "good", "-cpu-used", "5", "-auto-alt-ref", "0", "-an", out_webm]
+        p = subprocess.run(cmd, input=raw, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+        if p.returncode == 0 and os.path.exists(out_webm) and os.path.getsize(out_webm) <= 255 * 1024:
+            return True
+    return os.path.exists(out_webm) and os.path.getsize(out_webm) <= 256 * 1024
+
+
+def _encode_mp4_audio(frames_bgra, audio_path, start_sec, out_mp4, fps=STICKER_FPS):
+    ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+    raw = b"".join(_on_white(f).tobytes() for f in frames_bgra)
+    dur = len(frames_bgra) / float(fps)
+    cmd = [ffmpeg_exe, "-y", "-f", "rawvideo", "-pix_fmt", "bgr24", "-s", "512x512", "-r", str(fps), "-i", "pipe:0",
+           "-ss", f"{start_sec:.3f}", "-t", f"{dur:.3f}", "-i", audio_path,
+           "-map", "0:v:0", "-map", "1:a:0?", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+           "-c:a", "aac", "-b:a", "160k", "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-shortest", out_mp4]
+    p = subprocess.run(cmd, input=raw, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+    return p.returncode == 0 and os.path.exists(out_mp4)
+
+
+def generate_famous_sticker(image_path, audio_path, out_webm, out_mp4=None, cutout=True):
+    """
+    Crea un sticker animado estilo famoso:
+      - Encuadre cercano del personaje (cara grande)
+      - Recorte del fondo + borde blanco + sombra (fondo transparente)
+      - Boca, cejas, ojos y cabeza se mueven según el audio
+      - Bucle perfecto de <= 2.9 s a 30 fps, .webm VP9 con transparencia (<256 KB)
+    Devuelve dict(ok, face, cutout, start, webm, mp4).
+    """
+    info = {"ok": False, "face": False, "cutout": False, "start": 0.0, "webm": out_webm, "mp4": out_mp4}
+    src = _load_bgra(image_path)
+    if src is None:
+        return info
+    H, W = src.shape[:2]
+
+    # 1) Detectar cara en la imagen completa (escala 512) y mapear a coordenadas originales
+    canvas, s, ox, oy = _letterbox_512(_on_white(src))
+    pts512 = detect_primary_face(canvas)
+    if pts512 is not None:
+        info["face"] = True
+        pts = (pts512 - np.array([ox, oy], np.float32)) / s
+        fx0, fy0 = pts.min(axis=0)
+        fx1, fy1 = pts.max(axis=0)
+        fw, fh = fx1 - fx0, fy1 - fy0
+        side = max(fw, fh) * 3.0
+        cx = (fx0 + fx1) / 2.0
+        cy = fy0 + fh * 0.95
+        x0, y0 = int(round(cx - side / 2)), int(round(cy - side / 2))
+        x1, y1 = int(round(cx + side / 2)), int(round(cy + side / 2))
+        crop = _crop_with_pad(src, x0, y0, x1, y1)
+    else:
+        side = max(H, W)
+        crop = _crop_with_pad(src, (W - side) // 2, (H - side) // 2, (W - side) // 2 + side, (H - side) // 2 + side)
+
+    # 2) Subir resolución si la foto es pequeña (caras lejanas)
+    rgb_crop = crop[..., :3]
+    a_crop = crop[..., 3]
+    if rgb_crop.shape[0] < 300:
+        up = _super_resolve(rgb_crop)
+        a_crop = cv2.resize(a_crop, (up.shape[1], up.shape[0]), interpolation=cv2.INTER_CUBIC)
+        rgb_crop = up
+    INNER = 468  # deja margen para el borde blanco
+    rgb_i = cv2.resize(rgb_crop, (INNER, INNER), interpolation=cv2.INTER_AREA if rgb_crop.shape[0] > INNER else cv2.INTER_CUBIC)
+    a_i = cv2.resize(a_crop, (INNER, INNER), interpolation=cv2.INTER_LINEAR)
+    # Nitidez ligera
+    blur = cv2.GaussianBlur(rgb_i, (0, 0), 1.2)
+    rgb_i = cv2.addWeighted(rgb_i, 1.45, blur, -0.45, 0)
+
+    base = np.zeros((512, 512, 4), np.uint8)
+    off = (512 - INNER) // 2
+    base[off:off + INNER, off:off + INNER, :3] = rgb_i
+    base[off:off + INNER, off:off + INNER, 3] = a_i
+
+    # 3) Re-detectar puntos faciales en el encuadre grande (mucho más precisos)
+    base_white = _on_white(base)
+    pts_c = detect_primary_face(base_white) if info["face"] else None
+    if info["face"] and pts_c is None:
+        info["face"] = False
+
+    # 4) Recortar el fondo del personaje
+    if cutout:
+        keep = pts_c[NOSE_TIP_IDX] if pts_c is not None else (256, 300)
+        mask = _segment_subject(base_white, keep_point=keep)
+        if mask is not None:
+            base[..., 3] = (base[..., 3].astype(np.float32) * mask).astype(np.uint8)
+            info["cutout"] = True
+    if not info["cutout"]:
+        # Tarjeta redondeada (sin recorte posible)
+        rr = np.zeros((512, 512), np.uint8)
+        cv2.rectangle(rr, (off + 30, off), (off + INNER - 30, off + INNER), 255, -1)
+        cv2.rectangle(rr, (off, off + 30), (off + INNER, off + INNER - 30), 255, -1)
+        for (ccx, ccy) in [(off + 30, off + 30), (off + INNER - 30, off + 30), (off + 30, off + INNER - 30), (off + INNER - 30, off + INNER - 30)]:
+            cv2.circle(rr, (ccx, ccy), 30, 255, -1)
+        base[..., 3] = np.minimum(base[..., 3], rr)
+
+    # 5) Audio -> rasgos por frame (30 fps) y ventana de 2.9 s que empieza donde hay voz
+    energy, bright, emph, duration = extract_audio_features(audio_path, fps=STICKER_FPS, max_duration=30.0)
+    n = len(energy)
+    start = 0
+    above = np.where(energy > 0.12)[0]
+    if len(above):
+        start = max(0, int(above[0]) - 3)
+    end = min(n, start + STICKER_MAX_FRAMES)
+    if end - start < 30 and n >= 30:
+        start = max(0, end - 30)
+    energy, bright, emph = energy[start:end], bright[start:end], emph[start:end]
+    nf = max(30, len(energy))
+    if len(energy) < nf:
+        pad = nf - len(energy)
+        energy = np.pad(energy, (0, pad)); bright = np.pad(bright, (0, pad)); emph = np.pad(emph, (0, pad))
+    info["start"] = start / float(STICKER_FPS)
+
+    # Bucle perfecto: entrada y salida suaves a pose neutra
+    env = np.ones(nf, np.float32)
+    fade_in, fade_out = min(3, nf // 6), min(8, nf // 4)
+    env[:fade_in] = np.linspace(0.3, 1, fade_in)
+    env[nf - fade_out:] = np.linspace(1, 0, fade_out)
+    energy, emph = energy * env, emph * env
+
+    g = np.linspace(0, 511, 128, dtype=np.float32)
+    grid_x, grid_y = np.meshgrid(g, g)
+    full = np.arange(512, dtype=np.float32)
+    bmx, bmy = np.meshgrid(full, full)
+
+    frames = []
+    for i in range(nf):
+        t = i / float(STICKER_FPS)
+        bp = t % 2.2
+        blink = float(np.sin((bp - 1.0) / 0.15 * np.pi)) if 1.0 <= bp <= 1.15 else 0.0
+        if pts_c is not None:
+            # Ganancia extra para que los gestos se lean bien en tamaño sticker
+            f = render_talking_frame(base, pts_c, min(1.0, energy[i] * 1.25), bright[i], min(1.0, emph[i] * 1.2),
+                                     blink, t * env[i], grid_x, grid_y, bmx, bmy)
+        else:
+            f = _reactive_rgba(base, energy[i], emph[i], t)
+        frames.append(_add_sticker_outline(f, thickness=9))
+
+    ok_w = _encode_webm_alpha(frames, out_webm)
+    ok_m = _encode_mp4_audio(frames, audio_path, info["start"], out_mp4) if out_mp4 else False
+    info["ok"] = bool(ok_w)
+    info["mp4_ok"] = bool(ok_m)
+    return info
+
+
+def _reactive_rgba(base, e, emp, t):
+    """Personajes sin cara humana: estirar/aplastar + inclinación según el audio (con transparencia)."""
+    sx = 1.0 + e * 0.10 - emp * 0.03
+    sy = 1.0 - e * 0.05 + emp * 0.10
+    ang = np.sin(t * 5.0) * (1.0 + emp * 6.0)
+    M = cv2.getRotationMatrix2D((256, 300), ang, 1.0)
+    M[0, 0] *= sx; M[0, 1] *= sx; M[1, 0] *= sy; M[1, 1] *= sy
+    M[0, 2] = 256 - (M[0, 0] * 256 + M[0, 1] * 300) + 0
+    M[1, 2] = 300 - (M[1, 0] * 256 + M[1, 1] * 300) - emp * 14
+    return cv2.warpAffine(base, M, (512, 512), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=(0, 0, 0, 0))

@@ -1180,7 +1180,22 @@ class TelegramStarsBot:
         is_vid_actual = is_video or any(ext.endswith(x) for x in [".mp4", ".mov", ".avi", ".webm", ".gif"])
 
         try:
-            merged_ok = merge_image_and_audio_to_video(temp_input, temp_snd, merged_video, anim_mode=anim_mode)
+            native_webm = os.path.join(DOWNLOADS_DIR, f"stk_native_{user_id}_{sound_id}_{anim_mode}_{timestamp_now}.webm")
+            webm_ok = False
+            famous_done = False
+            # Foto + Lip-Sync -> Sticker estilo famoso (recorte, borde blanco, transparente, gestos por audio)
+            if not is_vid_actual and anim_mode == "lipsync":
+                try:
+                    from lip_sync_engine import generate_famous_sticker
+                    finfo = generate_famous_sticker(temp_input, temp_snd, native_webm, merged_video)
+                    webm_ok = bool(finfo.get("ok"))
+                    merged_ok = bool(finfo.get("mp4_ok"))
+                    famous_done = webm_ok
+                    write_log(f"🪄 Sticker famoso: cara={finfo.get('face')} recorte={finfo.get('cutout')} ok={webm_ok}")
+                except Exception as e:
+                    write_log(f"⚠️ Sticker famoso falló, usando modo clásico: {e}")
+            if not famous_done:
+                merged_ok = merge_image_and_audio_to_video(temp_input, temp_snd, merged_video, anim_mode=anim_mode)
             if not is_edit:
                 consume_service(user_id, "sticker")
 
@@ -1195,21 +1210,22 @@ class TelegramStarsBot:
             nice_name = f"Sticker_{sound_id}_{anim_mode}.mp4" if merged_ok else f"Sticker_{sound_id}{ext}"
             file_key = register_delivery_file(target_f, nice_name)
 
-            # Generar también Sticker Animado nativo de Telegram (.webm VP9 512x512)
-            native_webm = os.path.join(DOWNLOADS_DIR, f"stk_native_{user_id}_{sound_id}_{anim_mode}_{timestamp_now}.webm")
-            webm_ok = False
+            # Sticker Animado nativo de Telegram (.webm VP9 512x512)
             webm_key = None
-            if merged_ok:
+            if not famous_done and merged_ok:
                 webm_ok = convert_mp4_to_telegram_sticker_webm(merged_video, native_webm)
-                if webm_ok:
-                    webm_key = register_delivery_file(native_webm, f"Sticker_Animado_{sound_id}.webm")
+            if webm_ok:
+                webm_key = register_delivery_file(native_webm, f"Sticker_Animado_{sound_id}.webm")
+            merged_ok = merged_ok or webm_ok
 
             ref_link = f"https://t.me/nexus_global_vault_bot?start=ref_{user_id}"
             share_text = urllib.parse.quote("🔥 ¡Crea Stickers Animados con gestos y sonidos virales gratis aquí! ⚡")
             share_url = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={share_text}"
             dl_row = []
             if webm_key:
-                dl_row.append({"text": "📥 Descargar Sticker (.WEBM)", "callback_data": f"dl_{webm_key}"})
+                dl_row.append({"text": "📥 Descargar Sticker", "callback_data": f"dl_{webm_key}"})
+                if merged_ok and os.path.exists(merged_video):
+                    dl_row.append({"text": "🔊 Con Audio (.MP4)", "callback_data": f"dl_{file_key}"})
             else:
                 dl_row.append({"text": "📥 Descargar Sticker", "callback_data": f"dl_{file_key}"})
             markup = json.dumps({
@@ -1221,7 +1237,7 @@ class TelegramStarsBot:
                 ]
             })
 
-            if merged_ok and webm_ok:
+            if webm_ok:
                 # 1) Enviar el STICKER ANIMADO OFICIAL DE TELEGRAM (.webm VP9 512x512 — NO video MP4)
                 with open(native_webm, "rb") as sf:
                     stk_res = requests.post(
@@ -1233,18 +1249,32 @@ class TelegramStarsBot:
                     if not stk_res.ok:
                         write_log(f"⚠️ sendSticker error: {stk_res.text[:200]}")
 
-                # 2) Enviar el audio sincronizado como nota de voz compacta + botones de control y descarga
-                with open(temp_snd, "rb") as af:
-                    requests.post(
-                        f"{self.base_url}/sendVoice",
-                        data={
-                            "chat_id": chat_id,
-                            "caption": f"🪄 **¡Tu Sticker Animado está listo arriba!** ⚡\n\n👆 *Toca el sticker de arriba para guardarlo en tus Stickers de Telegram.*\n🎵 *Audio de los gestos:* **{snd_name}**\n🎭 *Estilo:* **{mode_label}**",
-                            "reply_markup": markup
-                        },
-                        files={"voice": af},
-                        timeout=30
-                    )
+                # 2) Audio de los gestos como nota de voz (OGG/Opus, formato que Telegram acepta) + botones
+                caption = (f"🪄 **¡Tu Sticker Animado está listo arriba!** ⚡\n\n"
+                           f"👆 *Toca el sticker para guardarlo en tus Stickers de Telegram.*\n"
+                           f"🎵 *Audio de los gestos:* **{snd_name}**\n🎭 *Estilo:* **{mode_label}**")
+                voice_ogg = os.path.join(DOWNLOADS_DIR, f"stk_voice_{user_id}_{timestamp_now}.ogg")
+                sent = False
+                try:
+                    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", temp_snd, "-t", "15", "-ac", "1",
+                                    "-c:a", "libopus", "-b:a", "64k", voice_ogg],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20)
+                    if os.path.exists(voice_ogg):
+                        with open(voice_ogg, "rb") as af:
+                            vr = requests.post(f"{self.base_url}/sendVoice",
+                                               data={"chat_id": chat_id, "caption": caption, "reply_markup": markup},
+                                               files={"voice": ("audio.ogg", af, "audio/ogg")}, timeout=30)
+                            sent = vr.ok
+                            if not vr.ok:
+                                write_log(f"⚠️ sendVoice error: {vr.text[:200]}")
+                except Exception as e:
+                    write_log(f"⚠️ voz sticker: {e}")
+                finally:
+                    if os.path.exists(voice_ogg):
+                        try: os.remove(voice_ogg)
+                        except: pass
+                if not sent:
+                    self.call_api("sendMessage", {"chat_id": chat_id, "text": caption, "reply_markup": markup})
             elif merged_ok:
                 with open(merged_video, "rb") as vf:
                     requests.post(
