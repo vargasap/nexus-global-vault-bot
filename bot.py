@@ -1263,8 +1263,7 @@ class TelegramStarsBot:
             except Exception as e:
                 self.call_api("sendMessage", {"chat_id": chat_id, "text": f"❌ Error convirtiendo a PDF: {e}"})
             finally:
-                for p in [temp_img, temp_pdf]:
-                    if os.path.exists(p): os.remove(p)
+                if os.path.exists(temp_img): os.remove(temp_img)
 
     def service_generate_qr(self, chat_id, user_id, username, lang_code, content):
         can_use, reason, _ = check_can_use_service(user_id, "qr", username)
@@ -1291,8 +1290,6 @@ class TelegramStarsBot:
                 )
         except Exception as e:
             self.call_api("sendMessage", {"chat_id": chat_id, "text": f"❌ Error generando QR: {e}"})
-        finally:
-            if os.path.exists(temp_qr): os.remove(temp_qr)
 
     def service_translate(self, chat_id, user_id, username, lang_code, text):
         can_use, reason, _ = check_can_use_service(user_id, "translate", username)

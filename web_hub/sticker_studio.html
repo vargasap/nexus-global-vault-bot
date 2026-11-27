@@ -402,6 +402,20 @@
       <button class="btn" id="btnExportWebp">🖼️ Guardar .WEBP</button>
       <a class="btn" id="btnSendToBot" href="https://t.me/nexus_global_vault_bot?start=promo_stickers" target="_blank">🗣️ Lip-Sync IA en Bot</a>
     </div>
+
+    <!-- Panel de Descarga Lista (funciona en Telegram WebApp, Móvil y PC) -->
+    <div id="downloadReadyBox" style="display:none; margin-top:8px; padding:12px; border-radius:14px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.45);">
+      <div id="downloadReadyTitle" style="font-size:13px; font-weight:700; color:#34d399; margin-bottom:8px; text-align:center;">✅ ¡Sticker Listo para Descargar!</div>
+      <video id="resultVideo" controls playsinline loop style="display:none; width:100%; max-width:240px; aspect-ratio:1/1; margin:0 auto 10px; border-radius:12px; background:#000;"></video>
+      <img id="resultImg" alt="Sticker listo" style="display:none; width:100%; max-width:240px; aspect-ratio:1/1; margin:0 auto 10px; border-radius:12px; object-fit:contain; background:#fff;">
+      <div class="upload-row">
+        <a id="btnDirectDownload" class="btn btn-success" download="Nexus_Sticker.mp4">📥 Descargar Archivo</a>
+        <button id="btnNativeShare" class="btn btn-primary" type="button">📤 Guardar / Compartir</button>
+      </div>
+      <div id="downloadTip" style="font-size:11px; color:#94a3b8; text-align:center; margin-top:7px;">
+        Si estás en Telegram móvil y no baja solo, toca <b>📤 Guardar / Compartir</b> o mantén presionado el video.
+      </div>
+    </div>
   </div>
 </div>
 
@@ -861,6 +875,92 @@ function playPreview(recordStreamCallback = null) {
 
 document.getElementById('btnPreview').onclick = () => playPreview();
 
+let lastExport = { blob: null, url: null, filename: '', mime: '' };
+
+function triggerBrowserDownload(blob, filename, mime, isVideo) {
+  if (lastExport.url) {
+    try { URL.revokeObjectURL(lastExport.url); } catch (e) {}
+  }
+  const url = URL.createObjectURL(blob);
+  lastExport = { blob, url, filename, mime };
+
+  const readyBox = document.getElementById('downloadReadyBox');
+  const readyTitle = document.getElementById('downloadReadyTitle');
+  const resVideo = document.getElementById('resultVideo');
+  const resImg = document.getElementById('resultImg');
+  const btnDirect = document.getElementById('btnDirectDownload');
+
+  readyBox.style.display = 'block';
+  readyTitle.textContent = `✅ ¡Listo! ${filename} (${(blob.size / 1024).toFixed(0)} KB)`;
+  btnDirect.href = url;
+  btnDirect.download = filename;
+
+  if (isVideo) {
+    resImg.style.display = 'none';
+    resVideo.style.display = 'block';
+    resVideo.src = url;
+    resVideo.load();
+    resVideo.play().catch(() => {});
+  } else {
+    resVideo.style.display = 'none';
+    resImg.style.display = 'block';
+    resImg.src = url;
+  }
+
+  // Auto-disparo de descarga directa en navegador / PC
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 300);
+  } catch (e) {}
+
+  readyBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  statusBar.textContent = `✅ ¡Sticker listo! Descarga iniciada (${(blob.size / 1024).toFixed(0)} KB).`;
+}
+
+document.getElementById('btnDirectDownload').onclick = ev => {
+  if (!lastExport.blob) return;
+  // Si es WebView móvil que ignora blob:, intentar DataURL como respaldo
+  if (tg && tg.platform && (tg.platform === 'android' || tg.platform === 'ios')) {
+    ev.preventDefault();
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const a = document.createElement('a');
+      a.href = reader.result;
+      a.download = lastExport.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      statusBar.textContent = '📥 Descarga enviada. Si Telegram la bloquea, toca 📤 Guardar / Compartir.';
+    };
+    reader.readAsDataURL(lastExport.blob);
+  }
+};
+
+document.getElementById('btnNativeShare').onclick = async () => {
+  if (!lastExport.blob) return;
+  try {
+    const file = new File([lastExport.blob], lastExport.filename, { type: lastExport.mime || 'application/octet-stream' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: 'Nexus Sticker con Sonido',
+        text: '🔥 Creado con @nexus_global_vault_bot',
+        files: [file]
+      });
+      statusBar.textContent = '✅ ¡Sticker guardado / compartido con éxito!';
+      return;
+    }
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+  }
+  // Fallback: disparar descarga directa
+  document.getElementById('btnDirectDownload').click();
+};
+
 // Export Animated Video Sticker (.webm / .mp4) directly in browser!
 document.getElementById('btnExportVideo').onclick = () => {
   if (state.isExporting) return;
@@ -881,6 +981,7 @@ document.getElementById('btnExportVideo').onclick = () => {
 
     const mimeCandidates = [
       'video/mp4;codecs=avc1,mp4a.40.2',
+      'video/mp4',
       'video/webm;codecs=vp9,opus',
       'video/webm;codecs=vp8,opus',
       'video/webm'
@@ -897,16 +998,9 @@ document.getElementById('btnExportVideo').onclick = () => {
       state.isExporting = false;
       recPill.classList.remove('active');
       const ext = chosenMime.includes('mp4') ? 'mp4' : 'webm';
-      const blob = new Blob(chunks, { type: chosenMime || 'video/webm' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Nexus_Sticker_${state.soundId}.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 4000);
-      statusBar.textContent = `✅ ¡Sticker descargado (${(blob.size/1024).toFixed(0)} KB)! Listo para compartir.`;
+      const finalMime = chosenMime || 'video/webm';
+      const blob = new Blob(chunks, { type: finalMime });
+      triggerBrowserDownload(blob, `Nexus_Sticker_${state.soundId}.${ext}`, finalMime, true);
     };
 
     recorder.start();
@@ -921,15 +1015,7 @@ document.getElementById('btnExportWebp').onclick = () => {
   drawFrame(0, 0);
   canvas.toBlob(blob => {
     if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Nexus_Sticker_512x512.webp';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
-    statusBar.textContent = '✅ Sticker .WEBP 512×512 descargado.';
+    triggerBrowserDownload(blob, 'Nexus_Sticker_512x512.webp', 'image/webp', false);
   }, 'image/webp', 0.95);
 };
 
