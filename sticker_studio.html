@@ -875,14 +875,31 @@ function playPreview(recordStreamCallback = null) {
 
 document.getElementById('btnPreview').onclick = () => playPreview();
 
-let lastExport = { blob: null, url: null, filename: '', mime: '' };
+let lastExport = { blob: null, url: null, cloudUrl: null, filename: '', mime: '' };
+const isTelegramMiniApp = !!(tg && tg.initData && tg.initData.length > 0);
 
-function triggerBrowserDownload(blob, filename, mime, isVideo) {
+async function uploadToCloudDownload(blob, filename) {
+  try {
+    const fd = new FormData();
+    fd.append('file', blob, filename);
+    const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+      method: 'POST',
+      body: fd
+    });
+    const json = await res.json();
+    if (json && json.status === 'success' && json.data && json.data.url) {
+      return json.data.url;
+    }
+  } catch (e) {}
+  return null;
+}
+
+async function triggerBrowserDownload(blob, filename, mime, isVideo) {
   if (lastExport.url) {
     try { URL.revokeObjectURL(lastExport.url); } catch (e) {}
   }
   const url = URL.createObjectURL(blob);
-  lastExport = { blob, url, filename, mime };
+  lastExport = { blob, url, cloudUrl: null, filename, mime };
 
   const readyBox = document.getElementById('downloadReadyBox');
   const readyTitle = document.getElementById('downloadReadyTitle');
@@ -907,7 +924,28 @@ function triggerBrowserDownload(blob, filename, mime, isVideo) {
     resImg.src = url;
   }
 
-  // Auto-disparo de descarga directa en navegador / PC
+  readyBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  if (isTelegramMiniApp) {
+    // Telegram WebView bloquea descargas blob: locales -> subir a enlace HTTPS en la nube y abrir descarga real
+    statusBar.textContent = '☁️ Preparando enlace de descarga directa para tu dispositivo...';
+    const cloudUrl = await uploadToCloudDownload(blob, filename);
+    if (cloudUrl) {
+      lastExport.cloudUrl = cloudUrl;
+      btnDirect.href = cloudUrl;
+      btnDirect.removeAttribute('download');
+      btnDirect.target = '_blank';
+      statusBar.textContent = '✅ ¡Enlace de descarga listo! Abriendo descarga en tu dispositivo...';
+      try {
+        tg.openLink(cloudUrl, { try_instant_view: false });
+      } catch (e) {
+        window.open(cloudUrl, '_blank');
+      }
+      return;
+    }
+  }
+
+  // Descarga directa estándar (Navegador PC / Chrome / Safari / Edge)
   try {
     const a = document.createElement('a');
     a.href = url;
@@ -918,26 +956,26 @@ function triggerBrowserDownload(blob, filename, mime, isVideo) {
     setTimeout(() => a.remove(), 300);
   } catch (e) {}
 
-  readyBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  statusBar.textContent = `✅ ¡Sticker listo! Descarga iniciada (${(blob.size / 1024).toFixed(0)} KB).`;
+  statusBar.textContent = `✅ ¡Sticker descargado (${(blob.size / 1024).toFixed(0)} KB)!`;
 }
 
-document.getElementById('btnDirectDownload').onclick = ev => {
+document.getElementById('btnDirectDownload').onclick = async ev => {
   if (!lastExport.blob) return;
-  // Si es WebView móvil que ignora blob:, intentar DataURL como respaldo
-  if (tg && tg.platform && (tg.platform === 'android' || tg.platform === 'ios')) {
+  if (isTelegramMiniApp) {
     ev.preventDefault();
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const a = document.createElement('a');
-      a.href = reader.result;
-      a.download = lastExport.filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      statusBar.textContent = '📥 Descarga enviada. Si Telegram la bloquea, toca 📤 Guardar / Compartir.';
-    };
-    reader.readAsDataURL(lastExport.blob);
+    if (!lastExport.cloudUrl) {
+      statusBar.textContent = '☁️ Generando enlace de descarga directa...';
+      lastExport.cloudUrl = await uploadToCloudDownload(lastExport.blob, lastExport.filename);
+    }
+    if (lastExport.cloudUrl) {
+      try {
+        tg.openLink(lastExport.cloudUrl, { try_instant_view: false });
+      } catch (e) {
+        window.open(lastExport.cloudUrl, '_blank');
+      }
+      statusBar.textContent = '📥 Abriendo descarga directa en el navegador de tu dispositivo...';
+      return;
+    }
   }
 };
 
