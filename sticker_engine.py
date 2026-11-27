@@ -94,8 +94,8 @@ def _get_face_landmarker():
             output_face_blendshapes=False,
             output_facial_transformation_matrixes=False,
             num_faces=4,
-            min_face_detection_confidence=0.22,
-            min_face_presence_confidence=0.22,
+            min_face_detection_confidence=0.65,
+            min_face_presence_confidence=0.65,
         )
         _FACE_MODEL = mp_vision.FaceLandmarker.create_from_options(opts)
     return _FACE_MODEL
@@ -138,53 +138,39 @@ def _load_source_image(image_path):
 
 def detect_primary_face_box(bgr):
     """
-    Detecta el rostro principal con escaneo multiescala (sirve tanto para selfies como planos amplios).
-    Retorna (x0, y0, x1, y1) en coordenadas de `bgr`, o None si no hay rostro humano.
+    Detecta un rostro humano real en la imagen completa (sin sub-recortes que alucinen caras).
+    Retorna (x0, y0, x1, y1) en coordenadas de `bgr`, o None si no hay rostro humano claro.
     """
     landmarker = _get_face_landmarker()
     if landmarker is None:
         return None
     h, w = bgr.shape[:2]
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-    regions = [
-        (0.0, 0.0, 1.0, 1.0),
-        (0.18, 0.10, 0.82, 0.80),
-        (0.18, 0.30, 0.82, 0.98),
-        (0.0, 0.10, 0.60, 0.80),
-        (0.40, 0.10, 1.0, 0.80),
-    ]
-    for (rx0, ry0, rx1, ry1) in regions:
-        x0, y0 = int(rx0 * w), int(ry0 * h)
-        x1, y1 = int(rx1 * w), int(ry1 * h)
-        sub = rgb[y0:y1, x0:x1]
-        if sub.size == 0:
+    if max(w, h) != 512:
+        patch = cv2.resize(rgb, (512, 512), interpolation=cv2.INTER_CUBIC if max(w, h) < 512 else cv2.INTER_AREA)
+    else:
+        patch = rgb
+    res = landmarker.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=patch))
+    if not res.face_landmarks:
+        return None
+
+    best_box = None
+    best_score = -1.0
+    cx_img, cy_img = w * 0.5, h * 0.5
+    for lm_list in res.face_landmarks:
+        pts = np.array([[lm.x * w, lm.y * h] for lm in lm_list], dtype=np.float32)
+        bx0, by0 = pts.min(axis=0)
+        bx1, by1 = pts.max(axis=0)
+        bw, bh = float(bx1 - bx0), float(by1 - by0)
+        if bw < 20 or bh < 20:
             continue
-        pw, ph = sub.shape[1], sub.shape[0]
-        if max(pw, ph) != 512:
-            patch = cv2.resize(sub, (512, 512), interpolation=cv2.INTER_CUBIC if max(pw, ph) < 512 else cv2.INTER_AREA)
-        else:
-            patch = sub
-        res = landmarker.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=patch))
-        if res.face_landmarks:
-            best_box = None
-            best_score = -1.0
-            cx_img, cy_img = w * 0.5, h * 0.5
-            for lm_list in res.face_landmarks:
-                pts = np.array([[x0 + lm.x * pw, y0 + lm.y * ph] for lm in lm_list], dtype=np.float32)
-                bx0, by0 = pts.min(axis=0)
-                bx1, by1 = pts.max(axis=0)
-                bw, bh = float(bx1 - bx0), float(by1 - by0)
-                if bw < 12 or bh < 12:
-                    continue
-                fcx, fcy = 0.5 * (bx0 + bx1), 0.5 * (by0 + by1)
-                dist_penalty = 1.0 / (1.0 + np.hypot(fcx - cx_img, fcy - cy_img) / max(w, h))
-                score = bw * bh * dist_penalty
-                if score > best_score:
-                    best_score = score
-                    best_box = (float(bx0), float(by0), float(bx1), float(by1))
-            if best_box is not None:
-                return best_box
-    return None
+        fcx, fcy = 0.5 * (bx0 + bx1), 0.5 * (by0 + by1)
+        dist_penalty = 1.0 / (1.0 + np.hypot(fcx - cx_img, fcy - cy_img) / max(w, h))
+        score = bw * bh * dist_penalty
+        if score > best_score:
+            best_score = score
+            best_box = (float(bx0), float(by0), float(bx1), float(by1))
+    return best_box
 
 
 def _run_u2netp_mask(bgr):
@@ -255,15 +241,15 @@ def _floodfill_solid_bg_mask(bgr):
 
     smooth = cv2.GaussianBlur(bgr, (3, 3), 0)
     ff_mask = np.zeros((h + 2, w + 2), dtype=np.uint8)
-    flags = 4 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY
-    lo_up = (20, 20, 20)
+    flags = 4 | (255 << 8) | cv2.FLOODFILL_MASK_ONLY | cv2.FLOODFILL_FIXED_RANGE
+    lo_up = (12, 12, 12)
 
     # Añadir puntos medios de borde que coincidan con el color de fondo para limpiar zonas aisladas en los bordes
     edge_candidates = list(close_seeds) + [
         (w // 2, 0), (w // 2, h - 1), (0, h // 2), (w - 1, h // 2)
     ]
     for sx, sy in edge_candidates:
-        if float(np.linalg.norm(smooth[sy, sx].astype(np.float32) - med_col)) < 22.0:
+        if float(np.linalg.norm(smooth[sy, sx].astype(np.float32) - med_col)) < 14.0:
             if ff_mask[sy + 1, sx + 1] == 0:
                 cv2.floodFill(smooth, ff_mask, (sx, sy), 255, loDiff=lo_up, upDiff=lo_up, flags=flags)
 
@@ -449,25 +435,24 @@ def prepare_sticker_subject(image_path, frame_style="cutout", outline=True):
 
     if frame_style == "cutout":
         if not already_cutout:
-            # Si hay rostro en un plano abierto, recortar alrededor de la persona manteniendo resolución (evitar bordes de puerta)
-            if face_box is not None:
-                bx0, by0, bx1, by1 = face_box
-                fw, fh = bx1 - bx0, by1 - by0
-                if max(W, H) > max(fw, fh) * 2.8:
-                    crop_side = int(round(max(fw, fh) * 3.8))
-                    cx = int(round(0.5 * (bx0 + bx1)))
-                    cy = int(round(by0 + fh * 1.15))
-                    sx0 = max(0, cx - crop_side // 2)
-                    sy0 = max(0, cy - crop_side // 2)
-                    sx1 = min(W, sx0 + crop_side)
-                    sy1 = min(H, sy0 + crop_side)
-                    if sx1 - sx0 >= 80 and sy1 - sy0 >= 80:
-                        src = src[sy0:sy1, sx0:sx1].copy()
-                        bgr = src[..., :3]
-                        face_box = (bx0 - sx0, by0 - sy0, bx1 - sx0, by1 - sy0)
-                        H, W = src.shape[:2]
+            # 1) Probar flood-fill de fondo uniforme PRIMERO para nunca mutilar dibujos/stickers/logos
+            fg_mask = _floodfill_solid_bg_mask(bgr)
+            if fg_mask is None:
+                fg_mask = remove_background_universal(bgr, face_box=face_box)
 
-            fg_mask = remove_background_universal(bgr, face_box=face_box)
+            if fg_mask is not None:
+                ys_m, xs_m = np.where(fg_mask >= 0.25)
+                if len(ys_m) > 0:
+                    mx0, my0, mx1, my1 = int(xs_m.min()), int(ys_m.min()), int(xs_m.max()) + 1, int(ys_m.max()) + 1
+                    box_area = float((mx1 - mx0) * (my1 - my0))
+                    orig_area = float(W * H)
+                    orig_ar = W / float(max(H, 1))
+                    cut_ar = (mx1 - mx0) / float(max(my1 - my0, 1))
+                    ar_ratio = max(orig_ar / max(cut_ar, 1e-4), cut_ar / max(orig_ar, 1e-4))
+                    # Guarda anti-mutilación: si recortó >82% o deformó >2.6x sin rostro real, conservar tarjeta completa
+                    if box_area < 0.18 * orig_area or (face_box is None and ar_ratio > 2.6):
+                        fg_mask = None
+
             if fg_mask is not None:
                 src = src.copy()
                 src[..., 3] = np.clip(fg_mask * 255.0, 0, 255).astype(np.uint8)
@@ -754,16 +739,14 @@ def _prepare_clean_portrait_for_cloud(image_path, out_png):
 
 def run_cloud_ai_lipsync(image_path, audio_path, out_mp4, timeout_sec=35):
     """
-    Habla IA Neural real en HuggingFace ZeroGPU vía gradio_client:
-      1) Intenta pragnakalp/Wav2lip-ZeroGPU (/run_infrence)
-      2) Respaldo fffiloni/EchoMimic (/generate_video)
-    Si ambos están ocupados/caídos o no hay rostro humano, devuelve False sin lanzar excepciones.
+    Habla IA Neural real en la nube:
+      1) Si existe FAL_KEY en entorno, usa https://fal.run/fal-ai/sadtalker (~10-15s)
+      2) Intenta HuggingFace ZeroGPU (pragnakalp/Wav2lip-ZeroGPU y respaldo fffiloni/EchoMimic)
+         usando HF_TOKEN si está configurado en entorno.
+    Si no hay claves/cuota o no hay rostro humano, devuelve False limpio sin lanzar excepciones.
     """
-    try:
-        from gradio_client import Client, handle_file
-    except Exception as e:
-        print(f"[AI LipSync] gradio_client no disponible: {e}")
-        return False
+    import base64
+    import requests as _req
 
     tmp_dir = tempfile.mkdtemp(prefix="nx_ailip_")
     try:
@@ -780,6 +763,41 @@ def run_cloud_ai_lipsync(image_path, audio_path, out_mp4, timeout_sec=35):
         if not os.path.exists(trimmed_wav):
             return False
 
+        # 1) fal.ai SadTalker (si existe FAL_KEY)
+        fal_key = (os.environ.get("FAL_KEY") or "").strip()
+        if fal_key:
+            try:
+                img_b64 = base64.b64encode(open(portrait_png, "rb").read()).decode("ascii")
+                aud_b64 = base64.b64encode(open(trimmed_wav, "rb").read()).decode("ascii")
+                r_fal = _req.post(
+                    "https://fal.run/fal-ai/sadtalker",
+                    headers={"Authorization": f"Key {fal_key}", "Content-Type": "application/json"},
+                    json={
+                        "source_image_url": f"data:image/png;base64,{img_b64}",
+                        "driven_audio_url": f"data:audio/wav;base64,{aud_b64}",
+                    },
+                    timeout=timeout_sec,
+                )
+                if r_fal.ok:
+                    v_url = (r_fal.json().get("video") or {}).get("url")
+                    if v_url:
+                        vr = _req.get(v_url, timeout=30)
+                        if vr.ok and len(vr.content) > 2048:
+                            with open(out_mp4, "wb") as f:
+                                f.write(vr.content)
+                            return True
+            except Exception as e:
+                print(f"[AI LipSync] FAL SadTalker error: {e}")
+
+        # 2) HuggingFace ZeroGPU vía gradio_client (con HF_TOKEN opcional)
+        try:
+            from gradio_client import Client, handle_file
+        except Exception as e:
+            print(f"[AI LipSync] gradio_client no disponible: {e}")
+            return False
+
+        hf_token = (os.environ.get("HF_TOKEN") or "").strip() or None
+
         def _extract_video_path(res):
             if isinstance(res, dict):
                 return res.get("video") or res.get("path") or res.get("url")
@@ -790,7 +808,7 @@ def run_cloud_ai_lipsync(image_path, audio_path, out_mp4, timeout_sec=35):
             return None
 
         def _call_wav2lip():
-            client = Client("pragnakalp/Wav2lip-ZeroGPU", verbose=False)
+            client = Client("pragnakalp/Wav2lip-ZeroGPU", token=hf_token, verbose=False)
             res = client.predict(
                 input_image=handle_file(portrait_png),
                 input_audio=handle_file(trimmed_wav),
@@ -799,7 +817,7 @@ def run_cloud_ai_lipsync(image_path, audio_path, out_mp4, timeout_sec=35):
             return _extract_video_path(res)
 
         def _call_echomimic():
-            client = Client("fffiloni/EchoMimic", verbose=False)
+            client = Client("fffiloni/EchoMimic", token=hf_token, verbose=False)
             res = client.predict(
                 uploaded_img=handle_file(portrait_png),
                 uploaded_audio=handle_file(trimmed_wav),

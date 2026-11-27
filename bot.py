@@ -11,6 +11,7 @@ import os
 BASE_DIR = os.path.dirname(__file__)
 import sys
 import shutil
+import html
 import json
 import time
 import re
@@ -625,7 +626,8 @@ class TelegramStarsBot:
                     f"{self.base_url}/sendDocument",
                     data={
                         "chat_id": chat_id,
-                        "caption": f"📥 **Descarga Directa:** `{file_info['filename']}`\n⚡ Guardado en tu dispositivo con máxima calidad.",
+                        "caption": f"📥 <b>Descarga Directa:</b> <code>{html.escape(file_info['filename'])}</code>\n⚡ Guardado en tu dispositivo con máxima calidad.",
+                        "parse_mode": "HTML",
                         "disable_content_type_detection": True
                     },
                     files={"document": (file_info["filename"], df)},
@@ -793,27 +795,44 @@ class TelegramStarsBot:
                 with open(stk_file, "rb") as sf:
                     requests.post(f"{self.base_url}/sendSticker", data={"chat_id": chat_id}, files={"sticker": sf}, timeout=30)
 
-            voice_ogg = os.path.join(DOWNLOADS_DIR, f"pop_v_{user_id}_{int(time.time())}.ogg")
+            pop_caption = (
+                f"🪄 <b>¡Sticker #{html.escape(meme_key.upper())} + Audio listos!</b>\n\n"
+                f"💚 Descarga para WhatsApp, Telegram o unido con audio en <code>.MP4</code>:"
+            )
             sent_v = False
-            try:
-                subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", snd_file, "-t", "12", "-ac", "1", "-c:a", "libopus", "-b:a", "64k", voice_ogg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
-                if os.path.exists(voice_ogg):
-                    with open(voice_ogg, "rb") as vf:
+            if mp4_p and os.path.exists(mp4_p):
+                try:
+                    with open(mp4_p, "rb") as vf:
                         vr = requests.post(
-                            f"{self.base_url}/sendVoice",
-                            data={"chat_id": chat_id, "caption": f"🪄 **¡Sticker #{meme_key.upper()} listo!**\n\n💚 Descarga para WhatsApp, Telegram o unido con audio en `.MP4`:", "reply_markup": markup},
-                            files={"voice": ("audio.ogg", vf, "audio/ogg")},
-                            timeout=30
+                            f"{self.base_url}/sendVideo",
+                            data={"chat_id": chat_id, "caption": pop_caption, "parse_mode": "HTML", "supports_streaming": True, "width": 512, "height": 512, "reply_markup": markup},
+                            files={"video": (f"Sticker_{meme_key}.mp4", vf, "video/mp4")},
+                            timeout=45
                         )
                         sent_v = vr.ok
-            except Exception:
-                pass
-            finally:
-                if os.path.exists(voice_ogg):
-                    try: os.remove(voice_ogg)
-                    except: pass
+                except Exception:
+                    pass
             if not sent_v:
-                self.call_api("sendMessage", {"chat_id": chat_id, "text": f"🪄 **¡Sticker #{meme_key.upper()} listo!**", "reply_markup": markup})
+                voice_ogg = os.path.join(DOWNLOADS_DIR, f"pop_v_{user_id}_{int(time.time())}.ogg")
+                try:
+                    subprocess.run([imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", snd_file, "-t", "12", "-ac", "1", "-c:a", "libopus", "-b:a", "64k", voice_ogg], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+                    if os.path.exists(voice_ogg):
+                        with open(voice_ogg, "rb") as vf:
+                            vr = requests.post(
+                                f"{self.base_url}/sendVoice",
+                                data={"chat_id": chat_id, "caption": pop_caption, "parse_mode": "HTML", "reply_markup": markup},
+                                files={"voice": ("audio.ogg", vf, "audio/ogg")},
+                                timeout=30
+                            )
+                            sent_v = vr.ok
+                except Exception:
+                    pass
+                finally:
+                    if os.path.exists(voice_ogg):
+                        try: os.remove(voice_ogg)
+                        except: pass
+            if not sent_v:
+                self.call_api("sendMessage", {"chat_id": chat_id, "text": pop_caption, "parse_mode": "HTML", "reply_markup": markup})
 
     def activate_service_by_num(self, chat_id, lang_code, num_str, username=""):
         s = SERVICES_INFO.get(num_str)
@@ -1249,47 +1268,77 @@ class TelegramStarsBot:
 
             ai_note = ""
             if effect == "ai_talk" and not bundle.get("used_ai_talk"):
-                ai_note = "\nℹ️ *Nota:* El servidor neural IA estaba en cola o sin rostro frontal; aplicamos animación nítida al ritmo del audio."
+                ai_note = "\nℹ️ <i>Nota:</i> La IA neural de labios requiere cuota/clave en la nube (<code>HF_TOKEN</code>/<code>FAL_KEY</code>) o rostro frontal claro; aplicamos animación nítida al ritmo del audio."
             elif bundle.get("used_ai_talk"):
-                ai_note = "\n🗣️ **¡Habla IA Neural aplicada en la nube!**"
+                ai_note = "\n🗣️ <b>¡Habla IA Neural aplicada en la nube!</b>"
 
-            txt_info = f" | ✍️ `{top_text} {bottom_text}`".strip() if (top_text or bottom_text) else ""
+            safe_snd = html.escape(str(snd_name))
+            safe_frame = html.escape(str(frame_label))
+            safe_eff = html.escape(str(eff_labels.get(bundle.get('effect', effect), eff_label)))
+            txt_raw = f"{top_text or ''} {bottom_text or ''}".strip()
+            txt_info = f" | ✍️ <code>{html.escape(txt_raw)}</code>" if txt_raw else ""
+
             caption = (
-                f"🪄 **¡Tu Sticker está listo arriba!** ⚡\n\n"
-                f"👆 *Toca el sticker de arriba para guardarlo directo en tus Stickers de Telegram.*\n"
-                f"🎵 *Audio:* **{snd_name}**\n"
-                f"🖼️ *Marco:* **{frame_label}** | 🎭 **{eff_labels.get(bundle.get('effect', effect), eff_label)}**{txt_info}{ai_note}\n\n"
-                f"👇 Descárgalo para **WhatsApp (.WEBP)**, **Telegram (.WEBM)** o **Unido con Audio (.MP4)**:"
+                f"🪄 <b>¡Sticker + Audio unidos y listos!</b> ⚡\n\n"
+                f"👆 <i>Arriba tienes el Sticker real para Telegram; aquí tienes la imagen + audio fundidos.</i>\n"
+                f"🎵 <b>Audio:</b> {safe_snd}\n"
+                f"🖼️ <b>Marco:</b> {safe_frame} | 🎭 <b>{safe_eff}</b>{txt_info}{ai_note}\n\n"
+                f"👇 Descárgalo para <b>WhatsApp (.WEBP)</b>, <b>Telegram (.WEBM)</b> o <b>Unido con Audio (.MP4)</b>:"
             )
 
-            # 2) Enviar Audio como Nota de Voz OGG/Opus + Panel completo de edición/descarga
-            voice_ogg = os.path.join(DOWNLOADS_DIR, f"stk_voice_{user_id}_{timestamp_now}.ogg")
+            # 2) Entregar automáticamente el Sticker + Audio FUNDIDOS en un solo archivo (.MP4 512x512)
             sent = False
-            try:
-                subprocess.run(
-                    [imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", temp_snd, "-t", "15", "-ac", "1", "-c:a", "libopus", "-b:a", "64k", voice_ogg],
-                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20,
-                )
-                if os.path.exists(voice_ogg):
-                    with open(voice_ogg, "rb") as af:
+            if mp4_path and os.path.exists(mp4_path):
+                try:
+                    with open(mp4_path, "rb") as vf:
                         vr = requests.post(
-                            f"{self.base_url}/sendVoice",
-                            data={"chat_id": chat_id, "caption": caption, "reply_markup": markup},
-                            files={"voice": ("audio.ogg", af, "audio/ogg")},
-                            timeout=30,
+                            f"{self.base_url}/sendVideo",
+                            data={
+                                "chat_id": chat_id,
+                                "caption": caption,
+                                "parse_mode": "HTML",
+                                "supports_streaming": True,
+                                "width": 512,
+                                "height": 512,
+                                "reply_markup": markup,
+                            },
+                            files={"video": (f"Sticker_Audio_{sound_id}.mp4", vf, "video/mp4")},
+                            timeout=45,
                         )
                         sent = vr.ok
                         if not vr.ok:
-                            write_log(f"⚠️ sendVoice error: {vr.text[:200]}")
-            except Exception as e:
-                write_log(f"⚠️ voz sticker: {e}")
-            finally:
-                if os.path.exists(voice_ogg):
-                    try: os.remove(voice_ogg)
-                    except: pass
+                            write_log(f"⚠️ sendVideo sticker error: {vr.text[:200]}")
+                except Exception as e:
+                    write_log(f"⚠️ video sticker: {e}")
+
+            # Respaldo: si no hubo MP4, enviar nota de voz OGG/Opus + teclado, o mensaje HTML
+            if not sent:
+                voice_ogg = os.path.join(DOWNLOADS_DIR, f"stk_voice_{user_id}_{timestamp_now}.ogg")
+                try:
+                    subprocess.run(
+                        [imageio_ffmpeg.get_ffmpeg_exe(), "-y", "-i", temp_snd, "-t", "15", "-ac", "1", "-c:a", "libopus", "-b:a", "64k", voice_ogg],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=20,
+                    )
+                    if os.path.exists(voice_ogg):
+                        with open(voice_ogg, "rb") as af:
+                            vr = requests.post(
+                                f"{self.base_url}/sendVoice",
+                                data={"chat_id": chat_id, "caption": caption, "parse_mode": "HTML", "reply_markup": markup},
+                                files={"voice": ("audio.ogg", af, "audio/ogg")},
+                                timeout=30,
+                            )
+                            sent = vr.ok
+                            if not vr.ok:
+                                write_log(f"⚠️ sendVoice error: {vr.text[:200]}")
+                except Exception as e:
+                    write_log(f"⚠️ voz sticker: {e}")
+                finally:
+                    if os.path.exists(voice_ogg):
+                        try: os.remove(voice_ogg)
+                        except: pass
 
             if not sent:
-                self.call_api("sendMessage", {"chat_id": chat_id, "text": caption, "reply_markup": markup})
+                self.call_api("sendMessage", {"chat_id": chat_id, "text": caption, "parse_mode": "HTML", "reply_markup": markup})
         except Exception as e:
             self.call_api("sendMessage", {"chat_id": chat_id, "text": f"❌ Error procesando sticker: {e}"})
         finally:
@@ -1774,7 +1823,7 @@ class TelegramStarsBot:
                                 mp4_k = last.get("mp4_key")
                                 if mp4_p and os.path.exists(mp4_p):
                                     m_kb = json.dumps({"inline_keyboard": [[{"text": "📥 Descargar MP4 con Audio", "callback_data": f"dl_{mp4_k}"}]]}) if mp4_k else None
-                                    d_args = {"chat_id": chat_id, "caption": "🔊 **Sticker + Audio Unido (.MP4 512×512)** ⚡", "supports_streaming": True, "width": 512, "height": 512}
+                                    d_args = {"chat_id": chat_id, "caption": "🔊 <b>Sticker + Audio Unido (.MP4 512×512)</b> ⚡", "parse_mode": "HTML", "supports_streaming": True, "width": 512, "height": 512}
                                     if m_kb:
                                         d_args["reply_markup"] = m_kb
                                     with open(mp4_p, "rb") as vf:
