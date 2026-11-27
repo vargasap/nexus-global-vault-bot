@@ -244,10 +244,10 @@ def render_talking_frame(base_bgr, pts, mouth_open, vowel_wide, emphasis, blink,
     chin = pts[CHIN_IDX]
     mouth_center = 0.5 * (upper_c + lower_c)
 
-    # Jaw drop amount scaled to face height
-    jaw_drop = float(mouth_open) * face_h * 0.135
-    upper_lift = float(mouth_open) * face_h * 0.022
-    corner_stretch = (float(vowel_wide) - 0.42) * float(mouth_open) * mouth_w * 0.22
+    # Jaw drop & facial gestures scaled clearly so expressions are unmistakable
+    jaw_drop = float(mouth_open) * face_h * 0.24
+    upper_lift = float(mouth_open) * face_h * 0.045
+    corner_stretch = (float(vowel_wide) - 0.40) * float(mouth_open) * mouth_w * 0.38
 
     # Drop lower lip & chin
     if jaw_drop > 0.3:
@@ -255,27 +255,27 @@ def render_talking_frame(base_bgr, pts, mouth_open, vowel_wide, emphasis, blink,
             grid_x, grid_y,
             lower_c[0], lower_c[1] + face_h * 0.04,
             0.0, jaw_drop,
-            mouth_w * 0.72, face_h * 0.22
+            mouth_w * 0.78, face_h * 0.25
         )
         disp_x += lx
         disp_y += ly
 
-        # Chin follows slightly softer
+        # Chin follows smoothly
         cx2, cy2 = _gaussian_warp_field(
             grid_x, grid_y,
             chin[0], chin[1],
-            0.0, jaw_drop * 0.75,
-            face_w * 0.36, face_h * 0.18
+            0.0, jaw_drop * 0.80,
+            face_w * 0.40, face_h * 0.20
         )
         disp_x += cx2
         disp_y += cy2
 
-        # Upper lip lifts subtly
+        # Upper lip lifts clearly
         ux, uy = _gaussian_warp_field(
             grid_x, grid_y,
             upper_c[0], upper_c[1],
             0.0, -upper_lift,
-            mouth_w * 0.55, face_h * 0.09
+            mouth_w * 0.58, face_h * 0.11
         )
         disp_x += ux
         disp_y += uy
@@ -285,20 +285,20 @@ def render_talking_frame(base_bgr, pts, mouth_open, vowel_wide, emphasis, blink,
             ml_x, ml_y = _gaussian_warp_field(
                 grid_x, grid_y,
                 mouth_l[0], mouth_l[1],
-                -corner_stretch, -corner_stretch * 0.2,
-                mouth_w * 0.35, face_h * 0.12
+                -corner_stretch, -corner_stretch * 0.25,
+                mouth_w * 0.38, face_h * 0.14
             )
             mr_x, mr_y = _gaussian_warp_field(
                 grid_x, grid_y,
                 mouth_r[0], mouth_r[1],
-                corner_stretch, -corner_stretch * 0.2,
-                mouth_w * 0.35, face_h * 0.12
+                corner_stretch, -corner_stretch * 0.25,
+                mouth_w * 0.38, face_h * 0.14
             )
             disp_x += ml_x + mr_x
             disp_y += ml_y + mr_y
 
-    # 2. Eyebrow raises on vocal emphasis
-    brow_lift = float(emphasis) * face_h * 0.045
+    # 2. Expressive eyebrow raises on vocal emphasis
+    brow_lift = float(emphasis) * face_h * 0.095
     if brow_lift > 0.2:
         lb_center = np.mean(pts[LEFT_EYEBROW], axis=0)
         rb_center = np.mean(pts[RIGHT_EYEBROW], axis=0)
@@ -351,10 +351,10 @@ def render_talking_frame(base_bgr, pts, mouth_open, vowel_wide, emphasis, blink,
         cavity_color = np.array([22, 18, 36], dtype=np.float32)
         warped = (warped.astype(np.float32) * (1.0 - alpha) + cavity_color * alpha).astype(np.uint8)
 
-    # 5. Subtle audio-driven head gesture (nod + expressive lean/tilt synced to emphasis)
-    nod_y = float(emphasis) * 4.5 - float(mouth_open) * 1.8
-    tilt_deg = float(np.sin(t_sec * 3.1)) * (0.9 + float(emphasis) * 2.4)
-    zoom = 1.0 + float(emphasis) * 0.032
+    # 5. Expressive audio-driven head gesture (nod + lean/tilt synced to emphasis)
+    nod_y = float(emphasis) * 8.5 - float(mouth_open) * 3.0
+    tilt_deg = float(np.sin(t_sec * 3.8)) * (1.4 + float(emphasis) * 4.2)
+    zoom = 1.0 + float(emphasis) * 0.048
 
     face_center = (float(pts[NOSE_TIP_IDX][0]), float(pts[NOSE_TIP_IDX][1]))
     M = cv2.getRotationMatrix2D(face_center, tilt_deg, zoom)

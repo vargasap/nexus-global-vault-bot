@@ -1205,44 +1205,53 @@ class TelegramStarsBot:
                     webm_key = register_delivery_file(native_webm, f"Sticker_Animado_{sound_id}.webm")
 
             ref_link = f"https://t.me/nexus_global_vault_bot?start=ref_{user_id}"
-            share_text = urllib.parse.quote("🔥 ¡Crea Stickers con Sonidos animados virales y usa 8 herramientas con prueba gratis aquí! ⚡")
+            share_text = urllib.parse.quote("🔥 ¡Crea Stickers Animados con gestos y sonidos virales gratis aquí! ⚡")
             share_url = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={share_text}"
-            dl_row = [{"text": "📥 Descargar con Audio (.MP4)", "callback_data": f"dl_{file_key}"}]
+            dl_row = []
             if webm_key:
-                dl_row.append({"text": "🪄 Sticker (.WEBM)", "callback_data": f"dl_{webm_key}"})
+                dl_row.append({"text": "📥 Descargar Sticker (.WEBM)", "callback_data": f"dl_{webm_key}"})
+            else:
+                dl_row.append({"text": "📥 Descargar Sticker", "callback_data": f"dl_{file_key}"})
             markup = json.dumps({
                 "inline_keyboard": [
                     dl_row,
-                    [{"text": "🎭 Cambiar Animación", "callback_data": "choose_anim"}, {"text": "🔄 Cambiar Sonido", "callback_data": "reselect_sound"}],
+                    [{"text": "🎭 Cambiar Gestos", "callback_data": "choose_anim"}, {"text": "🔄 Cambiar Sonido", "callback_data": "reselect_sound"}],
                     [{"text": "🚀 Compartir Bot (+1 Uso Gratis)", "url": share_url}],
                     [{"text": "🛠️ Menú (8 Herramientas)", "callback_data": "view_menu"}, {"text": "💳 Paquetes ($0.99)", "callback_data": "view_plans"}]
                 ]
             })
 
-            if merged_ok:
-                # 1) Enviar el STICKER ANIMADO OFICIAL DE TELEGRAM (se puede guardar directo en tus Stickers)
-                if webm_ok:
-                    try:
-                        with open(native_webm, "rb") as sf:
-                            requests.post(
-                                f"{self.base_url}/sendSticker",
-                                data={"chat_id": chat_id},
-                                files={"sticker": ("sticker.webm", sf, "video/webm")},
-                                timeout=30
-                            )
-                    except Exception:
-                        pass
+            if merged_ok and webm_ok:
+                # 1) Enviar el STICKER ANIMADO OFICIAL DE TELEGRAM (.webm VP9 512x512 — NO video MP4)
+                with open(native_webm, "rb") as sf:
+                    stk_res = requests.post(
+                        f"{self.base_url}/sendSticker",
+                        data={"chat_id": chat_id},
+                        files={"sticker": ("sticker.webm", sf, "video/webm")},
+                        timeout=30
+                    )
+                    if not stk_res.ok:
+                        write_log(f"⚠️ sendSticker error: {stk_res.text[:200]}")
 
-                # 2) Enviar el STICKER ANIMADO CON AUDIO UNIFICADO (.MP4) + Botones de Descarga
+                # 2) Enviar el audio sincronizado como nota de voz compacta + botones de control y descarga
+                with open(temp_snd, "rb") as af:
+                    requests.post(
+                        f"{self.base_url}/sendVoice",
+                        data={
+                            "chat_id": chat_id,
+                            "caption": f"🪄 **¡Tu Sticker Animado está listo arriba!** ⚡\n\n👆 *Toca el sticker de arriba para guardarlo en tus Stickers de Telegram.*\n🎵 *Audio de los gestos:* **{snd_name}**\n🎭 *Estilo:* **{mode_label}**",
+                            "reply_markup": markup
+                        },
+                        files={"voice": af},
+                        timeout=30
+                    )
+            elif merged_ok:
                 with open(merged_video, "rb") as vf:
                     requests.post(
                         f"{self.base_url}/sendVideo",
                         data={
                             "chat_id": chat_id,
-                            "caption": f"🪄 **¡Tu Sticker Animado con Sonido está listo!** ⚡\n\n⬆️ *Arriba tienes tu Sticker Oficial Animado (tócalo para guardarlo en tus Stickers de Telegram).*\n🎵 *Sonido:* **{snd_name}**\n🎭 *Animación:* **{mode_label}**",
-                            "supports_streaming": True,
-                            "width": 512,
-                            "height": 512,
+                            "caption": f"🪄 **¡Tu Sticker Animado está listo!** ⚡\n🎵 *Sonido:* **{snd_name}**",
                             "reply_markup": markup
                         },
                         files={"video": vf}
