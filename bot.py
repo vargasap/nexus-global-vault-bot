@@ -8,6 +8,7 @@ Nexus Universal All-In-One Super-Bot (10 Servicios Oficiales)
 """
 
 import os
+BASE_DIR = os.path.dirname(__file__)
 import sys
 import json
 import time
@@ -27,6 +28,28 @@ import uuid
 import imageio_ffmpeg
 
 DELIVERY_CACHE = {}
+SOUNDS_DIR = os.path.join(BASE_DIR, "sound_library")
+os.makedirs(SOUNDS_DIR, exist_ok=True)
+
+SOUNDS_LIB = {
+    "cat_pop": {"name": "🐱 Gato Wow Pop", "file": "cat_pop.wav"},
+    "doge_chirp": {"name": "🐕 Doge Hacker 8-Bit", "file": "doge_chirp.wav"},
+    "pepe_boing": {"name": "🐸 Pepe Boing", "file": "pepe_boing.wav"},
+    "mega_laugh": {"name": "😂 Mega Risa LOL", "file": "mega_laugh.wav"},
+    "bruh_bass": {"name": "🗿 Bruh Bass", "file": "bruh_bass.wav"},
+    "metal_pipe": {"name": "🔊 Metal Pipe", "file": "metal_pipe.wav"},
+    "mario_coin": {"name": "🍄 Moneda Arcade", "file": "mario_coin.wav"},
+    "game_over": {"name": "💀 Game Over Retro", "file": "game_over.wav"},
+    "victory_fanfare": {"name": "🏆 Fanfarria Victoria", "file": "victory_fanfare.wav"},
+    "headshot_laser": {"name": "🎯 Headshot Laser", "file": "headshot_laser.wav"},
+    "cinematic_boom": {"name": "💥 Explosión Impacto", "file": "cinematic_boom.wav"},
+    "dramatic_dun": {"name": "😱 Dun Dun Duuun!", "file": "dramatic_dun.wav"},
+    "ding_chime": {"name": "🔔 Ding Campana", "file": "ding_chime.wav"},
+    "airhorn_mlg": {"name": "🎺 Corneta MLG", "file": "airhorn_mlg.wav"},
+    "anime_wow": {"name": "🎌 Anime Wow", "file": "anime_wow.wav"}
+}
+PENDING_STICKER_PHOTOS = {}
+PENDING_SOUND_PREF = {}
 
 def register_delivery_file(filepath, filename):
     file_key = uuid.uuid4().hex[:8]
@@ -950,35 +973,76 @@ class TelegramStarsBot:
         except Exception as e:
             self.call_api("sendMessage", {"chat_id": chat_id, "text": "❌ No se pudo extraer el audio de este enlace."})
 
-    def service_make_sticker(self, chat_id, user_id, username, lang_code, file_id):
+    def prompt_sound_selection(self, chat_id, user_id, username, lang_code, photo_file_id):
+        PENDING_STICKER_PHOTOS[user_id] = photo_file_id
+        text = (
+            "📸 **¡Foto recibida con éxito!**\n\n"
+            "👇 **Selecciona el sonido para sincronizar con tu Sticker:**\n"
+            "Toca cualquier sonido de la lista o abre el catálogo interactivo para escucharlos todos:"
+        )
+        keyboard = [
+            [{"text": "🐱 Gato Pop", "callback_data": "snd_cat_pop"}, {"text": "🐕 Doge Hacker", "callback_data": "snd_doge_chirp"}],
+            [{"text": "🐸 Pepe Boing", "callback_data": "snd_pepe_boing"}, {"text": "😂 Mega Risa", "callback_data": "snd_mega_laugh"}],
+            [{"text": "🗿 Bruh Bass", "callback_data": "snd_bruh_bass"}, {"text": "🔊 Metal Pipe", "callback_data": "snd_metal_pipe"}],
+            [{"text": "🍄 Moneda Arcade", "callback_data": "snd_mario_coin"}, {"text": "💀 Game Over", "callback_data": "snd_game_over"}],
+            [{"text": "🏆 Victoria Fanfarria", "callback_data": "snd_victory_fanfare"}, {"text": "💥 Explosión Boom", "callback_data": "snd_cinematic_boom"}],
+            [{"text": "😱 Dun Dun Dun!", "callback_data": "snd_dramatic_dun"}, {"text": "🎺 Corneta MLG", "callback_data": "snd_airhorn_mlg"}],
+            [{"text": "🎌 Anime Wow", "callback_data": "snd_anime_wow"}, {"text": "🔔 Ding Campana", "callback_data": "snd_ding_chime"}],
+            [{"text": "🎧 Catálogo Completo de Sonidos (Mini App)", "web_app": {"url": "https://vargasap.github.io/nexus-global-vault-bot/sounds.html"}}],
+            [{"text": "🔙 Volver al Menú", "callback_data": "view_menu"}]
+        ]
+        self.call_api("sendMessage", {
+            "chat_id": chat_id,
+            "text": text,
+            "reply_markup": json.dumps({"inline_keyboard": keyboard})
+        })
+
+    def service_make_sticker(self, chat_id, user_id, username, lang_code, file_id, sound_id="cat_pop"):
         can_use, reason, _ = check_can_use_service(user_id, "sticker", username)
         if not can_use:
             self.send_plans_menu(chat_id, lang_code, header_text="⚠️ **Ya utilizaste tu prueba gratis para 3️⃣ Crear Sticker con Sonido.**\n👇 Elige un paquete para continuar:")
             return
 
-        self.call_api("sendMessage", {"chat_id": chat_id, "text": "🪄 **Creando tu sticker oficial con sonido sincronizado...**"})
+        sound_info = SOUNDS_LIB.get(sound_id, {"name": "Pop Meme", "file": "cat_pop.wav"})
+        snd_name = sound_info["name"]
+        
+        self.call_api("sendMessage", {"chat_id": chat_id, "text": f"🪄 **Creando Sticker con sonido: {snd_name}...**"})
         temp_img = os.path.join(DOWNLOADS_DIR, f"stk_in_{user_id}_{int(time.time())}.jpg")
-        temp_out = os.path.join(DOWNLOADS_DIR, f"stk_out_{user_id}_{int(time.time())}.webp")
-        temp_snd = os.path.join(DOWNLOADS_DIR, f"stk_snd_{user_id}_{int(time.time())}.wav")
+        temp_out = os.path.join(DOWNLOADS_DIR, f"stk_out_{user_id}_{int(time.time())}.png")
+        temp_snd = os.path.join(SOUNDS_DIR, sound_info["file"])
+        merged_video = os.path.join(DOWNLOADS_DIR, f"stk_custom_{user_id}_{sound_id}_{int(time.time())}.mp4")
+
+        # Si el archivo de sonido no existe, generarlo
+        if not os.path.exists(temp_snd):
+            temp_snd = os.path.join(DOWNLOADS_DIR, f"stk_snd_{user_id}_{int(time.time())}.wav")
+            create_meme_pop_sound(temp_snd)
 
         if self.download_telegram_file(file_id, temp_img):
             try:
                 im = Image.open(temp_img).convert("RGBA")
                 im.thumbnail((512, 512), Image.Resampling.LANCZOS)
-                im.save(temp_out, "WEBP")
+                im.save(temp_out, "PNG")
 
-                # Generar el sonido de acompañamiento sincronizado
-                create_meme_pop_sound(temp_snd)
-
-                consume_service(user_id, "sticker")
-                
-                merged_video = os.path.join(DOWNLOADS_DIR, f"stk_custom_{user_id}_{int(time.time())}.mp4")
+                # Unir imagen y audio en un solo archivo MP4
                 merged_ok = merge_image_and_audio_to_video(temp_out, temp_snd, merged_video)
+                consume_service(user_id, "sticker")
+
                 target_f = merged_video if merged_ok else temp_out
-                nice_name = "Mi_Sticker_Con_Sonido.mp4" if merged_ok else "Mi_Sticker.webp"
-                
+                nice_name = f"Sticker_{sound_id}.mp4" if merged_ok else "Sticker.webp"
                 file_key = register_delivery_file(target_f, nice_name)
-                markup = self.get_delivery_markup(user_id, download_key=file_key, download_label="📥 Descargar Sticker con Sonido")
+                
+                # Markup con Descargar y Cambiar Sonido
+                ref_link = f"https://t.me/nexus_global_vault_bot?start=ref_{user_id}"
+                share_text = urllib.parse.quote("🔥 ¡Crea Stickers con Sonidos virales y usa 8 herramientas con prueba gratis aquí! ⚡")
+                share_url = f"https://t.me/share/url?url={urllib.parse.quote(ref_link)}&text={share_text}"
+                markup = json.dumps({
+                    "inline_keyboard": [
+                        [{"text": "📥 Descargar Sticker con Sonido", "callback_data": f"dl_{file_key}"}],
+                        [{"text": "🔄 Cambiar a otro Sonido", "callback_data": "reselect_sound"}],
+                        [{"text": "🚀 Compartir Bot (+1 Uso Gratis)", "url": share_url}],
+                        [{"text": "🛠️ Menú (8 Herramientas)", "callback_data": "view_menu"}, {"text": "💳 Paquetes ($0.99)", "callback_data": "view_plans"}]
+                    ]
+                })
 
                 if merged_ok:
                     with open(merged_video, "rb") as vf:
@@ -986,7 +1050,7 @@ class TelegramStarsBot:
                             f"{self.base_url}/sendVideo",
                             data={
                                 "chat_id": chat_id,
-                                "caption": "🪄 **¡Tu Sticker con Sonido Unificado está listo!** ⚡\n\n🔊 *La imagen y el audio están unidos en un solo archivo con reproducción sincronizada.*",
+                                "caption": f"🪄 **¡Tu Sticker con Sonido está listo!** ⚡\n\n🎵 *Sonido:* **{snd_name}**\n🔊 *Imagen y audio sincronizados en un solo archivo.*",
                                 "reply_markup": markup
                             },
                             files={"video": vf}
@@ -994,21 +1058,10 @@ class TelegramStarsBot:
                 else:
                     with open(temp_out, "rb") as sf:
                         requests.post(f"{self.base_url}/sendSticker", data={"chat_id": chat_id}, files={"sticker": sf})
-                    if os.path.exists(temp_snd):
-                        with open(temp_snd, "rb") as vf:
-                            requests.post(
-                                f"{self.base_url}/sendVoice",
-                                data={
-                                    "chat_id": chat_id,
-                                    "caption": "🔊 **¡Sonido del Sticker!**\n💡 *Reenvía el sticker y este audio juntos.* ⚡",
-                                    "reply_markup": markup
-                                },
-                                files={"voice": vf}
-                            )
             except Exception as e:
                 self.call_api("sendMessage", {"chat_id": chat_id, "text": f"❌ Error procesando sticker: {e}"})
             finally:
-                for p in [temp_img, temp_out, temp_snd]:
+                for p in [temp_img, temp_out]:
                     if os.path.exists(p):
                         try: os.remove(p)
                         except: pass
@@ -1343,6 +1396,26 @@ class TelegramStarsBot:
                             if data.startswith("act_"):
                                 num = data.replace("act_", "")
                                 self.activate_service_by_num(chat_id, lang_code, num, username)
+                            elif data.startswith("snd_"):
+                                sound_id = data.replace("snd_", "")
+                                photo_id = PENDING_STICKER_PHOTOS.get(user_id)
+                                if photo_id:
+                                    self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"], "text": "🪄 Fusionando foto y sonido..."})
+                                    self.service_make_sticker(chat_id, user_id, username, lang_code, photo_id, sound_id=sound_id)
+                                else:
+                                    PENDING_SOUND_PREF[user_id] = sound_id
+                                    snd_name = SOUNDS_LIB.get(sound_id, {}).get("name", sound_id)
+                                    self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"], "text": f"✅ Sonido seleccionado: {snd_name}"})
+                                    self.call_api("sendMessage", {
+                                        "chat_id": chat_id,
+                                        "text": f"🎵 **Sonido seleccionado:** {snd_name}\n\n👉 **Envía ahora la foto o meme** que deseas convertir en tu Sticker con este sonido:"
+                                    })
+                            elif data == "reselect_sound":
+                                photo_id = PENDING_STICKER_PHOTOS.get(user_id)
+                                if photo_id:
+                                    self.prompt_sound_selection(chat_id, user_id, username, lang_code, photo_id)
+                                else:
+                                    self.call_api("answerCallbackQuery", {"callback_query_id": cb["id"], "text": "📸 Envía una foto primero para elegir su sonido.", "show_alert": True})
                             elif data.startswith("dl_"):
                                 file_key = data.replace("dl_", "")
                                 self.handle_download_callback(cb["id"], chat_id, user_id, file_key)
@@ -1444,7 +1517,11 @@ class TelegramStarsBot:
                             if "photo" in msg:
                                 largest_photo = msg["photo"][-1]["file_id"]
                                 if "/sticker" in caption.lower() or active_mode == "sticker":
-                                    self.service_make_sticker(chat_id, user_id, username, lang_code, largest_photo)
+                                    pre_snd = PENDING_SOUND_PREF.pop(user_id, None)
+                                    if pre_snd:
+                                        self.service_make_sticker(chat_id, user_id, username, lang_code, largest_photo, sound_id=pre_snd)
+                                    else:
+                                        self.prompt_sound_selection(chat_id, user_id, username, lang_code, largest_photo)
                                 elif "/pdf" in caption.lower() or active_mode == "pdf":
                                     self.service_photo_to_pdf(chat_id, user_id, username, lang_code, largest_photo)
                                 else:
@@ -1546,7 +1623,20 @@ class TelegramStarsBot:
                             elif text.startswith("/start"):
                                 parts = text.split()
                                 start_arg = parts[1] if len(parts) > 1 else ""
-                                self.handle_start(chat_id, lang_code, username, start_arg)
+                                if start_arg.startswith("snd_"):
+                                    sound_id = start_arg.replace("snd_", "")
+                                    photo_id = PENDING_STICKER_PHOTOS.get(user_id)
+                                    if photo_id:
+                                        self.service_make_sticker(chat_id, user_id, username, lang_code, photo_id, sound_id=sound_id)
+                                    else:
+                                        PENDING_SOUND_PREF[user_id] = sound_id
+                                        snd_name = SOUNDS_LIB.get(sound_id, {}).get("name", sound_id)
+                                        self.call_api("sendMessage", {
+                                            "chat_id": chat_id,
+                                            "text": f"🎵 **Sonido seleccionado de la biblioteca:** {snd_name}\n\n👉 **Envía ahora la foto o meme** que deseas convertir en tu Sticker con este sonido:"
+                                        })
+                                else:
+                                    self.handle_start(chat_id, lang_code, username, start_arg)
                             elif text.startswith("/juego") or text.startswith("/ruleta") or text.startswith("/arcade"):
                                 self.send_game_redirect(chat_id, lang_code)
                             elif text.startswith("/invitar") or text.startswith("/compartir") or text.startswith("/referidos"):
