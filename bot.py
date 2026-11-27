@@ -256,8 +256,8 @@ SERVICE_EXPLANATIONS = {
             "• **🔥 Populares:** Toca un sticker viral de abajo para recibirlo ahora:"
         ),
         "buttons": [
-            [{"text": "🎨 Abrir Programa Creador de Stickers (Studio Pro)", "web_app": {"url": "https://vargasap.github.io/nexus-global-vault-bot/sticker_studio.html"}}],
-            [{"text": "📸 Enviar Foto/Video (Lip-Sync IA)", "callback_data": "guide_upload_photo"}, {"text": "🎧 Sonidos (App)", "web_app": {"url": "https://vargasap.github.io/nexus-global-vault-bot/sounds.html"}}],
+            [{"text": "🎨 Abrir Programa Creador de Stickers (Studio Pro)", "url": "https://vargasap.github.io/nexus-global-vault-bot/sticker_studio.html?v=5"}],
+            [{"text": "📸 Enviar Foto/Video (Lip-Sync IA)", "callback_data": "guide_upload_photo"}, {"text": "🎧 Sonidos (App)", "url": "https://vargasap.github.io/nexus-global-vault-bot/sounds.html?v=5"}],
             [{"text": "🐱 Gato Wow + Pop", "callback_data": "pop_stk_cat"}, {"text": "🐶 Doge Hacker + Audio", "callback_data": "pop_stk_dog"}],
             [{"text": "🐸 Pepe Meme + Boing", "callback_data": "pop_stk_pepe"}, {"text": "😂 Mega LOL + Risas", "callback_data": "pop_stk_laugh"}],
             [{"text": "🔙 Volver al Menú", "callback_data": "view_menu"}, {"text": "💳 Ver Paquetes", "callback_data": "view_plans"}]
