@@ -766,6 +766,7 @@
     }
 
     const URL_PARAMS = new URLSearchParams(location.search);
+    const getBotHandle = () => URL_PARAMS.get('bot') || state?.bot_username || 'nexus_global_vault_bot';
     const API_BASE = (() => {
       const p = URL_PARAMS.get('api');
       if (p) return p.replace(/\/+$/, '');
@@ -1091,7 +1092,7 @@
       const text = txtEl.value.trim();
       if (!text) return;
       if (API_BASE === null) {
-        showToast('Abre el Trono desde @nexus_global_vault_bot para chatear en vivo');
+        showToast(`Abre el Trono desde @${getBotHandle()} para chatear en vivo`);
         return;
       }
       const author = authEl.value.trim() || tg?.initDataUnsafe?.user?.first_name || 'Visitante';
@@ -1173,7 +1174,7 @@
       if (displayName.length < 2) { showToast('⚠️ Escribe tu nombre o apodo'); return; }
 
       if (API_BASE === null) {
-        const botUrl = `https://t.me/nexus_global_vault_bot?start=throne_chat_${chosenTier}`;
+        const botUrl = `https://t.me/${getBotHandle()}?start=throne_chat_${chosenTier}`;
         if (tg?.openTelegramLink) tg.openTelegramLink(botUrl); else window.open(botUrl, '_blank');
         return;
       }
@@ -1239,7 +1240,7 @@
     }
 
     function shareThrone() {
-      const bot = state?.bot_username || 'nexus_global_vault_bot';
+      const bot = getBotHandle();
       const url = `https://t.me/${bot}?start=throne`;
       const txt = encodeURIComponent('👑 ¿Crees que puedes durar en El Trono #1? Destrona al Rey actual por $1.99 (100 ⭐) y pon tu perfil en pantalla global:');
       const share = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${txt}`;
