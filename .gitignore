@@ -18,6 +18,7 @@ users_game_db.json
 users_crypto_db.json
 sales_game_log.json
 sales_crypto_log.json
+*.sqlite*
 
 # OS generated files
 .DS_Store

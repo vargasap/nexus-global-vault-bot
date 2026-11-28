@@ -28,6 +28,26 @@ from PIL import Image, ImageEnhance
 import subprocess
 import uuid
 import imageio_ffmpeg
+import throne_engine as te
+
+def _read_root_env(key, default=""):
+    val = os.environ.get(key, "").strip()
+    if val:
+        return val
+    env_p = os.path.join(BASE_DIR, ".env")
+    if os.path.isfile(env_p):
+        try:
+            for line in open(env_p, "r", encoding="utf-8", errors="ignore"):
+                s = line.strip()
+                if s.startswith(f"{key}=") and "=" in s:
+                    return s.split("=", 1)[1].strip().strip('"').strip("'")
+        except Exception:
+            pass
+    return default
+
+OWNER_ID = _read_root_env("OWNER_ID", "5593082133")
+THRONE_WEBAPP_URL = _read_root_env("THRONE_URL", "https://vargasap.github.io/nexus-global-vault-bot/web_hub/throne.html")
+THRONE_PENDING_INPUT = {}
 
 DELIVERY_CACHE = {}
 SOUNDS_DIR = os.path.join(BASE_DIR, "sound_library")
@@ -497,6 +517,7 @@ class TelegramStarsBot:
         try:
             cmds = [
                 {"command": "menu", "description": "🛠️ Abrir Menú Oficial (8 Servicios)"},
+                {"command": "trono", "description": "👑 El Trono de $1.99 en Vivo"},
                 {"command": "start", "description": "⚡ Inicio y bienvenida"},
                 {"command": "precios", "description": "💳 Paquetes de Telegram Stars"},
                 {"command": "juego", "description": "🎰 Lucky Vault Arcade (Ruleta)"},
@@ -566,6 +587,25 @@ class TelegramStarsBot:
                 })
 
         # Redirección inteligente de tráfico por Deep-Link temático (?start=promo_...)
+        if start_arg == "throne":
+            self.send_throne_hub(chat_id)
+            return
+        if start_arg.startswith("throne_chat_"):
+            tier = start_arg.replace("throne_chat_", "", 1).strip()
+            if tier not in te.THRONE_TIERS:
+                tier = "king_100"
+            THRONE_PENDING_INPUT[int(chat_id)] = tier
+            self.prompt_throne_chat_input(chat_id, tier)
+            return
+        if start_arg.startswith("throne_"):
+            oid = start_arg.replace("throne_", "", 1).strip().upper()
+            ord_row = te.get_order(oid)
+            if ord_row and ord_row.get("status") == "pending":
+                self.send_throne_order_invoice(chat_id, ord_row)
+            else:
+                self.send_throne_hub(chat_id)
+            return
+
         promo_map = {
             "promo_tiktok": "1", "video": "1",
             "promo_mp3": "2", "mp3": "2",
@@ -722,6 +762,9 @@ class TelegramStarsBot:
         
         reply_markup = {
             "inline_keyboard": [
+                [
+                    {"text": "👑 El Trono de $1.99 (EN VIVO)", "callback_data": "view_throne"}
+                ],
                 [
                     {"text": "1️⃣ 🎬 Video HD", "callback_data": "act_1"},
                     {"text": "2️⃣ 🎵 Audio MP3", "callback_data": "act_2"}
@@ -941,9 +984,152 @@ class TelegramStarsBot:
         })
         write_log(f"[Pre-Checkout Aprobado] ID: {pc_id}")
 
+    def prompt_throne_chat_input(self, chat_id, tier="king_100"):
+        tier_cfg = te.THRONE_TIERS.get(tier, te.THRONE_TIERS["king_100"])
+        msg = (
+            f"👑 <b>{html.escape(tier_cfg['title'])}</b>\n"
+            f"━━━━━━━━━━━━━━━━━━━━━\n"
+            f"Envía en <b>un solo mensaje</b> tus datos separados por <code>|</code>:\n\n"
+            f"<code>Tu Nombre | Tu frase o promo | Tu enlace o @usuario</code>\n\n"
+            f"<i>Ejemplo:</i>\n"
+            f"<code>Carlos VIP | Sígueme para hacks diarios | @carlosvip</code>\n\n"
+            f"👉 También puedes escribir solo tu <b>Nombre</b> y te enviaremos la factura de <b>{tier_cfg['stars']} ⭐</b> al instante."
+        )
+        self.call_api("sendMessage", {
+            "chat_id": chat_id,
+            "text": msg,
+            "parse_mode": "HTML",
+            "reply_markup": {"inline_keyboard": [[{"text": "🔙 Cancelar", "callback_data": "view_throne"}]]},
+        })
+
+    def send_throne_order_invoice(self, chat_id, order):
+        tier_cfg = te.THRONE_TIERS.get(order["tier"], te.THRONE_TIERS["king_100"])
+        stars = int(order.get("stars_amount") or tier_cfg["stars"])
+        title = tier_cfg["title"][:32]
+        desc = f"{order.get('display_name', '')}: {order.get('message', '')[:120]}"[:255]
+        invoice_data = {
+            "chat_id": chat_id,
+            "title": title,
+            "description": desc,
+            "payload": f"throne_{order['order_id']}",
+            "currency": "XTR",
+            "prices": [{"label": title, "amount": stars}],
+            "provider_token": "",
+        }
+        res = self.call_api("sendInvoice", invoice_data)
+        if not res.get("ok"):
+            write_log(f"[Error Throne sendInvoice]: {res.get('description')}")
+
+    def send_throne_hub(self, chat_id):
+        st = te.get_live_state()
+        k = st.get("current_king")
+        stats = st.get("stats", {})
+        if k:
+            reign_m = int(k.get("reign_seconds", 0)) // 60
+            reign_s = int(k.get("reign_seconds", 0)) % 60
+            shield_line = f"\n🛡️ <b>Escudo activo:</b> <code>{k['shield_remaining']}s</code>" if k.get("shield_remaining", 0) > 0 else ""
+            promo_line = f"\n🔗 <b>Enlace:</b> {html.escape(k['promo_url'])}" if k.get("promo_url") else ""
+            king_block = (
+                f"👑 <b>REY ACTUAL #1:</b> {html.escape(k.get('avatar_emoji', '👑'))} <b>{html.escape(k['display_name'])}</b>\n"
+                f"💬 <i>\"{html.escape(k['message'])}\"</i>{promo_line}{shield_line}\n"
+                f"⏱️ <b>Reinando:</b> <code>{reign_m}m {reign_s}s</code> | 👆 Clics: <code>{k.get('clicks_count', 0)}</code>"
+            )
+        else:
+            king_block = "👑 <b>TRONO #1 DISPONIBLE AHORA</b>\n<i>¡Aún no hay Rey! Sé el primero en coronarte en pantalla global.</i>"
+
+        msg = (
+            "👑 <b>EL TRONO DE $1.99 — BATALLA EN VIVO</b> ⚡\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n"
+            f"{king_block}\n\n"
+            f"📊 <b>Estadísticas:</b> <code>{stats.get('total_takeovers', 0)}</code> tomas | <code>{stats.get('total_stars', 0)} ⭐</code>\n\n"
+            "🔥 Quien pague <b>$1.99 (100 ⭐)</b> destrona al #1 al instante, sube su perfil/negocio y avisa al Rey anterior para darle revancha:"
+        )
+        rows = [
+            [{"text": "👑 Tomar el Trono Ahora (100 ⭐ / $1.99)", "callback_data": "throne_take_king_100"}],
+            [
+                {"text": "🛡️ Blindado 15m (250 ⭐)", "callback_data": "throne_take_shield_250"},
+                {"text": "💎 Pin VIP 24h (50 ⭐)", "callback_data": "throne_take_pin_50"},
+            ],
+            [{"text": "📺 Abrir Muro en Vivo (Mini App)", "web_app": {"url": f"{THRONE_WEBAPP_URL}?v={int(time.time())}"}}],
+            [{"text": "🔙 Volver al Menú Principal", "callback_data": "view_menu"}],
+        ]
+        self.call_api("sendMessage", {
+            "chat_id": chat_id,
+            "text": msg,
+            "parse_mode": "HTML",
+            "disable_web_page_preview": True,
+            "reply_markup": {"inline_keyboard": rows},
+        })
+
+    def handle_balance_global(self, chat_id, user_id):
+        if str(user_id) != str(OWNER_ID):
+            self.call_api("sendMessage", {"chat_id": chat_id, "text": "🔒 Comando exclusivo del dueño del ecosistema.", "parse_mode": "HTML"})
+            return
+        try:
+            parent_dir = os.path.dirname(BASE_DIR)
+            if parent_dir not in sys.path:
+                sys.path.insert(0, parent_dir)
+            import check_global_balance as cgb  # noqa: E402
+            summary = cgb.collect_global_balance()
+            report_html = cgb.format_balance_telegram_html(summary)
+        except Exception as e:
+            report_html = f"❌ Error consultando balance global: <code>{html.escape(str(e))}</code>"
+        self.call_api("sendMessage", {"chat_id": chat_id, "text": report_html, "parse_mode": "HTML"})
+
     def handle_successful_payment(self, chat_id, lang_code, user_id, username, payment_info):
         stars_paid = payment_info.get("total_amount", 50)
         payload = payment_info.get("invoice_payload", "")
+
+        if payload.startswith("throne_"):
+            order_id = payload[len("throne_"):].strip().split("_")[0].upper()
+            res = te.activate_paid_order(order_id, payer_user_id=user_id, payer_username=username, stars_paid=stars_paid)
+            entry = res.get("entry") or {}
+            log_sale(user_id, username, entry.get("tier", "throne"), stars_paid, payload)
+
+            bot_u = _read_root_env("BOT_USERNAME", "nexus_global_vault_bot")
+            share_link = f"https://t.me/{bot_u}?start=throne"
+            share_txt = urllib.parse.quote(f"👑 ¡Acabo de tomar EL TRONO #1 en vivo por $1.99! ¿Te atreves a destronarme?")
+            share_url = f"https://t.me/share/url?url={urllib.parse.quote(share_link)}&text={share_txt}"
+
+            title_done = "👑 <b>¡ERES EL NUEVO REY #1 DEL TRONO!</b> ⚡" if entry.get("is_current_king") else "💎 <b>¡PIN VIP 24H ACTIVADO EN EL MURO!</b> ⚡"
+            self.call_api("sendMessage", {
+                "chat_id": chat_id,
+                "parse_mode": "HTML",
+                "text": (
+                    f"{title_done}\n\n"
+                    f"🏷️ <b>Nombre:</b> <code>{html.escape(str(entry.get('display_name', '')))}</code>\n"
+                    f"💬 <b>Mensaje:</b> <i>{html.escape(str(entry.get('message', '')))}</i>\n"
+                    f"⭐ <b>Pago confirmado:</b> <code>{stars_paid} Stars</code>\n\n"
+                    f"🚀 ¡Comparte el reto en grupos para presumir tu #1 y sumar clics!"
+                ),
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [{"text": "👑 Ver Trono en Vivo", "callback_data": "view_throne"}],
+                        [{"text": "🚀 Desafiar Amigos en Chat/Grupos", "url": share_url}],
+                    ]
+                },
+            })
+
+            # Automatic Revenge Notification to previous King
+            prev = res.get("previous_king")
+            if prev and prev.get("telegram_user_id") and int(prev["telegram_user_id"]) != int(user_id):
+                reign_s = int(prev.get("reign_seconds") or 0)
+                self.call_api("sendMessage", {
+                    "chat_id": int(prev["telegram_user_id"]),
+                    "parse_mode": "HTML",
+                    "text": (
+                        f"⚔️ <b>¡TE ACABAN DE DESTRONAR DEL #1!</b> 😱\n\n"
+                        f"👑 <b>{html.escape(str(entry.get('display_name', 'Un rival')))}</b> te quitó el Trono después de <code>{reign_s // 60}m {reign_s % 60}s</code>.\n\n"
+                        f"👇 ¿Vas a dejar que se quede con tu audiencia? ¡Toma revancha por <b>$1.99 (100 ⭐)</b>!"
+                    ),
+                    "reply_markup": {
+                        "inline_keyboard": [
+                            [{"text": "🔥 ¡VENGANZA! Retomar Trono (100 ⭐)", "callback_data": "throne_take_king_100"}],
+                            [{"text": "🛡️ Retomar BLINDADO 15 min (250 ⭐)", "callback_data": "throne_take_shield_250"}],
+                        ]
+                    },
+                })
+            return
 
         plan_id = "pack_3"
         if "pack_10" in payload:
@@ -1882,6 +2068,14 @@ class TelegramStarsBot:
                                     "chat_id": chat_id,
                                     "text": f"🌐 **Idioma de destino configurado:** {lang_labels.get(target_lang, target_lang.upper())}\n\n👉 Escribe cualquier texto para traducirlo al instante:"
                                 })
+                            elif data == "view_throne":
+                                self.send_throne_hub(chat_id)
+                            elif data.startswith("throne_take_"):
+                                tier = data.replace("throne_take_", "", 1).strip()
+                                if tier not in te.THRONE_TIERS:
+                                    tier = "king_100"
+                                THRONE_PENDING_INPUT[user_id] = tier
+                                self.prompt_throne_chat_input(chat_id, tier)
                             elif data == "buy_pack_3":
                                 self.send_stars_invoice(chat_id, lang_code, "pack_3")
                             elif data == "buy_pack_10":
@@ -1937,8 +2131,39 @@ class TelegramStarsBot:
                                 "quiero ir al menu", "vuelve al menu"
                             ]
                             if lower_text in menu_words or lower_text.startswith("/menu") or lower_text.startswith("menu"):
+                                THRONE_PENDING_INPUT.pop(user_id, None)
                                 set_user_active_mode(chat_id, "video")
                                 self.send_services_menu(chat_id, lang_code)
+                                continue
+
+                            # Flujo rápido por chat para tomar El Trono de $1.99
+                            if user_id in THRONE_PENDING_INPUT and text and not text.startswith("/"):
+                                pending_tier = THRONE_PENDING_INPUT.pop(user_id)
+                                parts_t = [p.strip() for p in text.split("|")]
+                                d_name = parts_t[0] if parts_t else ""
+                                d_msg = parts_t[1] if len(parts_t) >= 2 and parts_t[1] else "¡Nuevo Rey en el Trono #1!"
+                                d_url = parts_t[2] if len(parts_t) >= 3 else ""
+                                res_ord = te.create_pending_order(
+                                    {
+                                        "tier": pending_tier,
+                                        "display_name": d_name,
+                                        "message": d_msg,
+                                        "promo_url": d_url,
+                                        "telegram_user_id": user_id,
+                                        "username": username,
+                                    },
+                                    bot_token=self.token,
+                                )
+                                if not res_ord.get("ok"):
+                                    self.call_api("sendMessage", {
+                                        "chat_id": chat_id,
+                                        "text": f"⚠️ {res_ord.get('error', 'No se pudo crear la orden.')}\n\n👉 Prueba de nuevo con /trono",
+                                        "parse_mode": "HTML",
+                                    })
+                                else:
+                                    ord_row = te.get_order(res_ord["order_id"])
+                                    if ord_row:
+                                        self.send_throne_order_invoice(chat_id, ord_row)
                                 continue
 
                             # Selección escribiendo directamente el número (1 a 8)
@@ -2201,6 +2426,10 @@ class TelegramStarsBot:
                                         })
                                 else:
                                     self.handle_start(chat_id, lang_code, username, start_arg)
+                            elif text.startswith("/trono") or text.startswith("/throne"):
+                                self.send_throne_hub(chat_id)
+                            elif text.startswith("/balance_global") or text.startswith("/ingresos_globales"):
+                                self.handle_balance_global(chat_id, user_id)
                             elif text.startswith("/juego") or text.startswith("/ruleta") or text.startswith("/arcade"):
                                 self.send_game_redirect(chat_id, lang_code)
                             elif text.startswith("/invitar") or text.startswith("/compartir") or text.startswith("/referidos"):

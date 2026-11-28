@@ -14,8 +14,9 @@ import time
 import signal
 import threading
 import subprocess
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler
 from datetime import datetime
+import throne_server
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -54,9 +55,18 @@ def log(msg):
     print(f"[{ts}] [CloudSupervisor] {msg}", flush=True)
 
 class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        self.send_response(204)
+        throne_server.send_cors_headers(self)
+        self.end_headers()
+
     def do_GET(self):
+        path = self.path.split("?", 1)[0]
+        if throne_server.handle_throne_get(self, path):
+            return
+
         # Si visitan la raíz o /cybershield, servir la Landing Page oficial
-        if self.path in ["/", "/cybershield", "/cybershield.html", "/index.html"]:
+        if path in ["/", "/cybershield", "/cybershield.html", "/index.html"]:
             landing_path = os.path.join(BASE_DIR, "web_hub", "cybershield.html")
             if os.path.exists(landing_path):
                 self.send_response(200)
@@ -79,13 +89,20 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
         import json
         self.wfile.write(json.dumps(status_info, indent=2).encode("utf-8"))
 
+    def do_POST(self):
+        path = self.path.split("?", 1)[0]
+        if throne_server.handle_throne_post(self, path):
+            return
+        self.send_response(404)
+        self.end_headers()
+
     def log_message(self, format, *args):
         # Silence routine health check request logs to keep terminal clean
         pass
 
 def run_health_server(port):
-    server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
-    log(f"Servidor de Health Check activo en puerto {port} para Render/Koyeb")
+    server = throne_server.ThroneHTTPServer(("0.0.0.0", port), HealthCheckHandler)
+    log(f"Servidor HTTP + Throne SSE activo en puerto {port} para Render/Koyeb")
     server.serve_forever()
 
 def supervise_bot(bot_info):
